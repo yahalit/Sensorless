@@ -1,0 +1,9 @@
+BEMain/CPU1_FLASH/
+BEMain/CPU1_RAM/
+BECpu2/CPU2_FLASH/
+BECpu2/CPU2_RAM/
+
+*.asv
+*.pdb
+*.d
+*.obj
