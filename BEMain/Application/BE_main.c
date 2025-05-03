@@ -68,10 +68,44 @@ void ExampleInitSysCtrl(void);
 void InitEPwm1(void);
 void SetupDMA(void);
 
+void CfgBlockTransport(void)
+{
+    SysState.BlockUpload.InBlockMsg.cobId = (0xb<<7)+CanIdLocal  ;
+    SysState.BlockUpload.InBlockMsg.dLen  = 8 ;
+
+    SysState.BlockUpload.StartBlockMsg.cobId = (0xb<<7)+CanIdLocal  ;
+    SysState.BlockUpload.StartBlockMsg.dLen  = 8 ;
+    SysState.BlockUpload.StartBlockMsg.data[0] = 0x64 + (0x2006L<<8) + (1L<<24);
+
+    SysState.BlockUpload.EndBlockMsg.cobId = (0xb<<7)+CanIdLocal  ;
+    SysState.BlockUpload.EndBlockMsg.dLen  = 8 ;
+
+    SysState.BlockUpload.AbortBlockMsg.cobId = (0xb<<7)+CanIdLocal  ;
+    SysState.BlockUpload.AbortBlockMsg.dLen  = 8 ;
+    SysState.BlockUpload.AbortBlockMsg.data[0] = (4L<<5) + ( (long unsigned)02006 ) + ( (long unsigned)1 << 24 );
+    SysState.BlockUpload.AbortBlockMsg.data[1] = Invalid_sequence_number ;
+}
+
 //
 // Uncomment to enable DMA ISR
 //
 //interrupt void dma_isr(void);
+void InitAppData(void)
+{
+    ClearMemRpt((short unsigned *) &SysState,sizeof( SysState) );
+    ClearMemRpt((short unsigned *) &CanSlaveInQueue,sizeof( CanSlaveInQueue) );
+    ClearMemRpt((short unsigned *) &CanSlaveOutQueue,sizeof( CanSlaveOutQueue) );
+    ClearMemRpt((short unsigned *) &FlashProg,sizeof( FlashProg) );
+
+    CanIdLocal = 1 ;
+    ProjId = PROJ_TYPE;// Test identity
+
+    CanSlaveInQueue.nQueue = N_SLAVE_QUEUE ;
+    CanSlaveOutQueue.nQueue = N_SLAVE_QUEUE ;
+
+    SlaveSdo.SlaveBuf = (unsigned long* ) SlaveSdoBuf ;
+    CfgBlockTransport( ) ;
+}
 
 //
 // Main
@@ -82,7 +116,7 @@ void main(void)
 //
 // Disable CPU interrupts
 //
-    DINT;
+    DINT ;
 
 
     //
@@ -111,6 +145,7 @@ void main(void)
         DevCfgRegs.BANKMUXSEL.bit.BANK4 = 3U;
     EDIS;
 
+    InitAppData() ;
 //
 // Initialize GPIO pins for EPWM-1
 //

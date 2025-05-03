@@ -28,15 +28,16 @@ MEMORY
    // RAMLS9_CLA    : origin = 0x006000, length = 0x002000  // Use only if configured as CLA program memory
 
    //RAMGS0           : origin = 0x010000, length = 0x002000
-   RAMGS1           : origin = 0x012000, length = 0x002000
-   RAMGS2           : origin = 0x014000, length = 0x002000
-   RAMGS3           : origin = 0x016000, length = 0x002000
-   RAMGS4           : origin = 0x018000, length = 0x002000
+   RAMGS1to4           : origin = 0x012000, length = 0x008000
+   //RAMGS2           : origin = 0x014000, length = 0x002000
+   //RAMGS3           : origin = 0x016000, length = 0x002000
+   //RAMGS4           : origin = 0x018000, length = 0x002000
 
    /* Flash Banks (128 sectors each) */
    FLASH_BANK0     : origin = 0x080002, length = 0x1FFFE  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
    FLASH_BANK1     : origin = 0x0A0000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
-   FLASH_BANK2     : origin = 0x0C0000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
+   FLASH_BANK2     : origin = 0x0C0000, length = 0x1fc00  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
+   FLASH_STATISTIC  : origin = 0x1fc00, length = 0x400
    // FLASH_BANK3     : origin = 0x0E0000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
    // FLASH_BANK4     : origin = 0x100000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
 
@@ -79,9 +80,11 @@ SECTIONS
    .esysmem         : > RAMLS5
 #endif
 
+	.statistics		: > FLASH_STATISTIC, ALIGN(8)
+
    //ramgs0 : > RAMGS0, type=NOINIT
-   ramgs1 : > RAMGS1, type=NOINIT
-   ramgs2 : > RAMGS2, type=NOINIT
+   //ramgs1 : > RAMGS1, type=NOINIT
+   //amgs2 : > RAMGS2, type=NOINIT
 
    MSGRAM_CPU1_TO_CPU2 > CPU1TOCPU2RAM, type=NOINIT
    MSGRAM_CPU2_TO_CPU1 > CPU2TOCPU1RAM, type=NOINIT
