@@ -70,21 +70,43 @@ void SetupDMA(void);
 
 void CfgBlockTransport(void)
 {
-    SysState.BlockUpload.InBlockMsg.cobId = (0xb<<7)+CanIdLocal  ;
+    SysState.BlockUpload.InBlockMsg.cobId = (0xb<<7)+CanId ;
     SysState.BlockUpload.InBlockMsg.dLen  = 8 ;
 
-    SysState.BlockUpload.StartBlockMsg.cobId = (0xb<<7)+CanIdLocal  ;
+    SysState.BlockUpload.StartBlockMsg.cobId = (0xb<<7)+CanId  ;
     SysState.BlockUpload.StartBlockMsg.dLen  = 8 ;
     SysState.BlockUpload.StartBlockMsg.data[0] = 0x64 + (0x2006L<<8) + (1L<<24);
 
-    SysState.BlockUpload.EndBlockMsg.cobId = (0xb<<7)+CanIdLocal  ;
+    SysState.BlockUpload.EndBlockMsg.cobId = (0xb<<7)+CanId  ;
     SysState.BlockUpload.EndBlockMsg.dLen  = 8 ;
 
-    SysState.BlockUpload.AbortBlockMsg.cobId = (0xb<<7)+CanIdLocal  ;
+    SysState.BlockUpload.AbortBlockMsg.cobId = (0xb<<7)+CanId  ;
     SysState.BlockUpload.AbortBlockMsg.dLen  = 8 ;
     SysState.BlockUpload.AbortBlockMsg.data[0] = (4L<<5) + ( (long unsigned)02006 ) + ( (long unsigned)1 << 24 );
     SysState.BlockUpload.AbortBlockMsg.data[1] = Invalid_sequence_number ;
 }
+
+
+
+/**
+ * \brief Initiate the time outs of the system
+ */
+void InitTimeOuts ( void )
+{
+    short unsigned cnt ;
+
+    // All the timers are initially elapsed
+    for ( cnt = 0 ; cnt < NSYS_TIMER_CMP_ARRAY ; cnt++)
+    {
+        SetSysTimerTargetSec(cnt, 0.1f, &SysTimerStr);
+    }
+    SetSysTimerTargetSec ( TIMER_MCAN_BUSOFF , BUS_OFF_RECOVERY_TIME ,  &SysTimerStr  );
+    SetSysTimerTargetSec ( TIMER_AUTO_MOTOROFF , 0.3f ,  &SysTimerStr  );
+    SetSysTimerTargetSec ( TIMER_AUTO_MIN_MOTORON , 3.0 , &SysTimerStr ) ;
+//    SetSysTimerTargetSec (TIMER_GYRO_PROG , 0.005f  , &SysTimerStr);
+}
+
+
 
 //
 // Uncomment to enable DMA ISR
@@ -92,19 +114,155 @@ void CfgBlockTransport(void)
 //interrupt void dma_isr(void);
 void InitAppData(void)
 {
+    struct CFloatParRecord *pPar ;
+    short unsigned cnt ;
+    //float PosRange;
+    ClearMemRpt((short unsigned *) &Commutation,sizeof( Commutation) );
     ClearMemRpt((short unsigned *) &SysState,sizeof( SysState) );
+
     ClearMemRpt((short unsigned *) &CanSlaveInQueue,sizeof( CanSlaveInQueue) );
     ClearMemRpt((short unsigned *) &CanSlaveOutQueue,sizeof( CanSlaveOutQueue) );
+    ClearMemRpt((short unsigned *) &SlaveSdo,sizeof( SlaveSdo) );
+    ClearMemRpt((short unsigned *) &UartSwBuf,sizeof( UartSwBuf) );
+    ClearMemRpt((short unsigned *) &MasterBlaster,sizeof( MasterBlaster) );
+    ClearMemRpt((short unsigned *) &CfgDirty[0],sizeof( CfgDirty) );
+    ClearMemRpt((short unsigned *) &Correlations,sizeof( Correlations) );
     ClearMemRpt((short unsigned *) &FlashProg,sizeof( FlashProg) );
 
-    CanIdLocal = 1 ;
-    ProjId = PROJ_TYPE;// Test identity
+    pUIdentity   = ( union UIdentity *) Sector_AppIdentity_start ;
+    pUNVParams   = ( union UNVParams *) Sector_AppParams_start ;
+    NVParamsPassWord = 0 ;
+
+
+    // Test identity
+    ApplyIdentity(pUIdentity,pUNVParams);
+
+    Correlations.fPtrs[0] = &ClaState.Encoder1.UserPos ;
+    Correlations.fPtrs[1] = &ClaState.CurrentControl.ExtCurrentCommand ;
+    Correlations.fPtrs[2] = &ClaState.CurrentControl.ExtIq ;
+    Correlations.nCyclesInTake = 1 ;
+    Correlations.nSamplesForFullTake = 10 ;
+    Correlations.nWaitTakes = 1 ;
+    Correlations.nSumTakes = 1 ;
 
     CanSlaveInQueue.nQueue = N_SLAVE_QUEUE ;
     CanSlaveOutQueue.nQueue = N_SLAVE_QUEUE ;
 
     SlaveSdo.SlaveBuf = (unsigned long* ) SlaveSdoBuf ;
-    CfgBlockTransport( ) ;
+
+#ifdef SLAVE_DRIVER
+    SysState.pOutMsgBufTx = &SysState.OutMsgBuf;
+
+    InitFsiService() ;
+
+    SysState.bCanTxCounter = 0 ;
+
+#endif
+    SysState.Timing.Ts = CUR_SAMPLE_TIME_USEC * 1e-6 ;
+    SysState.Timing.TsTraj = SysState.Timing.Ts ;
+    SysState.Timing.TsInTicks = (CPU_CLK_MHZ * CUR_SAMPLE_TIME_USEC  ) ;
+
+    // Set configuration params
+    ResetConfigPars() ;
+
+    // Load the parameters
+    for ( cnt = 0 ; cnt < (signed short)N_ParTable; cnt++ )
+    {
+        pPar = (struct CFloatParRecord  *) &ParTable[cnt];
+        if ( pPar->ptr == (float*) 0 )
+        {
+            break ;
+        }
+        *pPar->ptr = pPar->dflt ;
+    }
+
+    ProjId = 0xffff ; // Ilegal
+    InitControlParams();
+
+    InitLinService();
+
+
+    FlashCalib =  Sector_AppCalib_start ;
+
+    InitSystemTimer( &SysTimerStr);
+
+    ClaState.SystemMode = E_SysMotionModeManual ; // Be optimistic
+
+
+
+    // Just in case
+    InitRecorder(FAST_INTS_IN_C, FAST_TS_USEC, SDO_BUF_LEN_LONGS);
+
+#ifdef PVTEnabled
+    InitPVT() ;
+#endif
+    SysState.PT.Init = 0 ;
+
+    DealCalibration (1) ; // Deal with calibration
+    if  (ReadCalibFromFlash ( (long unsigned*) &CalibProg.C.Calib ,   FlashCalib   ) )
+    {
+        SysState.Mot.NoCalib = 1 ;
+
+        LogException( EXP_FATAL , exp_missing_calib);
+        SetSystemMode(E_SysMotionModeFault);
+
+        ClearMemRpt( (short unsigned * ) &CalibProg.C.Calib , sizeof(struct CCalib)  ) ;
+
+#ifdef ON_BOARD_GYRO
+        //ClaState.SystemMode =  ; // Born in fault ....
+        for ( cnt = 0 ; cnt < 4 ; cnt++ )
+        {
+            Calib.qImu2ZeroENUPos[cnt]  = Geom.DefaultqImu2ZeroENUPos[cnt];
+        }
+        ProcessIMUTransformation() ;
+#endif
+    }
+
+
+    SysState.Mot.CurrentLimitFactor = 1 ;
+
+    InitTimeOuts();
+
+    ClaState.Timing.TsInTicks = CUR_SAMPLE_TIME_CLOCKS  ;
+    ClaState.Timing.InvMhz = 1.0f / (float) CPU_CLK_MHZ ;
+
+
+    InitControlParams() ;
+
+    //ProgramProfiler(&SysState.Profiler[cnt] , ControlPars.MaxSpeedCmd , ControlPars.MaxAcc , ControlPars.MaxAcc , ControlPars.ProfileTau , 0 ) ;
+    ResetProfiler ( &SysState.Profiler, SysState.PosControl.PosFeedBack , ClaState.Encoder1.UserSpeed , 1 ) ;
+
+    SysState.Mot.LoopClosureMode = E_LC_OpenLoopField_Mode ; // Default
+    //SysState.Mot.GyroNotReady = 1 ;
+
+
+    SysState.Debug.GRef.Type  = E_S_Fixed ;
+    SysState.Debug.TRef.Type  = E_S_Fixed  ;
+
+    InitHallModule() ;
+
+    InitPosPrefilter() ;
+
+#ifndef NEW_WHEEL_GEAR_RATIO
+    SysState.EncoderMatchTest.bTestEncoderMatch = 1 ; // Do encoder matching test
+#endif
+
+/*
+    PosRange = __fmax( ControlPars.MaxPositionCmd - ControlPars.MinPositionCmd, 0.0001f) ;
+    PosPrefilter.InPosScale = 1073741824.0f / PosRange ; // 2^30  /PosRange
+    PosPrefilter.OutPosScale = 9.313225746154785e-10f * PosRange ;
+    PosPrefilter.OutSpeedScale = PosPrefilter.OutPosScale / (CUR_SAMPLE_TIME_USEC*1e-6f) ; // PosRange * 2^(-30)
+*/
+}
+
+void InitPosPrefilter(void)
+{
+    ClearMemRpt((short unsigned *) &PosPrefilter,sizeof( PosPrefilter) );
+    PosPrefilter.b01 = 131453 ;
+    PosPrefilter.b02 = 189276 ;
+
+    PosPrefilter.a21 = 2114678849 ;
+    PosPrefilter.a22 = 2114346702 ;
 }
 
 //
@@ -141,9 +299,14 @@ void main(void)
         MemCfgRegs.GSxMSEL.bit.MSEL_GS0 = 1U;
         DevCfgRegs.MCUCNF1.all |= 0x30 ; // D4 and D5 go to CPU2
 
-        DevCfgRegs.BANKMUXSEL.bit.BANK3 = 3U;
-        DevCfgRegs.BANKMUXSEL.bit.BANK4 = 3U;
+        //DevCfgRegs.BANKMUXSEL.bit.BANK3 = 3U;
+        //DevCfgRegs.BANKMUXSEL.bit.BANK4 = 3U;
     EDIS;
+
+    SetupFlash() ;
+
+
+
 
     InitAppData() ;
 //
@@ -151,6 +314,7 @@ void main(void)
 //
     InitPeripherals() ;
     // InitEPwm1Gpio();
+    CfgBlockTransport(); // Only after CAN ID is known
 
 
     PrepCpu2Work() ;

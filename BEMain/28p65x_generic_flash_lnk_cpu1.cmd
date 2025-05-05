@@ -36,8 +36,11 @@ MEMORY
    /* Flash Banks (128 sectors each) */
    FLASH_BANK0     : origin = 0x080002, length = 0x1FFFE  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
    FLASH_BANK1     : origin = 0x0A0000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
-   FLASH_BANK2     : origin = 0x0C0000, length = 0x1fc00  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
-   FLASH_STATISTIC  : origin = 0x1fc00, length = 0x400
+   FLASH_BANK2     : origin = 0x0C0000, length = 0x1dc00  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
+   FLASH_CALIB  	: origin = 0xddc00, length = 0x400
+   FLASH_PARAMS 	: origin = 0xde000, length = 0x1000
+   FLASH_IDENTITY  : origin = 0xdf000, length = 0x400
+   FLASH_STATISTIC  : origin = 0xdf400, length = 0x400
    // FLASH_BANK3     : origin = 0x0E0000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
    // FLASH_BANK4     : origin = 0x100000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
 

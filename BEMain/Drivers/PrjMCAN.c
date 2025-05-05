@@ -43,6 +43,86 @@
 const short SpaceForElementSizeInLongs[8] = {4 , 5 , 6 , 7 , 8 , 10 , 14 , 18 } ;
 const short Dlc2Len[16] = {0,1,2,3,4,5,6,7,8,12,16,20,32,18,48,64} ;
 
+
+
+short unsigned IsTemperatureReport ;
+
+
+
+short   EarlyRefDecode(long unsigned d1, long unsigned d2)
+{
+union UMultiType u1 , u2 ;
+short unsigned nextClosure , nextRefMode ;
+//float pref ;
+    u1.ul = d1 ;
+    u2.ul = d2 ;
+    nextClosure = ( u1.us[0]  >> 2 ) & 7 ;
+    nextRefMode = ( u1.us[0]  >> 5 ) & 7 ;
+    SysState.PT.NewMsgReady = 0 ;
+    if ( nextClosure == E_LC_EXTDual_Pos_Mode)
+    {
+        SysState.PosControl.PosErrorExt = u2.s[0] *  9.587379924285257e-05f  ;
+        SysState.PosControl.SpeedFFExt  = u2.s[1] * 4.882812500000000e-04f   ;
+        SysState.PosControl.RefTimer = SysState.Timing.UsecTimer ;
+        return 2 ;
+    }
+    if ( nextRefMode  == E_PosModePT )
+    {
+        //pref = u2.f  ;
+        SysState.InterpolationPosRef    = u2.s[0] *  9.587379924285257e-05f  ;
+        SysState.PosControl.SpeedFFExt  = u2.s[1] * 4.882812500000000e-04f   ;
+        SysState.PosControl.RefTimer = SysState.Timing.UsecTimer ;
+/*
+        if ( ( isnan(pref) == 0 ) && (__fmax(__fmin(pref,ControlPars.MaxPositionCmd),ControlPars.MinPositionCmd)== pref ))
+        {
+            SysState.InterpolationPosRef = pref ;
+        }
+*/
+        SysState.PT.NewMsgReady = 1 ;
+        return 2 ;
+    }
+    return 0 ;
+}
+
+
+#pragma FUNCTION_OPTIONS ( SetPDO2HW, "--opt_level=3" );
+short SetPDO2HW(struct CCanMsg  *pMsg , short unsigned nPdo )
+{
+    int  shift ;
+    union
+    {
+        long unsigned ul ;
+        short unsigned us[2];
+    } u2 ;
+    long unsigned *pmsg ;
+
+
+    // Invert the pending state so we have the clear mailboxes
+    u2.ul = ~HWREG(MCAN0_BASE + MCAN_TXBRP) ;
+    u2.us[0] &= (1<<nPdo);
+
+    if (  u2.us[0] == 0 )
+    {// All clogged, go home
+        return -1 ;
+    }
+
+    u2.us[0] = __flip16(u2.us[0] ) ;
+    u2.us[1] = 0  ;
+    __norm32(u2.ul , &shift );
+    shift -= 15 ;
+    pmsg = SysState.MCanSupport.pTxBufStart + shift * SysState.MCanSupport.TxBufElementWidth * MCAN_RAM_LONG_PTR_INC   ;
+    pmsg[0] = ( pMsg->cobId & 0x7ff) << 18 ;
+    pmsg[MCAN_RAM_LONG_PTR_INC] = ( unsigned long) pMsg->dLen << 16 ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*2] = pMsg->data[0] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*3] = pMsg->data[1] ;
+
+    // Send request to transmit this buffer
+    HWREG(MCAN0_BASE +MCAN_TXBAR) = (1<<shift) ;
+    return 0 ;
+}
+
+
+
 short unsigned dLen2Dlc(short unsigned l )
 {
     if ( l <= 8 )
@@ -213,17 +293,8 @@ void setupMCAN(void)
     //
     //CanId
 
-    stdFiltelem.sfid2              = 0x7ffU  ; // Standard ID Filter Mask. 0 bit is "don't care"
-
-    if ( CanIdLocal <= 8)
-    {
-        stdFiltelem.sfid1          = CAN_ID_PDO_BROADCAST + PDO1_RX  ; // Broadcast
-    }
-    else
-    {
-        stdFiltelem.sfid1          = CAN_ID_PDO_BROADCAST + PDO2_RX  ; // Broadcast
-    }
-
+    stdFiltelem.sfid2              = 0x7ffU; // Standard ID Filter Mask. 0 bit is "don't care"
+    stdFiltelem.sfid1              = CanId + PDO1_RX ; // Standard ID Filter
     stdFiltelem.sfec               = 0x5U; // Store into FIFO 0.
     stdFiltelem.sft                = 0x02U; // SFID1 = filter; SFID2 = mask
 
@@ -232,10 +303,8 @@ void setupMCAN(void)
     //
     MCAN_addStdMsgIDFilter(MCAN0_BASE, 0U, &stdFiltelem);
 
-    stdFiltelem.sfid2              = 0x7ffU ; // Standard ID Filter Mask. 0 bit is "dont care"
-    //stdFiltelem.sfid1              = 14 + (CanIdLocal & 1) ; // Standard ID Filter
-    stdFiltelem.sfid1          = CAN_ID_SDO_BROADCAST  + SDO_RX  ; // Broadcast
-
+    stdFiltelem.sfid2              = 0x7ffU; // Standard ID Filter Mask. 0 bit is "dont care"
+    stdFiltelem.sfid1              = CanId + PDO2_RX ; // Standard ID Filter
     stdFiltelem.sfec               = 0x5U; // Store into FIFO 0.
     stdFiltelem.sft                = 0x02U; // SFID1 = filter; SFID2 = mask
 
@@ -255,7 +324,7 @@ void setupMCAN(void)
     MCAN_addStdMsgIDFilter(MCAN0_BASE, 2U, &stdFiltelem);
 
     stdFiltelem.sfid2              = 0x7ffU; // Standard ID Filter Mask. 0 bit is "dont care"
-    stdFiltelem.sfid1              = CanIdLocal + SDO_RX ; // Standard ID Filter
+    stdFiltelem.sfid1              = CanId + SDO_RX ; // Standard ID Filter
     stdFiltelem.sfec               = 0x5U; // Store into FIFO 0.
     stdFiltelem.sft                = 0x02U; // SFID1 = filter; SFID2 = mask
 
@@ -266,7 +335,7 @@ void setupMCAN(void)
 
 
     /*
-     * Uncomment the following line in order to bypass any type of Message Filter
+     * Uncommend the following line in order to bypass any type of Message Filter
      */
    // MCAN_config(MCANA_BASE, &config_params);         // Reserve
 
@@ -316,7 +385,8 @@ struct CCanMsg TxMsg ;
 void RtCanService(void)
 {
     struct CCanMsg  *pQMsg ;
-    short unsigned next , dlc , target   ;
+    short unsigned next , dlc , mask ,EarlyDecodeState ;
+    //float pref ;
     union
     {
         long unsigned ul ;
@@ -324,26 +394,23 @@ void RtCanService(void)
         float f ;
         short unsigned us[2];
         short s[2] ;
-    } u , u2 , u3 ;
+    } u , u2 , u3 , u5 , u4;
     unsigned long cobId  ;
     unsigned long * pmsg ;
-    short unsigned nf , nread , cnt  , nget , filtIndex  ;
+    short unsigned nf , nread , cnt  , nget , filtIndex , target ;
+    union UCBit CbitCopy ;
 
-    if ( SysState.CmdTimeOutCtr )
-    {
-        SysState.CmdTimeOutCtr -= 1 ;
-    }
+/*
     // Track sync time validity
     u.ul = SysState.Timing.UsecTimer - SysState.MCanSupport.SyncTrackTime ;
     if ( u.us[1] & 0x8000)
     {
         SysState.MCanSupport.SyncValid = 0 ;
     }
-
-    //unsigned long TxPend ;
+*/
+    //Test which receivers are free to use;
     u.ul = HWREG(MCAN0_BASE + MCAN_RXF0S) ;
     nf     = (short unsigned) (u.us[0] & 0x7f) ;
-    //TxPend = HWREG(MCAN0_BASE + MCAN_TXBRP) ;
     if ( nf )
     {
         nread  = __min( nf , 3 ) ;
@@ -371,25 +438,58 @@ void RtCanService(void)
             filtIndex     = ( u2.us[1] >> 8 ) & 0x3f ;
             switch ( filtIndex)
             {
-            case 0:// PDO 1 for axes 1..7, PDO2 for axes 8..14
-                SysState.CmdTimeOutCtr = 1600 ; // About 0.1sec
+            case 0: // PDO1_RX
+                if ( SysState.MCanSupport.NodeStopped + SysState.Debug.IgnoreHostCW   )
+                {
+                     break ;
+                }
+                // Byte 0: Control word. Thats: .0: motor on, 1: Fault reset, :2..4: Loop type : 5..7: Reference type
+                // byte 1: Current limit, 1/256 of rated
+                // Bytes 2..3 :  Spare
+                // Bytes 4..7: Command
+                u4.ul  = pmsg[MCAN_RAM_LONG_PTR_INC*2] ;
+                u5.ul  = pmsg[MCAN_RAM_LONG_PTR_INC*3] ;
+                // There are two modes that the reference in the PDO must be immediately interpreted
+                // - In the PT tracking mode
+                // - In the external closure mode
+                EarlyDecodeState = EarlyRefDecode(u4.ul, u5.ul );
 
+                if ( SysState.Status.bNewControlWord  == 0 )
+                {
+                    SysState.MCanSupport.uPDO1Rx.ul[0] = u4.ul  ;
+                    SysState.MCanSupport.uPDO1Rx.ul[1] = u5.ul ;
+                    SysState.Status.bNewControlWord = 1 +  EarlyDecodeState ;
+                }
+
+                mask = BlockInts() ;
+                SysState.MCanSupport.PdoDirtyBoard |= 1 ;
+                SysState.MCanSupport.Pdo1RxTime.ll = SysTimerStr.SysTimer ;
+                if ( SysState.Timing.UsecTimer <  SysState.MCanSupport.Pdo1RxTime.ul[0]   )
+                {
+                    SysState.MCanSupport.Pdo1RxTime.ul[1]  += 1   ;
+                }
+                RestoreInts( mask) ;
 
                 break ;
-
-            case 1: // Global SDO
-                next = ( CanSlaveInQueue.nPut + 1 ) & (CanSlaveInQueue.nQueue-1) ;
-                if ( CanSlaveInQueue.nGet != next )
+            case 1: // RX PDO 2
+                if ( SysState.MCanSupport.NodeStopped  )
                 {
-                    pQMsg = &CanSlaveInQueue.Msg[CanSlaveInQueue.nPut]  ;
-                    pQMsg->cobId = (cobId & 0x780) | CanIdLocal ;// Cheat as if accepted as local cobId ;
-                    pQMsg->dLen  = dlc   ;
-                    pQMsg->data[0] = pmsg[MCAN_RAM_LONG_PTR_INC*2] ;
-                    pQMsg->data[1] = pmsg[MCAN_RAM_LONG_PTR_INC*3] ;
-                    CanSlaveInQueue.nPut = next ;
+                     break ;
                 }
-                break;
-
+                // Spare
+                SysState.MCanSupport.PdoDirtyBoard |= 2 ;
+                SysState.MCanSupport.uPDO2Rx.ul[0] = pmsg[MCAN_RAM_LONG_PTR_INC*2] ;
+                SysState.MCanSupport.uPDO2Rx.ul[1] = pmsg[MCAN_RAM_LONG_PTR_INC*3] ;
+                if (( (SysState.MCanSupport.uPDO2Rx.us[1] & 0x7f8) != 0x7f8 )  &&
+                        ( (SysState.MCanSupport.uPDO2Rx.us[3] & 0x7f8) != 0x7f8 ))
+                {// After verification none of the transmissions contains NAN
+                    SysState.Profiler.vmax         = __fmin(  __fmax( SysState.MCanSupport.uPDO2Rx.f[0],0),ControlPars.MaxSpeedCmd ) ;
+                    SysState.Profiler.accel        =  __fmin( __fmax( SysState.MCanSupport.uPDO2Rx.f[1],0),ControlPars.MaxAcc ) ;
+                    SysState.Profiler.dec          =  SysState.Profiler.accel ;
+                    //SysState.SpeedControl.ProfileAcceleration = SysState.Profiler.accel ;
+                    // In speed mode PDO 2 sets the acceleration only, not the speed
+                }
+                break ;
             case 2: // SYNC or NMT
                 // The message itself is don't care
                 //PDO1:
@@ -403,21 +503,155 @@ void RtCanService(void)
                 // Even stopped nodes listens NMT
                 if ( (cobId & 0x780) == 0  )
                 { // That is NMT
-                    if (( cobId == CanIdLocal ) || (cobId == 0 ) )
+                    if (( cobId == CanId ) || (cobId == 0 ) )
                     {
                         // NMT for us
                         SysState.MCanSupport.uNMTRx.ul[0] = pmsg[MCAN_RAM_LONG_PTR_INC*2] ;
                         target = (SysState.MCanSupport.uNMTRx.us[0] >> 8 ) & 0xff ;
-                        if ( (target == CanIdLocal ) || (target == 0 ) )
+                        if ( (target == CanId ) || (target == 0 ) )
                         {
                             // Enter the NMT queue
                             SysState.MCanSupport.uNMTRx.ul[1] = ( SysState.MCanSupport.uNMTRx.ul[1] <<8 ) |  (SysState.MCanSupport.uNMTRx.us[0] & 0xff ) ;
                         }
                     }
+                    break ;
+                }
+
+                if ( SysState.MCanSupport.NodeStopped  ||  (SysState.ConfigDone == 0) )
+                {
+                     break ;
+                }
+
+                // Register the time (maybe later replaced by more accurate MCAN timing)
+                //EstimateMessageTiming() ;
+
+
+                // Build TX PDO batch
+
+                // PDO 1 is CBIT, Current, Exception
+                u3.s[0] =(short) __fmax( __fmin(ClaState.CurrentControl.ExtIqFilt * ControlPars.PdoCurrentReportScale, 1023.0f ) , -1023.0f ) ;
+                u3.us[0] = ( u3.us[0] & 0x7ff ) + ( SysState.CBit2.all << 11 ) ;
+
+                CbitCopy.all  = SysState.CBit.all ;
+                if ( IsTemperatureReport )
+                {
+                    CbitCopy.bit.IsTemperature = 1 ;
+                    u3.us[1] = (short unsigned) ( __fmin( __fmax(SysState.AnalogProc.Temperature , -55) , 150.0f) + 60);
+                }
+                else
+                {
+                    CbitCopy.bit.IsTemperature = 0 ;
+                    if ( SysState.Mot.MotorFault && SysState.Mot.KillingException )
+                    {
+                        u3.us[1] = SysState.Mot.KillingException ;
+                    }
+                    else
+                    {
+                        u3.us[1] = SysState.Mot.LastException ;
+                    }
+                }
+                u2.ul =  CbitCopy.all ;
+                IsTemperatureReport = (IsTemperatureReport+1) & 1  ;
+
+                TxMsg.UseLongId = 0 ;
+                TxMsg.cobId     = CanId + PDO1_TX  ;
+                TxMsg.dLen      = 8 ;
+                TxMsg.data[0] = u2.ul ;
+                TxMsg.data[1] = u3.ul ;
+                SetPDO2HW(&TxMsg , 1 ) ;
+
+                // PDO2 is speed command and speed
+                TxMsg.cobId     = CanId + PDO2_TX  ;
+                u2.f = ClaState.Encoder1.UserSpeed   ;
+                u3.f = SysState.SpeedControl.SpeedCommand ;
+                TxMsg.data[0] = u2.ul ;
+                TxMsg.data[1] = u3.ul ;
+                SetPDO2HW(&TxMsg , 2 ) ;
+
+                // PDO batch description
+                //////////////////////////////////
+                // Note: All transmitted position units are 2^16/rev
+
+
+                // Build TX PD1 batch
+                // TX PD1:
+                // Always:  PDO1 [0..3] = CBIT
+                //          PDO1 [4..5] = 10 bit current + part of CBIT2
+                //          PDO1 [6..7] = Exception report
+
+                // PDO2: (for wheel: floor units)
+                // [0..3].f : Speed command
+                // [4..7].f : Speed actual
+
+                // PDO3 is configuration dependent:
+
+                // Rotary Potentiometer axes (steering, rotator) configuration:
+                ///////////////////////
+                // [0..1].s : Position command, 15bit rotation
+                // [2..3].s : Position actual , 15bit rotation
+                // [4..5].f : Potentiometer1
+                // [6..7].f : Position by motor encoder
+                //
+                // Rotary 2x Potentiometer axes (neck) configuration:
+                ///////////////////////
+                // [0..1].s : Position command, 15bit rotation
+                // [2..3].s : Position actual , 15bit rotation
+                // [4..5].f : Potentiometer1
+                // [6..7].f : Potentiometer2
+
+                // Linear axes (Tape arm, linear)
+                // [0..1].s : Position command, 0.1mm
+                // [2..3].s : Position actual , 0.1mm
+                // [4..7] 0
+
+                // Wheel configuration:
+                ///////////////////////
+                // No PDO 3 TX (data will be sent by the interface card)
+                // Data from interface card will be:
+                // Still some spare bits
+                // [0..3].BF = ( ClaMailOut.SwitchDetectValid & 7 ) + ( (SysState.SwitchDir & 3 ) << 3 )
+                //        + ( ( (long)(__fmin(ClaState.LLimit.SwitchWidth,0.064f) * 1.7109e+04f)  & 8191 ) << 5 ) +
+                //          (ClaState.LLimit.PresentValue ? (1<<18) :0) + (ClaState.LLimit.RiseMarker ? (1<<19) :0) +
+                //          (ClaState.LLimit.FallMarker ? (1<<20) :0);
+
+                // [4..5] (mod 2^16) (ClaState.Encoder3.UserPos * 65536.0f) ;
+                // [6..7] (mod 2^16) (ClaState.LLimit.EncoderAtSwitch * 65536.0f) ;
+
+
+                TxMsg.cobId     = CanId + PDO3_TX  ;
+                switch (  ( ControlPars.UseCase  >> 6 ) & 3 )
+                {
+                case 0: // PDO3_CONFIG_ROTARY_POT
+                    u2.us[0] = Angle2Short( SysState.PosControl.FilteredPosReference ) ;
+                    u2.us[1] = Angle2Short( SysState.PosControl.PosFeedBack ) ;
+                    u3.us[0] = Angle2Short( ClaState.Pot.Position[0] ) ;
+                    u3.us[1] = Angle2Short( ClaState.Pot.Position[1] ) ;
+                    TxMsg.data[0] = u2.ul ;
+                    TxMsg.data[1] = u3.ul ;
+                    SetMsg2HW(&TxMsg ) ;
+                    break ;
+                case 1: // PDO3_CONFIG_LINEAR
+                    u2.us[0] = Distance2Short( SysState.PosControl.FilteredPosReference ) ;
+                    u2.us[1] = Distance2Short( SysState.PosControl.PosFeedBack ) ;
+                    u3.ul = 0 ;
+                    TxMsg.data[0] = u2.ul ;
+                    TxMsg.data[1] = u3.ul ;
+                    SetMsg2HW(&TxMsg ) ;
+                    break ;
+                case 3: // PDO3_CONFIG_2_ROTARY_POT
+                    u2.us[0] = Angle2Short( SysState.PosControl.FilteredPosReference ) ;
+                    u2.us[1] = Angle2Short( SysState.PosControl.PosFeedBack ) ;
+                    u3.us[0] = Angle2Short( ClaState.Pot.PosDiff  ) ;
+                    u3.us[1] = Angle2Short( ClaState.Pot.PosCenter  ) ;
+                    TxMsg.data[0] = u2.ul ;
+                    TxMsg.data[1] = u3.ul ;
+                    SetPDO2HW(&TxMsg , 3 ) ;
+                    break ;
                 }
 
                 break;
-            case 3: // SDO, local
+            case 3: // SDO
+
                 next = ( CanSlaveInQueue.nPut + 1 ) & (CanSlaveInQueue.nQueue-1) ;
                 if ( CanSlaveInQueue.nGet != next )
                 {
@@ -448,22 +682,19 @@ void RtCanService(void)
     // TX queued message
     // Is SDO waiting
     // Transmit messages required by the idle process
-    if ( SysState.Status.StopCan  )
-    {
-        CanSlaveOutQueue.nGet = 0 ;
-        CanSlaveOutQueue.nPut = 0 ;
-        return ;
-    }
-
     if ( CanSlaveOutQueue.nGet != CanSlaveOutQueue.nPut )
     {
         if ( SetMsg2HW(& CanSlaveOutQueue.Msg[CanSlaveOutQueue.nGet]) == 0 )
         {
-            CanSlaveOutQueue.nGet = (CanSlaveOutQueue.nGet+1) & (N_SLAVE_QUEUE-1) ;
+            CanSlaveOutQueue.nGet = (CanSlaveOutQueue.nGet+1) & (CanSlaveOutQueue.nQueue-1) ;
         }
     }
 
-    SysState.FreeCanTxQueueSlave = (N_SLAVE_QUEUE-1) - ((CanSlaveOutQueue.nPut - CanSlaveOutQueue.nGet) & (N_SLAVE_QUEUE-1)) ;
+    if ( SysState.BlockUpload.InBlockUload   )
+    {
+        RTDealBlockUpload();
+    }
+
 }
 
 
@@ -666,7 +897,7 @@ void SetBootUpMessage( void )
 {
     struct CCanMsg  Msg ;
     Msg.UseLongId = 0 ;
-    Msg.cobId = CanIdLocal + CAN_NMT_ERROR_CONTROL ;
+    Msg.cobId = CanId + CAN_NMT_ERROR_CONTROL ;
     Msg.dLen = 1 ;
     Msg.data[0] = 0  ;
     Msg.data[1] = 0 ;
@@ -680,35 +911,10 @@ void SetExtendedBootUpMessage( void )
 {
     struct CCanMsg  Msg ;
     Msg.UseLongId = 0 ;
-    Msg.cobId = CanIdLocal + CAN_NMT_ERROR_CONTROL ;
+    Msg.cobId = CanId + CAN_NMT_ERROR_CONTROL ;
     Msg.dLen = 4 ;
     Msg.data[0] = ( PROJ_TYPE << 8  ) + (((unsigned long)ProjId & 255)<<24)  ;
     Msg.data[1] = 0 ;
     PutCanSlaveQueue( &Msg);
 }
 
-/**
- * \brief Prepare and send boot-up message
-            // Expecting an extended ID message
-            ////////////////////////////////////
-            //  Bytes 3..7: HW revision
-            //  Byte  0: Slave status .0: Fault, 1: Not Calibrated, 2..3: Role (0=dsp1,1=dsp2,2=llc,3: Unknown )
-            //          4: 1 for invalid identity 5: 0 for operational, 1 for boot
-            //  Bytes 4..5: Serial number
-            pAxis->bCalibrated  = ( me->Msg.data[0] & (1<<9)) ? 0 : 1  ;
-            pAxis->HwVersion    =  me->Msg.data[1] ;
-            pAxis->SerialNumber = (short unsigned )(me->Msg.data[0] >> 16 ) ;
-            pAxis->BootAcknowledge = 1 ;
-*/
-void SetLLCBootUpMessage( void )
-{
-    struct CCanMsg  Msg ;
-    long   unsigned dat ;
-    Msg.UseLongId = 0 ;
-    Msg.cobId = CanIdLocal + CAN_NMT_ERROR_CONTROL ;
-    Msg.dLen = 8 ;
-    dat = (SysState.NoCalib ? 0 : 1 ) +  (( SysState.MyRole & 3 ) << 1 ) + (1<<4)  ;
-    Msg.data[0] = dat   ;
-    Msg.data[1] = 0 ;
-    PutCanSlaveQueue( &Msg);
-}

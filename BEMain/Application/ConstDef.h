@@ -9,6 +9,61 @@
 #define APPLICATION_CONSTDEF_H_
 
 
+#define SRV_FIRM_YR 2024UL
+#define SRV_FIRM_MONTH 10UL
+#define SRV_FIRM_DAY 12UL
+
+#define SRV_FIRM_VER 2UL
+#define SRV_FIRM_SUBVER 2UL
+#define SRV_FIRM_PATCH 17
+
+//#define FIRM_VER (( (long unsigned)FIRM_YR << 20 ) + ((long unsigned)FIRM_MONTH<<16) + ((long unsigned)FIRM_DAY <<8) + (long unsigned) FIRM_SUBVER ) ;
+#define SubverPatch ( ((SRV_FIRM_YR-2000) << 24 ) + (SRV_FIRM_MONTH<<20) + (SRV_FIRM_DAY <<15)  +(SRV_FIRM_VER << 8) + (SRV_FIRM_SUBVER<<4) + SRV_FIRM_PATCH )
+
+#define PROJ_TYPE_UNDEFINED 0
+#define PROJ_TYPE_WHEEL_R 1
+#define PROJ_TYPE_STEERING_R 2
+#define PROJ_TYPE_WHEEL_L 3
+#define PROJ_TYPE_STEERING_L 4
+#define PROJ_TYPE_NECK 5
+#define PROJ_TYPE_NECK2 6
+#define PROJ_TYPE_NECK3 7
+#define PROJ_TYPE_TRAY_ROTATOR 8
+#define PROJ_TYPE_TRAY_SHIFTER 9
+#define PROJ_TYPE_TAPE_MOTOR 10
+#define PROJ_TYPE_LAST 11 // Must be 1 over the biggest
+
+#define PROJ_TYPE_ERROR 0xff
+
+
+
+#define CPU_CLK_MHZ     200
+#define INV_CPU_CLK_MHZ (1.0f/CPU_CLK_MHZ)
+#define CPU_CLK_HZ (CPU_CLK_MHZ*1.0e6f)
+#define INV_CPU_CLK_HZ (1.0f/CPU_CLK_HZ)
+#define CUR_SAMPLE_TIME_USEC 50
+#define CUR_SAMPLE_TIME_CLOCKS (CUR_SAMPLE_TIME_USEC*CPU_CLK_MHZ)
+#define MAX_TIME_FOR_ZERO_SPEED (6.4e-3f)
+
+#define FSI_OVER_CONTROL 0.5f // Rate of FSI cycles over control cycles
+#define MAX_BRAKE_VOLTAGE 26.0f
+
+#define BUS_OFF_RECOVERY_TIME 0.1f
+
+#define FAST_INTS_IN_C 1
+#define FAST_TS_USEC CUR_SAMPLE_TIME_USEC
+
+
+#define PiHalf 1.570796326794897f
+#define Pi     3.141592653589793f
+#define Pi2 6.283185307179586f
+#define OneOverPi2 0.159154943091895f
+#define Log2OfE 1.442695040888963f
+
+#define HallFac 0.166666666666667f
+
+
+#define UART_SW_INP_BUF_SIZE 128
 #define SDO_BUF_LEN_LONGS 128
 #define EXCEPTION_TAB_LENGTH 8
 
@@ -38,23 +93,60 @@
 
 #define CAN_NMT_ERROR_CONTROL  (0xe<<7)
 
-
-#define CAN_ID_SDO_BROADCAST  48
-#define CAN_ID_PDO_BROADCAST  49
-
+#define MAX_ADC_CUR_OFFSET 200
 
 #define UNSIGNED_MINUS1 0xffffffffUL
 #define UNSIGNED_MINUS1_S 0xffff
 
+
+#define MODE_OF_OPERATION_PROFILED_POSITION 1
+#define MODE_OF_OPERATION_PROFILED_VELOCITY 3
+#define MODE_OF_OPERATION_PROFILED_TORQUE 4
+#define MODE_OF_OPERATION_HOMING 6
+#define MODE_OF_OPERATION_PROFILED_CSP 8
+#define MODE_OF_OPERATION_PROFILED_CSV 9
+
+
 #define Pi2 6.283185307179586f
 
-#define PROJ_TYPE 0x4000UL
+#define NSYS_TIMER_CMP_ARRAY 16
+
+#define EXP_FATAL (short)(-1)   // Fatal - dead duck
+#define EXP_WARN  (short)(-2)   // For warning
+#define EXP_ABORT  (short)(-3)  // Abort auto actions
+#define EXP_RESET  (short)(0)  // Clear
+//#define EXP_ABORT_PACKON  (short)(-4)  // Abort auto actions, leave pack handling on the work
+#define EXP_SAFE_FATAL (short)(-5)   // Fatal - with safe brake application
+
+// Flags for configuration parameters
+#define CFG_FLOAT 2
+#define CFG_MUST_INIT 4
+//#define CFG_MUST_AUTO 8
+#define CFG_KILLS_CFG  16
+#define CFG_RECALC  32
+#define CFG_REVISION 0x4000
+
+
+
+#define MODE_OF_OPERATION_PROFILED_POSITION 1
+#define MODE_OF_OPERATION_PROFILED_VELOCITY 3
+#define MODE_OF_OPERATION_PROFILED_TORQUE 4
+#define MODE_OF_OPERATION_HOMING 6
+#define MODE_OF_OPERATION_PROFILED_CSP 8
+#define MODE_OF_OPERATION_PROFILED_CSV 9
+
+#define IsBadFloat(x) ((( *((short unsigned *)&x + 1 ) & 0x7f80 ) == 0x7f80 ) ? 1 : 0 )
+
+// Depends in number of transmitters!
+#define MCAN_TX_MASK_OTHER  0b1110000
+
 
 
 enum E_CLA_TASK_MODES
 {
     MODE_FIND_COMM_START = 1
 };
+
 
 enum SdoAbortErrorCode
 {
@@ -70,11 +162,113 @@ enum SdoAbortErrorCode
     Invalid_block_size = 0x5040002,
     Invalid_sequence_number = 0x5040003,
     crc_error = 0x5040004,
-    Manufacturer_error_detail = 0x9000000UL
+    Manufacturer_error_detail = 0x9000000UL,
+    ReturnNotExpected = 0x7fffffffUL
 };
 
 
+enum E_ReferenceModes
+{
+    E_PosModeNothing = 0 ,
+    E_PosModeDebugGen = 1 ,
+    E_PosModeStayInPlace = 2 ,
+    E_PosModePTP = 3 , // Build automatic trajectory towards target s.t. speed & acceleration constraints
+    E_PosModePT = 4 , // Position-time: Each command includes an immediate position reference
+    E_RefModeSpeed = 5, // Set to speed s.t. acceleration limit
+    E_RefModeSpeed2Home = 6 // Homing, by pre-defined method
+};
+
+
+enum E_SigRefType
+{
+    E_S_Nothing = 0 ,
+    E_S_Fixed   = 1 ,
+    E_S_Sine    = 2 ,
+    E_S_Square  = 3 ,
+    E_S_Triangle = 4
+};
+
+enum E_CommutationModes
+{
+    COM_OPEN_LOOP = 0 ,
+    COM_HALLS_ONLY = 1 ,
+    COM_ENCODER = 2 ,
+    COM_ENCODER_RESET= 3
+};
+
+enum CF_CorrelationState
+{
+    ECF_Inactive = 0 ,
+    ECF_StartTime = 1 ,
+    ECF_WaitStabilize = 2 ,
+    ECF_sumCorr = 3 ,
+    ECF_sumCorr2 = 4 ,
+    ECF_Done = 5
+};
+
+
+enum INBD_BrakeEngageState
+{
+    INBD_EngageNothing = 0 ,
+    INBD_EngageInit = 1 ,
+    INBD_WaitZeroSpeedRef = 2 ,
+    INBD_WaitBrakeEngage = 3
+} ;
+
+enum EHT_HomeState
+{
+    EHS_Init = 0 ,
+    EMS_LogEvent = 1 ,
+    EMS_Stop = 2 ,
+    EMS_ExitHome = 3 ,
+    EMS_Final_Stop = 4 ,
+    EMS_Done = 5 ,
+    EMS_Decelerate2Fail = 6 ,
+    EMS_Failure = 7
+};
+
+enum EHM_HomeMethod
+{
+    EHM_CollideLimit = 0 ,
+    EHM_SwitchLimit = 1 ,
+    EHM_Immediate = 2
+ };
+
+
+enum EHM_SwInUse
+{
+    EHM_HomingSwitchD0 = 0 ,
+    EHM_HomingSwitchD1 = 1
+};
+
+enum EHM_Direction
+{
+    EHM_HomingForward = 1,
+    EHM_HomingReverse = -1
+};
+
+
+enum E_MotorOffType
+{
+    E_OffForFinal  = 0 ,
+    E_OffForAutoEngage = 1
+};
+
 #define DMA_USE_LEN REC_BUF_LEN
 #define CLA_DMA_TRANSFER_SIZE_LONGS 8
+
+#define Sector_AppCalib_start 0xddc00
+#define Sector_AppParams_start 0xde000
+
+#define Sector_AppIdentity_start 0xdf000
+
+#define Sector_AppVerify_start 0xdf400
+
+/*
+FLASH_CALIB      : origin = 0xddc00, length = 0x400
+FLASH_PARAMS     : origin = 0xde000, length = 0x1000
+FLASH_IDENTITY  : origin = 0xdf000, length = 0x400
+FLASH_STATISTIC  : origin = 0xdf400, length = 0x400
+*/
 
 #endif /* APPLICATION_CONSTDEF_H_ */
