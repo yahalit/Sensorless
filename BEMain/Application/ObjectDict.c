@@ -31,10 +31,6 @@ long unsigned  SetCalibCmd( struct CSdo * pSdo ,short unsigned nData);
 long unsigned  GetCalibCmd( struct CSdo * pSdo ,short unsigned *nData);
 
 
-long unsigned  SetIdentityCmd( struct CSdo * pSdo ,short unsigned nData);
-long unsigned  GetIdentityCmd( struct CSdo * pSdo ,short unsigned *nData);
-
-
 long unsigned  SetParamCmd( struct CSdo * pSdo ,short unsigned nData);
 long unsigned  GetParamCmd( struct CSdo * pSdo ,short unsigned *nData);
 
@@ -92,7 +88,6 @@ const struct CObjDictionaryItem ObjDictionaryItem [] =
 { 0x2225  , 2 , SetFloatData , GetFloatData },
 { 0x2301 , 4 , SetFwCmd , GetFwCmd },
 { 0x2302 , 4 , SetCalibCmd , GetCalibCmd },
-{ 0x2303 , 4 , SetIdentityCmd , GetIdentityCmd },
 { 0x2304 , 4 , SetParamCmd , GetParamCmd },
 { 0x2400 , 0 , SetMotionPar , GetMotionPar },
 { 0x5007 , 2 , SetSyncArrivalTime , NoSuchGetObject },
@@ -382,15 +377,7 @@ void ResetConfigPars(void)
     float *fPtr ;
     for ( cnt = 0 ; cnt < nConfigPars ; cnt++)
     {
-        if ( DBaseConf.IsUserConfiguration )
-        {
-            pPar = & pUNVParams->NVParams.UserCfgPars[cnt] ;
-
-        }
-        else
-        {
-            pPar = ( struct CFloatConfigParRecord * ) &ConfigTable[cnt] ;
-        }
+        pPar = ( struct CFloatConfigParRecord * ) &ConfigTable[cnt] ;
 
         fPtr = ConfigTable[cnt].ptr ;
         if ( pPar->Flags & CFG_FLOAT)
@@ -652,10 +639,8 @@ long unsigned  GetMiscTest( struct CSdo * pSdo ,short unsigned *nData)
     case 100:
         u.l = ( Commutation.CommutationMode & 7 ) + (( Correlations.state & 7 ) << 3 ) + (ClaMailIn.bNoCurrentPrefilter ? (1  << 6) : 0  ) +
                 (( ControlPars.MaxSupportedClosure & 7 ) << 7 )  + ( (SysState.Debug.bBypassPosFilter & 1) << 10 ) + ( (SysState.Profiler.bPeriodic & 1 ) << 11 ) +
-                 (( SysState.Mot.ReferenceMode & 7 ) << 12 ) + ( DBaseConf.IsValidDatabase ? (1U<<15): 0 ) +  (1UL<<16)
-                 + ( (unsigned long)(SysState.SwState & 7 ) << 17  )+ ( DBaseConf.IsValidIdentity ? (1UL<<20): 0 )
-                 +( SysState.Status.DisableAutoBrake ? (1UL<<21): 0 )
-                 +( SysState.Mot.InAutoBrakeEngage ? (1UL<<22): 0 ) ;
+                 (( SysState.Mot.ReferenceMode & 7 ) << 12 ) + (1UL<<15) +  (1UL<<16)
+                 + ( (unsigned long)(SysState.SwState & 7 ) << 17  )+ (1UL<<20) ;
 
         break ;
 
@@ -878,7 +863,6 @@ const struct CShortDataItem ShortDataItem[]={
                                {& SysState.EncoderMatchTest.bTestEncoderMatch , 0, 1, 0 } , // 4
                                {(short*) &SysState.MCanSupport.NodeStopped , 0 ,1,0 } ,  //5
                                { &SysState.Homing.State, 0 ,5,1 } ,  //6
-                               {(short*)  &SysState.Status.DisableAutoBrake,0,7,0} ,  // 7
                                {(short*)  &SysState.Debug.bDisablePotEncoderMatchTest,0,1,0} , // 8
                                {(short*)  &SysState.SteerCorrection.bSteeringComprensation ,0, 1 , 0}   // 9
 };
@@ -950,17 +934,19 @@ long unsigned  SetShortData( struct CSdo * pSdo ,short unsigned nData)
 
 }
 
+const float BigFatZero = 0 ;
+
 const float  * pFloatData[] =  {
-                             &Geom.Pot1Rat2Rad , // 0 (duplicate)
-                             &Geom.Pot1Rat2Rad , // 1
-                             &Geom.Pot2Rat2Rad, // 2
-                             &Geom.Pot1RatCenter,  // 3
-                             &Geom.Pot2RatCenter,  // 4
+                             &BigFatZero , // 0 (duplicate)
+                             &BigFatZero , // 1
+                             &BigFatZero, // 2
+                             &BigFatZero,  // 3
+                             &BigFatZero,  // 4
                              &ClaControlPars.PhaseOverCurrent, // 5
                              &ClaControlPars.VDcMax , // 6
                              &ClaControlPars.VDcMin , //7
-                             &ControlPars.LowAutoMotorOffThold , //8
-                             &ControlPars.HiAutoMotorOffThold ,// 9
+                             &BigFatZero , //8
+                             &BigFatZero ,// 9
                              &SysState.EncoderMatchTest.DeltaTestUser ,// 10
                              &SysState.EncoderMatchTest.DeltaTestTol , // 11
                              &SysState.EncoderMatchTest.MaxPotentiometerPositionDeviation ,//12
@@ -1075,9 +1061,8 @@ long unsigned  GetAtpData( struct CSdo * pSdo ,short unsigned *nData)
 short bcnt ;
 long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
 {
-    short unsigned si  ,us  , cnt , YesNo ;
+    short unsigned si  ,us   , YesNo ;
     short stat ;
-    short unsigned *ptr ;
     long unsigned ul ;
     float f ;
     (void) nData ;
@@ -1636,69 +1621,6 @@ long unsigned  GetCalibCmd( struct CSdo * pSdo ,short unsigned *nData)
 }
 
 
-/**
- * \brief Object 0x2303
- */
-long unsigned  GetIdentityCmd( struct CSdo * pSdo ,short unsigned *nData)
-{
-    short unsigned si ;
-    long unsigned ul ;
-
-    si = pSdo->SubIndex ;
-    if ( si == 0 )
-    {
-        ul = 16 ;
-    }
-    else
-    {
-        switch (si )
-        {
-        case 2:
-            ul =  pUIdentity->C.Identity.HardwareRevision ;
-            break ;
-        case 3:
-            ul =  pUIdentity->C.Identity.ProductionDate ;
-            break ;
-        case 4:
-            ul =  pUIdentity->C.Identity.RevisionDate ;
-            break ;
-        case 5:
-            ul =  pUIdentity->C.Identity.HardwareType ;
-            break ;
-        case 6:
-            ul =  pUIdentity->C.Identity.SerialNumber ;
-            break ;
-        case 7:
-            ul =  pUIdentity->C.Identity.ProductionBatchCode ;
-            break ;
-
-        case 32:
-            ul = ProjId ;
-            break  ;
-
-        case 251:
-            ul = DBaseConf.IsValidIdentity ;
-            break ;
-        case 252:
-            ul = DBaseConf.IsValidDatabase ;
-            break ;
-        case 253:
-            ul = pUIdentity->C.Identity.cs ;
-            break ;
-        case 254:
-            ul = IdentityParametersRevision ;
-            break ;
-        default:
-            return Sub_index_does_not_exist ;
-        }
-    }
-
-
-    * nData = 4 ;
-    * ((long *) &pSdo->SlaveBuf[0] ) = ul ;
-    return 0 ;
-}
-
 
 
 short SafePrepFlash(void)
@@ -1923,112 +1845,6 @@ long unsigned  SetCalibCmd( struct CSdo * pSdo ,short unsigned nData)
 }
 
 
-/**
- * \brief Object 0x2303 Set Identity
- */
-long unsigned  SetIdentityCmd( struct CSdo * pSdo ,short unsigned nData)
-{
-    short unsigned si , cnt  ;
-    short stat ;
-    unsigned long ul ;
-    unsigned long * uPtr;
-
-    si = pSdo->SubIndex ;
-    ul =* ((unsigned long *) pSdo->SlaveBuf);
-
-    // Reject if motor is on
-    if ( ClaState.MotorOnRequest)
-    {
-        return GetManufacturerSpecificCode(ERR_ONLY_FOR_MOTOROFF) ;
-
-    }
-
-    if ( si == 1 )
-    {
-        IdentityProg.C.PassWord = ul ;
-    }
-    if ( (( IdentityProg.C.PassWord !=  0x12345678  ) && (si > 252) ) || nData != 4 )
-    {
-        return General_parameter_incompatibility_reason ;
-    }
-    if ( si == 1 )
-    {
-        ClearMemRpt( (short unsigned *) &IdentityProg.C.Identity , sizeof(IdentityProg.C.Identity ) );
-        stat = SafePrepFlash();
-        if ( stat )
-        {
-            return General_parameter_incompatibility_reason ;
-        }
-        return 0 ;
-    }
-
-
-    switch ( si )
-    {
-    case 2:
-        IdentityProg.C.Identity.HardwareRevision = ul ;
-        break ;
-    case 3:
-        IdentityProg.C.Identity.ProductionDate = ul ;
-        break ;
-    case 4:
-        IdentityProg.C.Identity.RevisionDate = ul ;
-        break ;
-    case 5:
-        IdentityProg.C.Identity.HardwareType = ul ;
-        break ;
-    case 6:
-        IdentityProg.C.Identity.SerialNumber = ul ;
-        break ;
-    case 7:
-        IdentityProg.C.Identity.ProductionBatchCode = ul  ;
-        break ;
-    case 252: // Clear sectors of identity
-        if ( ul == 12345  )
-        {
-            stat = SafeEraseFlash(Sector_AppIdentity_start) ;
-        }
-        else
-        {
-            return General_parameter_incompatibility_reason ;
-        }
-        if ( stat )
-        {
-           return GetManufacturerSpecificCode(ERR_COULD_NOT_ERASE_OLD_IDENTITY) ; ;
-        }
-        break ;
-    case 253:
-        IdentityProg.C.Identity.PassWord = 0x12345678  ;
-        IdentityProg.C.Identity.IdentityRevision =  IdentityParametersRevision ;
-        IdentityProg.C.Identity.cs = 0 ;
-        uPtr = (unsigned long *) & IdentityProg.C.Identity ;
-        for ( cnt = 0 ; cnt < ((sizeof(IdentityProg.C.Identity)>>1)-1) ; cnt++ )
-        {
-            IdentityProg.C.Identity.cs -= *uPtr++  ;
-        }
-         stat = SafeEraseFlash(Sector_AppIdentity_start) ;
-
-        if ( stat )
-        {
-            return GetManufacturerSpecificCode(ERR_COULD_NOT_ERASE_OLD_IDENTITY) ; ;
-        }
-
-        stat = SafeProgramFlash((short unsigned * ) & IdentityProg.C.Identity ,Sector_AppIdentity_start  , 64 ) ;
-
-        if ( stat )
-        {
-            return GetManufacturerSpecificCode(ERR_COULD_NOT_BURN_IDENTITY) ;
-        }
-        ApplyIdentity(pUIdentity,pUNVParams);
-        //InitControlParams() ;
-
-
-        break ;
-    default:
-        return Sub_index_does_not_exist ;
-    }
-    return 0 ;
-}
 
 short IsBufferUsedForProgramming(void)
 {
@@ -2073,15 +1889,12 @@ long unsigned  GetParamCmd( struct CSdo * pSdo ,short unsigned *nData)
  */
 long unsigned  SetParamCmd( struct CSdo * pSdo ,short unsigned nData)
 {
-    short unsigned si , cnt  ;
+    short unsigned si   ;
     short stat ;
     unsigned long ul ;
-    unsigned long * uPtr;
-    union UNVParams *pLocalParams ;
 
     si = pSdo->SubIndex ;
     ul =* ((unsigned long *) pSdo->SlaveBuf);
-    pLocalParams = (union UNVParams *) & RecorderBuffer[0] ;
 
     // Reject if motor is on
     if ( ClaState.MotorOnRequest)
@@ -2122,20 +1935,6 @@ long unsigned  SetParamCmd( struct CSdo * pSdo ,short unsigned nData)
 
     switch ( si )
     {
-    case 250:
-        // Do the most idiotic thing:  Select one desired project and leave all the rest empty
-        if ( ul == PROJ_TYPE_UNDEFINED || ul >= PROJ_TYPE_LAST)
-        {
-            return General_parameter_incompatibility_reason ;
-        }
-        for ( cnt = 0 ; cnt < 1024 ; cnt++)
-        {
-            pLocalParams->Buf[cnt] = 0xffffffff ;
-        }
-        pLocalParams->NVParams.Password = 0x12345678  ;
-        pLocalParams->NVParams.ProjIndex = ul ;
-        pLocalParams->NVParams.UseParsConfig = 0 ;
-        break ;
 
     case 251:
         if ( ul >= 8 )
@@ -2164,41 +1963,7 @@ long unsigned  SetParamCmd( struct CSdo * pSdo ,short unsigned nData)
         }
 
         break ;
-    case 253:
-        pLocalParams->NVParams.Password= 0x12345678  ;
-        pLocalParams->NVParams.cs = 0 ;
-        uPtr = (unsigned long *) &  RecorderBuffer[0]  ;
-        for ( cnt = 0 ; cnt < 1023 ; cnt++ )
-        {
-            pLocalParams->NVParams.cs -= *uPtr++  ;
-        }
 
-        stat = SafeEraseFlash(Sector_AppParams_start) ;
-
-        if ( stat )
-        {
-            return GetManufacturerSpecificCode(ERR_COULD_NOT_ERASE_OLD_PARAMS) ; ;
-        }
-
-        stat = SafeProgramFlash((short unsigned * ) & RecorderBuffer[0] ,Sector_AppParams_start  , 2048 ) ;
-
-        if ( stat )
-        {
-            return GetManufacturerSpecificCode(ERR_COULD_NOT_BURN_PARAMS) ;
-        }
-        SysState.IsInParamProgramming = 0 ; // Release recorder buffer for use
-        break ;
-
-    case 254:
-        // This will never return correctly because SDO mechanism is destroyed
-        SafeSetMotorOff() ;
-        ApplyIdentity(pUIdentity,pUNVParams);
-        SetProjectId() ;
-        FlushCanQueues() ;
-#ifdef ON_BOARD_CAN
-        setupMCAN();
-#endif
-        return ReturnNotExpected  ;
     default:
         return Sub_index_does_not_exist ;
     }
@@ -2357,7 +2122,7 @@ long unsigned  GetFwCmd(    struct CSdo * pSdo ,short unsigned *nData)
         break ;
 
     case 8:
-        * ulPtr = THISCARD ;
+        * ulPtr = 100 ; // THISCARD ;
         break ;
 
     default:
@@ -2533,6 +2298,101 @@ long unsigned  SetFwCmd(    struct CSdo * pSdo ,short unsigned nData)
         return Sub_index_does_not_exist;
     }
     return 0 ;
+}
+
+
+short SetSystemMode(short  x)
+{
+    short RetVal  ;
+
+    if ( x == ClaState.SystemMode )
+    { // Nothing to do
+        return 0 ;
+    }
+
+    RetVal = 0 ;
+    // Test reset ability
+    if (  ClaState.SystemMode == E_SysMotionModeFault )
+    {
+        if ( IsResetBlocked() )
+        {
+            RetVal = ERR_SERIOUS_ERROR ;
+        }
+        else
+        {
+            SysState.Mot.MotorFault = 0 ;
+        }
+    }
+
+// Transition to automatic - only if calibrated
+    if ( x == E_SysMotionModeAutomatic)
+    {
+        if ( SysState.Mot.NoCalib )
+        {
+            RetVal = ERR_CALIBRATION_MISSING ;
+        }
+    }
+    else
+    {
+        SysState.SteerCorrection.bSteeringComprensation  = 0 ;
+    }
+
+    if ( RetVal)
+    { // IF failed then the next mode is FAULT
+        x = E_SysMotionModeFault ;
+    }
+
+//    short unsigned mask ;
+    if ((x <= E_SysMotionModeAutomatic) && ( x >= E_SysMotionModeSafeFault) )
+    { // On mode change , nothing can execute
+        if ( x == E_SysMotionModeFault )
+        {
+            ClaState.MotorOnRequest = 0 ; // Kill Cla
+            SysState.Mot.BrakeControlOverride = 0 ;
+            SysState.Mot.QuickStop = 1;
+        }
+
+
+        if ( x == E_SysMotionModeAutomatic)
+        {
+            if ( SysState.Mot.LoopClosureMode <= E_LC_OpenLoopField_Mode )
+            {
+                LogException( EXP_SAFE_FATAL , exp_auto_mode_requires_closedloop);
+            }
+            /*
+            if ( ClaState.MotorOnRequest || ClaState.MotorOn )
+            {
+                LogException( EXP_SAFE_FATAL , exp_auto_mode_transition_requires_motoroff);
+            }
+            */
+        }
+
+        if ( ClaState.SystemMode == E_SysMotionModeFault )
+        {
+            SetMotorOff(E_OffForFinal) ;
+            HallDecode.Init = 0 ;
+        }
+
+        if ( ClaState.SystemMode == E_SysMotionModeAutomatic)
+        { // Changing from automatic
+            SysState.Mot.CurrentLimitFactor = 1 ;
+            SysState.Mot.QuickStop = 1;
+        }
+
+        if ( ClaState.SystemMode == E_SysMotionModeSafeFault )
+        {
+            SysState.Mot.QuickStop = 1;
+        }
+
+        ClaState.SystemMode = x ;
+        SysState.CBit.bit.SystemMode = ((short) x ) & 7 ;
+//        RestoreInts(mask) ;
+    }
+    if( RetVal)
+    {
+        SysState.Mot.MotorFault = 1 ;
+    }
+    return RetVal  ;
 }
 
 

@@ -672,13 +672,6 @@ void SafeSetMotorOff()
         SetMotorOff(E_OffForFinal) ;
         return ;
     }
-
-    SysState.Status.DisableAutoBrake |= 1  ;
-    //SysState.Mot.InAutoBrakeEngage = 0 ;
-    if ( SysState.Mot.InBrakeEngageDelay == INBD_EngageNothing )
-    { // Avoid double trigger of brake delay
-        SysState.Mot.InBrakeEngageDelay = INBD_EngageInit ;
-    }
 }
 
 /*
@@ -711,27 +704,6 @@ void SetMotorOff(enum E_MotorOffType Method)
 }
 
 
-void ArmAutomaticMotorOff(void)
-{
-    if ( ClaState.MotorOnRequest )
-    {
-        SysState.StartStop.RefPositionCommandForAutoStop = SysState.PosControl.PosReference;
-    }
-    else
-    {
-        SysState.StartStop.RefPositionCommandForAutoStop = SysState.PosControl.PosFeedBack;
-    }
-    SysState.StartStop.RefEncoderCountsForAutoStop   = ClaState.Encoder1.Pos ;
-    SetSysTimerTargetSec ( TIMER_AUTO_MOTOROFF , ControlPars.AutoMotorOffTime + ControlPars.BrakeReleaseOverlap,  &SysTimerStr  );
-    if ( ControlPars.HiAutoMotorOffThold * ControlPars.LowAutoMotorOffThold > 0 )
-    {
-        SysState.Status.DisableAutoBrake &= (~1) ;
-    }
-    else
-    {
-        SysState.Status.DisableAutoBrake |= 1 ;
-    }
-}
 
 /*
  * Request a controlled state.
@@ -757,20 +729,7 @@ short SetMotorOn( short OnCondition)
 
     SysState.Mot.InAutoBrakeEngage = 0 ;
 
-    if ( OnCondition)
-    {
-        // Do not shut motor automatically at the near future
-        ArmAutomaticMotorOff();
-    }
-    else
-    {
-        SysState.Status.DisableAutoBrake |= 1  ;
-    }
 
-    if ( DBaseConf.IsValidDatabase == 0 )
-    {
-        return ERR_IDENTITY_MISSING ;
-    }
 
     if ( SysState.SeriousError )
     {
@@ -1034,6 +993,7 @@ long unsigned SetLoopClosureMode( short us )
  */
 void DecodeBhCW(long unsigned data)
 {
+    extern void DealFaultState();
     short next , mon ,resetfault , stat  ;
     short unsigned MotorIsOn ;
     long  unsigned lstat ;
@@ -1050,14 +1010,6 @@ void DecodeBhCW(long unsigned data)
     mon = u.us[0] & 1 ;
     resetfault = u.us[0] & 2 ;
 
-    if ( u.us[0] & (1<<9))
-    {
-        SysState.Status.DisableAutoBrake |= 2 ;
-    }
-    else
-    {
-        SysState.Status.DisableAutoBrake &= (~2)  ;
-    }
 
     SysState.SteerCorrection.bSteeringComprensation =   ( u.us[0] >> 10 ) & 1 ;
 

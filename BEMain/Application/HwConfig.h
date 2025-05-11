@@ -29,11 +29,10 @@ enum E_LoopClosureMode
 
 
 
-#if THISCARD == NECKCARD
     #define PROJ_TYPE 0x9300UL
     #define BootCanId  38
 
-    #define ON_BOARD_POT
+    //#define ON_BOARD_POT
     #define ON_BOARD_BRAKE
     //#define ON_BOARD_GYRO
     #define ON_BOARD_ENCODER
@@ -46,41 +45,8 @@ enum E_LoopClosureMode
 
     #define PWM_PACER_BASE EPWM1_BASE
     #define CUR_SAMP_PACER_MULT 1
-
-
     #define DEAD_TIME_USEC 0.28f
-#endif
 
-#if THISCARD == WHEELCARD
-    #define PROJ_TYPE 0x9400UL
-    #define BootCanId  39
-    #define SLAVE_DRIVER
-
-    #define PWM_SYNCSEL 2
-    #define PWM_A_BASE EPWM5_BASE
-    #define PWM_B_BASE EPWM3_BASE
-    #define PWM_C_BASE EPWM1_BASE
-    #define PWM_PACER_BASE EPWM2_BASE
-    #define CUR_SAMP_PACER_MULT 2
-
-    #define IOFLAG_HI    (HWREGH(GPIODATA_BASE+3)=(1<<8))
-    #define IOFLAG_LO    (HWREGH(GPIODATA_BASE+5)=(1<<8))
-
-//#define DEAD_TIME_USEC 0.28f
-#define DEAD_TIME_USEC 1.0f
-#endif
-#if THISCARD == INTERFACECARD
-    #define PROJ_TYPE  0x9900UL
-    #define BootCanId  36
-#endif
-
-#if THISCARD == NECKCARD
-#elif THISCARD == INTERFACECARD
-#elif THISCARD == WHEELCARD
-#else
-#error "This is an unknown card"
-
-#endif
 
 
 #ifdef ON_BOARD_ENCODER

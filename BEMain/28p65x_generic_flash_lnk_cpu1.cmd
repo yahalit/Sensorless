@@ -6,21 +6,23 @@ MEMORY
    RAMM0            : origin = 0x0001B1, length = 0x00024F
    RAMM1            : origin = 0x000400, length = 0x000400
 
-   RAMD0            : origin = 0x00C000, length = 0x002000
-   RAMD1            : origin = 0x00E000, length = 0x002000
+   //RAMD0            : origin = 0x00C000, length = 0x002000
+   //RAMD1            : origin = 0x00E000, length = 0x002000
    RAMD2            : origin = 0x01A000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0x8000. User should comment/uncomment based on core selection
    RAMD3            : origin = 0x01C000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0xA000. User should comment/uncomment based on core selection
+
    //RAMD4            : origin = 0x01E000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0xC000. User should comment/uncomment based on core selection
    //RAMD5            : origin = 0x020000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0xE000. User should comment/uncomment based on core selection
 
-   RAMLS0           : origin = 0x008000, length = 0x000800
-   RAMLS1           : origin = 0x008800, length = 0x000800
-   RAMLS2           : origin = 0x009000, length = 0x000800
-   RAMLS3           : origin = 0x009800, length = 0x000800
-   RAMLS4           : origin = 0x00A000, length = 0x000800
-   RAMLS5           : origin = 0x00A800, length = 0x000800
-   RAMLS6           : origin = 0x00B000, length = 0x000800
-   RAMLS7           : origin = 0x00B800, length = 0x000800
+   RAMLS01           : origin = 0x008000, length = 0x001000
+   //RAMLS1           : origin = 0x008800, length = 0x000800
+   RAMLS23           : origin = 0x009000, length = 0x001000
+   //RAMLS3           : origin = 0x009000, length = 0x000800
+   RAMLS4to9        : origin = 0x00a000, length = 0x006000  // Including D0 to D3
+   //RAMLS4           : origin = 0x00A000, length = 0x000800
+   //RAMLS5           : origin = 0x00A800, length = 0x000800
+   //RAMLS6           : origin = 0x00B000, length = 0x000800
+   //RAMLS7           : origin = 0x00B800, length = 0x000800
    RAMLS8           : origin = 0x022000, length = 0x002000  // When configured as CLA program use the address 0x4000
    RAMLS9           : origin = 0x024000, length = 0x002000  // When configured as CLA program use the address 0x6000
 
@@ -70,15 +72,15 @@ SECTIONS
 
    .stack           : > RAMM1
 #if defined(__TI_EABI__)
-   .bss             : > RAMLS5
-   .bss:output      : > RAMLS3
+   .bss             : > RAMLS4to9
+   .bss:output      : > RAMLS4to9
    .init_array      : > FLASH_BANK0, ALIGN(8)
    .const           : > FLASH_BANK0, ALIGN(8)
-   .data            : > RAMLS5
-   .sysmem          : > RAMLS4
+   .data            : > RAMGS1to4
+   .sysmem          : > RAMLS4to9
 #else
    .pinit           : > FLASH_BANK0, ALIGN(8)
-   .ebss            : >> RAMLS5 | RAMLS6
+   .ebss            : >> RAMLS4to9
    .econst          : > FLASH_BANK0, ALIGN(8)
    .esysmem         : > RAMLS5
 #endif
@@ -121,7 +123,7 @@ SECTIONS
 #if defined(__TI_EABI__)
     /* CLA specific sections */
     Cla1Prog        : LOAD = FLASH_BANK0,
-                      RUN = RAMLS0,
+                      RUN = RAMLS01,
                       LOAD_START(Cla1ProgLoadStart),
                       RUN_START(Cla1ProgRunStart),
                       LOAD_SIZE(Cla1ProgLoadSize),
@@ -129,7 +131,7 @@ SECTIONS
 #else
     /* CLA specific sections */
     Cla1Prog        : LOAD = FLASH_BANK0,
-                      RUN = RAMLS0,
+                      RUN = RAMLS01,
                       LOAD_START(_Cla1ProgLoadStart),
                       RUN_START(_Cla1ProgRunStart),
                       LOAD_SIZE(_Cla1ProgLoadSize),
@@ -139,23 +141,23 @@ SECTIONS
    Cla1ToCpuMsgRAM  : > CLATOCPURAM
    CpuToCla1MsgRAM  : > CPUTOCLARAM
 
-   .scratchpad      : > RAMLS1
-   .bss_cla         : > RAMLS1
+   .scratchpad      : > RAMLS23
+   .bss_cla         : > RAMLS23
 
-   Cla1DataRam      : > RAMLS2
-   cla_shared       : > RAMLS1
-   CLADataLS1       : > RAMLS1
+   Cla1DataRam      : > RAMLS23
+   cla_shared       : > RAMLS23
+   //CLADataLS1       : > RAMLS23
 
 #if defined(__TI_EABI__)
    .const_cla      : LOAD = FLASH_BANK0,
-                      RUN = RAMLS1,
+                      RUN = RAMLS23,
                       RUN_START(Cla1ConstRunStart),
                       LOAD_START(Cla1ConstLoadStart),
                       LOAD_SIZE(Cla1ConstLoadSize),
                       ALIGN(4)
 #else
    .const_cla      : LOAD = FLASH_BANK0,
-                      RUN = RAMLS1,
+                      RUN = RAMLS23,
                       RUN_START(_Cla1ConstRunStart),
                       LOAD_START(_Cla1ConstLoadStart),
                       LOAD_SIZE(_Cla1ConstLoadSize),

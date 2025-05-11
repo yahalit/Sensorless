@@ -18,7 +18,7 @@
 
 #ifdef VARS_OWNER
 #define EXTERN_TAG
-#pragma DATA_SECTION(ClaRecsCopy, "RAMGS1to4"); // Assure in DMA-accesible RAM
+#pragma DATA_SECTION(ClaRecsCopy, ".data"); // Assure in DMA-accesible RAM
 #else
 #define EXTERN_TAG extern
 #endif
@@ -303,11 +303,7 @@ struct CCBit2
 {
     int unsigned bAutoBlocked : 1 ;
     int unsigned NodeStopped :  1 ;
-    int unsigned InAutoBrakeEngage: 1 ; // Brake is automatically engaged as motion is converged
-    int unsigned EnableAutoBrakeEngage: 1 ; // Brake is authorized to automatically engage as motion is converged
-    int unsigned InBrakeEngageDelay :  1 ;// Flag the start of a motor Off process. The motor is let a given time to stop, then brake engages with motor engaged but frozen
-    int unsigned InBrakeReleaseDelay : 1 ;// Flag the start of a motor ON process. The motor is let a given time to ON, then brake releases with motor engaged, but frozen
-    int unsigned bRsvd : 10 ;
+    int unsigned bRsvd : 14 ;
 };
 
 union UCBit2
@@ -324,16 +320,6 @@ struct CRejectWarning
     short IgnoreWarning ;
     short unsigned exp ;
     long Msec ;
-};
-
-
-struct CStartStop
-{
-    float RefPositionCommandForAutoStop ; // Historical position command to check if there was a change
-    long  RefEncoderCountsForAutoStop ; // Historical position to check if there was a change
-    float ErrorForAutoStop ;
-    float StartStopTimer ;
-    long  unsigned mode ;
 };
 
 
@@ -379,7 +365,6 @@ struct CStatus
      short unsigned ResetFaultRequest  ;
      short unsigned ResetFaultRequestUsed ;
      short unsigned bNewControlWord ;
-     short unsigned DisableAutoBrake ; // Bit field: .0 set by normal process, .1 set by host command
      short unsigned StopCan ;
      long  unsigned AbortCnt ;
      long  unsigned LongException ;
@@ -541,7 +526,6 @@ struct CSysState
 {
     struct CStatus Status ;
     struct CMotion Mot ;
-    struct CStartStop StartStop ;
     struct CTiming Timing ;
     struct CProfiler Profiler ;
     struct CPosControl PosControl ;
@@ -662,8 +646,6 @@ struct CControlPars
     float HighDeadBandThold ; // High side dead band hysteresis for position error
     float LowDeadBandThold  ; // Low side dead band hysteresis for position error;
     float AutoMotorOffTime  ; // Time for automatic motor off if motion converged
-    float LowAutoMotorOffThold  ; // Low side dead band hysteresis for automatic shutdown;
-    float HiAutoMotorOffThold  ; // Low side dead band hysteresis for automatic shutdown;
     float OuterSensorBit2User ; // Wheels only: conversion of wheel sensor to user units
     float KGyroMerge ; // Coefficient of merging for gyroscope data
     float PosErrorExtRelGain ; // Relative gain change when external pos error is applied
@@ -677,8 +659,6 @@ struct CControlPars
 EXTERN_TAG struct CControlPars ControlPars ;
 
 EXTERN_TAG union UCalibProg CalibProg;
-
-EXTERN_TAG union UIdentity IdentityProg;
 
 EXTERN_TAG long unsigned FlashCalib ;
 
@@ -737,17 +717,6 @@ EXTERN_TAG short unsigned CanId ;
 EXTERN_TAG short unsigned HallTable[8];
 EXTERN_TAG short unsigned ProjId ;
 
-
-struct CDBaseConf
-{
-    short unsigned IsUserConfiguration ;
-    short unsigned IsUserHwConfig      ;
-    short unsigned IsUserProjId        ;
-    short unsigned IsValidIdentity     ;
-    short unsigned IsValidDatabase     ;
-};
-
-EXTERN_TAG struct CDBaseConf DBaseConf     ;
 
 union UVars
 {
@@ -825,10 +794,6 @@ EXTERN_TAG struct CRefGenPars TRefGenPars ;
 EXTERN_TAG long unsigned CfgDirty[8] ;
 
 
-struct CClaRecs
-{
-    float kuku[8] ;
-};
 
 EXTERN_TAG struct CClaRecs ClaRecsCopy ;
 
@@ -1010,17 +975,6 @@ float fSatNanProt( float x , float y )
         return 0 ;
     }
     return __fmax(__fmin(x,y),-y);
-}
-
-
-inline int unsigned IsDin1(void)
-{
-    return ( ClaState.Pot.PotRat[0] < 0.5f ) ? 1 : 0 ;
-}
-
-inline int unsigned IsDin2(void)
-{
-    return ( ClaState.Pot.PotRat[1] < 0.5f ) ? 1 : 0 ;
 }
 
 

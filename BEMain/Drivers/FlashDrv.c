@@ -1,19 +1,89 @@
 #include "..\Application\StructDef.h"
 
+/* Flash handler functions for the 28P65x
+ * All entities are 32 bits
+ */
+
+const long unsigned BankAddress[5] =
+{
+ 0x080000, 0x0A0000 ,0x0C0000  , 0x0e0000,  0x100000
+};
+
+volatile short unsigned PumpOwner ;
 
 
-void   SetupFlash(void)
+
+/*
+ * Relates flash size ID to physical size
+ */
+const short unsigned nSectPerId[8] = {0,0,0,1,2,3,4,5} ;
+short unsigned nThisCpu ;
+short unsigned nOtherCpu ;
+
+/*
+ * Initial flash memory setup
+ * CPU may be     IPC_FLASHSEM_OWNER_CPU1 = 0x1, or  IPC_FLASHSEM_OWNER_CPU2 = 0x2
+ *
+ */
+
+void DeallocateFlashPump(void)
+{
+    uint32_t semRegister = IPC_CPUXTOCPUX_BASE + IPC_O_FLASHCTLSEM;
+    EALLOW ;
+    HWREG(semRegister) = 0x5A5A0000U  ;
+    EDIS ;
+    PumpOwner = 0 ; //No - ones
+}
+
+
+// Get number of flash banks for this component
+short unsigned GetNFlashBanks( )
+{
+    short unsigned n ;
+    long unsigned cfgreg = HWREG(DEVCFG_BASE + SYSCTL_O_PARTIDL);
+    n = (short unsigned)((cfgreg>>16) & 0xff ) ;
+    if ( n > 7 )
+    {
+        n = 7 ;
+    }
+    return nSectPerId[n] ;
+}
+
+
+
+
+
+#pragma CODE_SECTION(SetupFlashBody, ".TI.ramfunc");
+short   SetupFlashBody(IPC_FlashSemOwner cpu , uint32 u32HclkFrequencyMHz  )
 {
     Fapi_StatusType oReturnCheck;
+    //uint32_t partNumber ;
+    // Initialize the module, 4 wait states for 200MHz
     Flash_initModule(FLASH0CTRL_BASE, FLASH0ECC_BASE, 4);
 
-    //EALLOW;
-    IPC_claimFlashSemaphore(IPC_FLASHSEM_OWNER_CPU1);
-    SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK0, SYSCTL_CPUSEL_CPU1);
-    SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK1, SYSCTL_CPUSEL_CPU1);
-    SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK2, SYSCTL_CPUSEL_CPU1);
-    SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK3, SYSCTL_CPUSEL_CPU2);
-    SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK4, SYSCTL_CPUSEL_CPU2);
+    // Get the part
+    //partNumber = DevCfgRegs.DEVICEID.all;
+
+    // Define the other core
+    nThisCpu = (short unsigned ) cpu ;
+    nOtherCpu = 3 - nThisCpu ;
+
+    // Assure this device has 5 banks
+    if ( GetNFlashBanks() <  5 )
+    {
+        return -1 ;
+    }
+
+    //Allocate 3 banks to CPU1, later 2 banks for CPU2
+    if ( cpu == IPC_FLASHSEM_OWNER_CPU1)
+    {
+        IPC_claimFlashSemaphore(IPC_FLASHSEM_OWNER_CPU1);
+        SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK0, SYSCTL_CPUSEL_CPU1);
+        SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK1, SYSCTL_CPUSEL_CPU1);
+        SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK2, SYSCTL_CPUSEL_CPU1);
+        SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK3, SYSCTL_CPUSEL_CPU2);
+        SysCtl_allocateFlashBank(SYSCTL_FLASH_BANK4, SYSCTL_CPUSEL_CPU2);
+    }
 
     // NOTE: This will be different for every device
     // This is set up for F28P650DK9
@@ -23,287 +93,339 @@ void   SetupFlash(void)
     // frequency before any other Flash API operation can be performed.
     // This function must also be called whenever System frequency or RWAIT is
     // changed.
-    oReturnCheck = Fapi_initializeAPI(FlashTech_CPU0_BASE_ADDRESS,
-                                      DEVICE_SYSCLK_FREQ/1000000U);
+    oReturnCheck = Fapi_initializeAPI(FlashTech_CPU0_BASE_ADDRESS, u32HclkFrequencyMHz);
 
     if(oReturnCheck != Fapi_Status_Success)
     {
         // Check Flash API documentation for possible errors
-        Sample_Error();
+        return -2;
     }
+
+    return 0 ;
+}
+
+#pragma CODE_SECTION(SetupFlash, ".TI.ramfunc");
+
+/*
+ * cpu: 1 for CPU1 , 2 for CPU2
+ */
+short SetupFlash(short unsigned cpu , unsigned long u32HclkFrequencyMHz  )
+{
+    short stat = SetupFlashBody((IPC_FlashSemOwner)cpu , (uint32) u32HclkFrequencyMHz  );
+    DeallocateFlashPump() ;
+    return stat ;
+}
+
+
+
+#pragma CODE_SECTION(ClearFSMState, ".TI.ramfunc")
+/*
+ * Clear status of the state machine
+ */
+short ClearFSMState(void)
+{
+    Fapi_FlashStatusType  oFlashStatus;
+    Fapi_StatusType  oReturnCheck;
+
+    // Wait until FSM is done with the previous flash operation
+    while (Fapi_checkFsmForReady() != Fapi_Status_FsmReady){}
+
+    oFlashStatus = Fapi_getFsmStatus();
+
+    if(oFlashStatus != 0)
+    {
+
+        /* Clear the Status register */
+        oReturnCheck = Fapi_issueAsyncCommand(Fapi_ClearStatus);
+
+        // Wait until status is cleared
+        while (Fapi_getFsmStatus() != 0) {}
+
+        if(oReturnCheck != Fapi_Status_Success)
+        {
+            // Check Flash API documentation for possible errors
+            return -1;
+        }
+    }
+
+    return 0 ;
+}
+
+
+#pragma CODE_SECTION(WaitFlashActionComplete, ".TI.ramfunc")
+/*
+ * Wait a flash action to complete
+ */
+short WaitFlashActionComplete()
+{
+    Fapi_FlashStatusType  oFlashStatus;
+
+    // Wait until the Flash program operation is over
+    while(Fapi_checkFsmForReady() == Fapi_Status_FsmBusy);
+
+    oFlashStatus = Fapi_getFsmStatus();
+    return (oFlashStatus == Fapi_Status_Success) ? 0 : -12 ;
 }
 
 
 
 /*
+ * Get the protection masks that need to be set for erasing or writing
+ */
 
-EraseSector
-
-Function to Erase data of a sector in Flash.
-Flash API functions used in this function are executed from RAM in this
-*/
-
-
-#pragma CODE_SECTION(EraseSector, ".TI.ramfunc");
-
-
-//******************************************************************************
-// For this example, just stop here if an API error is found
-//******************************************************************************
-void Example_Error(Fapi_StatusType status)
+void GetBankProtectionMaskes(long unsigned FlashAddress , long unsigned buflen32 , long unsigned *_prot0to31 , long unsigned *_prot32to127)
 {
-    //
-    //  Error code will be in the status parameter
-    //
-    __asm("    ESTOP0");
+    short unsigned cnt ;
+    long unsigned RelEndAddress;
+    long unsigned RelStartAddress;
+    long unsigned prot0to31;
+    long unsigned prot32to127;
+    long unsigned buflen = buflen32 >> 1 ;
+    RelStartAddress = (FlashAddress & 0x1ffff) >> 10  ;
+    RelEndAddress   = ((FlashAddress+buflen) & 0x1ffff) >> 10  ;
+    prot0to31 = 0xffffffff ;
+    prot32to127 = 0xffffffff ;
+    // 1k sector
+    if ( RelStartAddress < 32 )
+    {
+        for ( cnt = RelStartAddress ; cnt < 32 ; cnt++ )
+        {
+            if ( cnt > RelEndAddress)
+            {
+                *_prot0to31   = prot0to31 ;
+                *_prot32to127 = prot32to127 ;
+                return ;
+            }
+            prot0to31 &= (~(1UL<<cnt));
+        }
+    }
+    // 8k sectors
+    if ( RelEndAddress >= 32 )
+    {
+        RelEndAddress >>= 5 ;
+        for ( cnt = 0 ; cnt < 32 ; cnt++ )
+        {
+            if ( cnt > RelEndAddress)
+            {
+                *_prot0to31   = prot0to31 ;
+                *_prot32to127 = prot32to127 ;
+                return ;
+            }
+            prot0to31 &= (~(1UL<<cnt));
+        }
+    }
+    // Case we reached the end of bank
+    *_prot0to31   = prot0to31 ;
+    *_prot32to127 = prot32to127 ;
 }
 
-//******************************************************************************
-// For this example, just stop here if FMSTAT fail occurs
-//******************************************************************************
-void FMSTAT_Fail(void)
+#pragma CODE_SECTION(UnProtectBank, ".TI.ramfunc")
+void UnProtectBank(long unsigned FlashAddress , long unsigned buflen)
 {
-    __asm("    ESTOP0");
+    long unsigned prot0to31 ;
+    long unsigned prot32to127 ;
+    GetBankProtectionMaskes(FlashAddress , buflen , &prot0to31 , &prot32to127);
+    // Clears status of previous Flash operation
+    ClearFSMState();
+    Fapi_setupBankSectorEnable(FLASH_WRAPPER_PROGRAM_BASE+FLASH_O_CMDWEPROTA, prot0to31);
+    Fapi_setupBankSectorEnable(FLASH_WRAPPER_PROGRAM_BASE+FLASH_O_CMDWEPROTB, prot32to127);
 }
 
 
-#pragma CODE_SECTION(ProgramPageAutoECC, ".TI.ramfunc");
-short ProgramPageAutoECC( short unsigned * Buffer_in , long unsigned FlashAddress , long unsigned buflen)
+// Which CPU: 0 for CPU1 , 1 for CPU2
+#pragma CODE_SECTION(GetFlashAccess, ".TI.ramfunc")
+short GetFlashAccess(  long unsigned FlashAddress , long unsigned buflen32)
 {
-    uint32 u32Index = 0;
-    uint16 i = 0, ECC_B = 0, ECC_LB = 0, ECC_HB = 0;
-    uint16 * Buffer = (uint16 * ) &Buffer_in[0];
-    uint64 *LData, *HData, dataLow, dataHigh;
+    // Test if we have the pump. If not, try claim it
+    short unsigned cnt ;
+    long unsigned nBank ;
+    short unsigned BankMux  ;
+    long unsigned prot0to31 ;
+    long unsigned prot32to127 ;
     Fapi_StatusType  oReturnCheck;
-    Fapi_FlashStatusType  oFlashStatus;
-    Fapi_FlashStatusWordType  oFlashStatusWord;
+    long unsigned buflen = buflen32 >> 1 ;
 
-    //
-    // Program data and ECC in Flash using "DataAndEcc" option.
-    // When DataAndECC option is used, Flash API will program both the supplied
-    // data and ECC in Flash at the address specified.
-    // Fapi_calculateEcc is used to calculate the corresponding ECC of the data.
-    //
-    // Note that data buffer (Buffer) is aligned on 64-bit boundary for verify
-    // reasons.
-    //
-    // In this example, 0x100 bytes are programmed in Flash Sector6
-    // along with the specified ECC.
-    //
 
-    for(i=0, u32Index = FlashAddress;
-       (u32Index < (FlashAddress + buflen));
-       i+= 8, u32Index+= 8)
+    // Test we can claim
+    uint32_t semRegister = IPC_CPUXTOCPUX_BASE + IPC_O_FLASHCTLSEM;
+    PumpOwner = ( short unsigned) ( HWREG(semRegister) & 3)  ;
+    if ( PumpOwner == nOtherCpu)
     {
-        //
-        // Point LData to the lower 64 bit data
-        // and   HData to the higher 64 bit data
-        //
-        LData = (uint64 *)((uint32 *)Buffer + i/2);
-        HData = (uint64 *)((uint32 *)Buffer + i/2 + 2);
-
-        //
-        // Calculate ECC for lower 64 bit and higher 64 bit data
-        //
-        ECC_LB = Fapi_calculateEcc(u32Index,*LData);
-        ECC_HB = Fapi_calculateEcc(u32Index+4,*HData);
-        ECC_B = ((ECC_HB<<8) | ECC_LB);
-
-        oReturnCheck = Fapi_issueProgrammingCommand((uint32 *)u32Index,Buffer+i,
-                                                 8, &ECC_B, 2, Fapi_DataAndEcc);
-
-        //
-        // Wait until the Flash program operation is over
-        //
-        while(Fapi_checkFsmForReady() == Fapi_Status_FsmBusy);
-
-        if(oReturnCheck != Fapi_Status_Success)
-        {
-            //
-            // Check Flash API documentation for possible errors
-            //
-            Example_Error(oReturnCheck);
-        }
-
-        //
-        // Read FMSTAT register contents to know the status of FSM after
-        // program command to see if there are any program operation related
-        // errors
-        //
-        oFlashStatus = Fapi_getFsmStatus();
-        if(oFlashStatus != 0)
-        {
-            //
-            // Check FMSTAT and debug accordingly
-            //
-            FMSTAT_Fail();
-        }
-
-        Flash_enableECC(FLASH0ECC_BASE);
-
-        //
-        // Read back the programmed data to check if there are any ECC failures
-        //
-        dataLow = *(uint64 *)(u32Index);
-
-        Flash_ErrorStatus errorStatusLow = Flash_getLowErrorStatus(FLASH0ECC_BASE);
-        if((errorStatusLow != FLASH_NO_ERR) || (dataLow != *LData))
-        {
-            return -1 ; // ECC_Fail();
-        }
-
-        dataHigh = *(uint64 *)(u32Index + 4);
-
-        Flash_ErrorStatus errorStatusHigh = Flash_getHighErrorStatus(FLASH0ECC_BASE);
-        if((errorStatusHigh != FLASH_NO_ERR) || (dataHigh != *HData))
-        {
-            return -2 ; //ECC_Fail();
-        }
-
-        //
-        // Verify the programmed values.  Check for any ECC errors.
-        //
-        oReturnCheck = Fapi_doVerify((uint32 *)u32Index,
-                                     4, (uint32 *)Buffer + (i/2),
-                                     &oFlashStatusWord);
-
-        if(oReturnCheck != Fapi_Status_Success)
-        {
-            //
-            // Check Flash API documentation for possible errors
-            //
-            return -3 ; // Example_Error(oReturnCheck);
-        }
-    }
-    return 0 ;
-}
-
-
-short EraseSector(unsigned long SecAddress )
-{
-    Fapi_StatusType  oReturnCheck;
-    Fapi_FlashStatusType  oFlashStatus;
-    Fapi_FlashStatusWordType  oFlashStatusWord;
-
-    //
-    // Issue ClearMore command
-    //
-    oReturnCheck = Fapi_issueAsyncCommand(Fapi_ClearMore);
-
-    //
-    // Wait until FSM is done with erase sector operation
-    //
-    while (Fapi_checkFsmForReady() != Fapi_Status_FsmReady){}
-
-    if(oReturnCheck != Fapi_Status_Success)
-    {
-        //
-        // Check Flash API documentation for possible errors
-        //
-        return -1 ; // Example_Error(oReturnCheck);
-    }
-
-    //
-    // Erase the sector that is programmed in the above example
-    // Erase Sector1
-    //
-    oReturnCheck = Fapi_issueAsyncCommandWithAddress(Fapi_EraseSector,
-                   (uint32 *)SecAddress);
-    //
-    // Wait until FSM is done with erase sector operation
-    //
-    while (Fapi_checkFsmForReady() != Fapi_Status_FsmReady){}
-
-    if(oReturnCheck != Fapi_Status_Success)
-    {
-        //
-        // Check Flash API documentation for possible errors
-        //
-        return -2 ; // Example_Error(oReturnCheck);
-    }
-
-    //
-    // Read FMSTAT register contents to know the status of FSM after
-    // erase command to see if there are any erase operation related errors
-    //
-    oFlashStatus = Fapi_getFsmStatus();
-    if(oFlashStatus != 0)
-    {
-        //
-        // Check Flash API documentation for FMSTAT and debug accordingly
-        // Fapi_getFsmStatus() function gives the FMSTAT register contents.
-        // Check to see if any of the EV bit, ESUSP bit, CSTAT bit or
-        // VOLTSTAT bit is set (Refer to API documentation for more details).
-        //
-        return -3 ; // FMSTAT_Fail();
-    }
-
-    //
-    // Verify that Sector1 is erased
-    //
-    oReturnCheck = Fapi_doBlankCheck((uint32 *)SecAddress,
-                   Sector8KB_u32length,
-                   &oFlashStatusWord);
-
-    if(oReturnCheck != Fapi_Status_Success)
-    {
-        //
-        // Check Flash API documentation for error info
-        //
-        return -4 ; //Example_Error(oReturnCheck);
-    }
-    return 0 ;
-}
-
-#pragma CODE_SECTION(PrepFlash4Burn, ".TI.ramfunc");
-short PrepFlash4Burn(void)
-{
-    Fapi_StatusType  oReturnCheck;
-    //
-    // Enable Global Interrupt (INTM) and realtime interrupt (DBGM)
-    //
-    EINT;
-    ERTM;
-
-    // At 120MHz, execution wait-states for external oscillator is 5. Modify the
-    // wait-states when the system clock frequency is changed.
-    //
-    //Flash_initModule(FLASH0CTRL_BASE, FLASH0ECC_BASE, 5);
-
-  //
-    // Initialize the Flash API by providing the Flash register base address
-    // and operating frequency(in MHz).
-    // This function is required to initialize the Flash API based on System
-    // frequency before any other Flash API operation can be performed.
-    // This function must also be called whenever System frequency or RWAIT is
-    // changed.
-    //
-    oReturnCheck = Fapi_initializeAPI(F021_CPU0_BASE_ADDRESS,
-                                      DEVICE_SYSCLK_FREQ/1000000U);
-
-    if(oReturnCheck != Fapi_Status_Success)
-    {
-        //
-        // Check Flash API documentation for possible errors
-        //
-        return -1;
-    }
-
-    //
-    // Initialize the Flash banks and FMC for erase and program operations.
-    // Fapi_setActiveFlashBank() function sets the Flash banks and FMC for
-    // further Flash operations to be performed on the banks.
-    //
-    oReturnCheck = Fapi_setActiveFlashBank(Fapi_FlashBank0);
-
-    if(oReturnCheck != Fapi_Status_Success)
-    {
-        //
-        // Check Flash API documentation for possible errors
-        //
         return -1 ;
     }
 
-    return 0;
+    if (PumpOwner != nThisCpu )
+    {
+        // Make the claim
+        EALLOW ;
+        HWREG(semRegister) = 0x5A5A0000U | (uint32_t)nThisCpu;
+
+        for ( cnt = 0 ; cnt < 100 ; cnt++ )
+        {
+            PumpOwner = ( short unsigned) ( HWREG(semRegister) & 3)  ;
+            if ( PumpOwner == nThisCpu)
+            {
+                break  ;
+            }
+        }
+        EDIS ;
+    }
+
+
+    if ( PumpOwner != nThisCpu)
+    {
+        return -3 ;
+    }
+
+    // Test address validity
+    nBank =  (FlashAddress - BankAddress[0]) >> 17   ;
+    if ( nBank*2 >= sizeof(BankAddress) )
+    {
+        return -4 ;
+    }
+
+    // Test that action does not go beyond bank limits
+    if ( nBank != ((FlashAddress- BankAddress[0] + buflen) >> 17 ) )
+    {
+        return -5 ;
+    }
+
+    // See if we own this bank
+    BankMux = (short unsigned) HWREG(DEVCFG_BASE + SYSCTL_O_BANKMUXSEL);
+
+
+    if (  (( 1 <<  (short unsigned)nBank  ) & BankMux ) == 0 )
+    {// Bank is not ours
+        return -6 ;
+    }
+
+    // Check address alignment (128 bits)
+    if ( FlashAddress & 0x3f)
+    {
+        return -7 ;
+    }
+    // Check action length alignment (128 bits)
+    if ( buflen & 0x3f)
+    {
+        return -7 ;
+    }
+
+
+    // Initialize the API for this bank
+    // Initialize the Flash banks and FMC for erase and program operations.
+    // Fapi_setActiveFlashBank() function sets the Flash banks and FMC for
+    // further Flash operations to be performed on the banks.
+    oReturnCheck = Fapi_setActiveFlashBank( (Fapi_FlashBankType) nBank );
+    if(oReturnCheck != Fapi_Status_Success)
+    {
+        return -8  ;
+    }
+
+        // Clears status of previous Flash operation
+    if ( ClearFSMState() )
+    {
+        return -9 ;
+    }
+
+    GetBankProtectionMaskes(FlashAddress , buflen32 , &prot0to31 , &prot32to127) ;
+
+    // Enable program/erase protection for select sectors
+    // CMDWEPROTA is applicable for sectors 0-31
+    // Bits 0-11 of CMDWEPROTB is applicable for sectors 32-127, each bit represents
+    // a group of 8 sectors, e.g bit 0 represents sectors 32-39, bit 1 represents
+    // sectors 40-47, etc
+    UnProtectBank( FlashAddress , buflen) ;
+
+    return 0 ;
 }
+
+
+//############################# EEPROM_ERASE #################################
+#pragma CODE_SECTION(EraseSectorsBody, ".TI.ramfunc")
+short EraseSectorsBody( long unsigned FlashAddress , long unsigned buflen32)
+{
+    Fapi_StatusType  oReturnCheck;
+    Fapi_FlashStatusWordType poFlashStatusWord ;
+    short stat ;
+    long unsigned buflen = buflen32 >> 1 ;
+    stat = GetFlashAccess(FlashAddress, buflen) ;
+    if ( stat )
+    {
+        return stat ;
+    }
+
+    // Erase the EEPROM Bank
+    oReturnCheck = Fapi_issueBankEraseCommand((uint32*) (FlashAddress & (~0x1ffffUL)) );
+    if(oReturnCheck != Fapi_Status_Success)
+    {
+        return -10 ;
+    }
+    // Wait for completion and check for any programming errors
+    stat = WaitFlashActionComplete() ;
+
+    oReturnCheck = Fapi_doBlankCheck((uint32*) FlashAddress,buflen32,&poFlashStatusWord) ;
+    if(oReturnCheck != Fapi_Status_Success)
+    {
+        return -11 ;
+    }
+
+    return stat ;
+}
+
+#pragma CODE_SECTION(EraseSectors, ".TI.ramfunc")
+short EraseSectors( long unsigned FlashAddress , long unsigned buflen32)
+{
+    short stat ;
+    stat = EraseSectorsBody( FlashAddress ,  buflen32);
+    DeallocateFlashPump() ;
+    return stat ;
+}
+
+
+
+#pragma CODE_SECTION(WriteToFlashBody, ".TI.ramfunc")
+short WriteToFlashBody( long unsigned FlashAddress , long unsigned * Write_Buffer , long unsigned buflen32)
+{
+    Fapi_StatusType  oReturnCheck;
+    Fapi_FlashStatusWordType poFlashStatusWord ;
+    long unsigned buflen = buflen32 >> 1 ;
+    short stat ;
+    stat = GetFlashAccess(FlashAddress, buflen) ;
+    if ( stat )
+    {
+        return stat ;
+    }
+
+    // Verify the write area is indeed blank
+    oReturnCheck = Fapi_doBlankCheck((uint32*) FlashAddress,buflen32, &poFlashStatusWord ) ;
+    if(oReturnCheck != Fapi_Status_Success)
+    {
+        return -14 ;
+    }
+
+    // Program the EEPROM Bank
+    oReturnCheck = Fapi_issueProgrammingCommand((uint32*) FlashAddress,
+                                                (uint16*)Write_Buffer, buflen , 0, 0,
+                                                Fapi_AutoEccGeneration);
+    if(oReturnCheck != Fapi_Status_Success)
+    {
+        return -10 ;
+    }
+    // Wait for completion and check for any programming errors
+    stat = WaitFlashActionComplete() ;
+
+    oReturnCheck = Fapi_doVerify((uint32*) FlashAddress,buflen32,Write_Buffer,&poFlashStatusWord ) ;
+
+    return stat ;
+}
+
+#pragma CODE_SECTION(WriteToFlash, ".TI.ramfunc")
+short WriteToFlash( long unsigned FlashAddress , long unsigned * Write_Buffer , long unsigned buflen)
+{
+    short stat ;
+    stat = WriteToFlashBody( FlashAddress , Write_Buffer , buflen);
+    DeallocateFlashPump() ;
+    return stat ;
+}
+
 

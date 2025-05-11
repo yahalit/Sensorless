@@ -1,127 +1,44 @@
-
-
 //#############################################################################
 //
-// FILE:   EEPROM_Config.h
+// FILE:   flash_programming_f28p65x.h
 //
-// The purpose of this file is to configure various aspects of EEPROM Emulation,
-// declare functions/global variables, and define unchanging values.
-// The following variables can be configured in this file:
-// 1. The number of sectors to use for EEPROM Emulation
-// 2. EEPROM Bank Size
-// 3. EEPROM Page Size
-// 4. Flash Sector Size
-// 5. Page_Mode or _64_BIT_MODE
+// TITLE:  A set of Constant Values for the F280015x Family.
 //
-// NOTE: To select which Flash sectors to use in EEPROM Emulation, adjust SECTOR_NUMBERS
-// in EEPROM_FLASH.c
 //#############################################################################
-
-// Include Flash API Header Files
-#include "driverlib.h"
-#include "device.h"
-
 //
-// Include Flash API include file
 //
-
-#include "..\flash_api\f28p65x\include\FlashAPI\FlashTech_F28P65x_C28x.h"
-
-// Include Flash API example header file
+// $Copyright:
+// Copyright (C) 2023 Texas Instruments Incorporated - http://www.ti.com/
 //
-#include "flash_programming_f28p65x.h"
-
-// Un-comment appropriate definition if one of the following variants is being used
-
-#define F28P65xDKx 1
-//#define F28P65xSKx 1
-//#define F28P65xSHx 1
-
-// Project specific defines
-//#define _64_BIT_MODE 1
-#define PAGE_MODE 1
-
-// Define which Flash Bank to use for EEPROM Emulation.
-// Bank 0 reserved for loading EEPROM Emulation/Flash API by default, choose Banks 1-4
-// Note: Check data-sheet to verify that device has indicated bank
-#define FLASH_BANK_SELECT FlashBank1StartAddress
-
-// Define Flash Sector Size in 16-bit words
-#define FLASH_SECTOR_SIZE F28P65x_FLASH_SECTOR_SIZE
-
-// Define how many sectors are in a Flash Bank
-#define NUM_FLASH_SECTORS F28P65x_NUM_FLASH_SECTORS
-
-// Define how many EEPROM Banks to emulate
-#define NUM_EEPROM_BANKS 4
-
-// Define how many EEPROM Pages for each EEPROM Bank
-#define NUM_EEPROM_PAGES 3
-
-// Define size of data to be written to EEPROM Pages (measured in 16-bit words)
-// If size is not a multiple of 4, the size of the Page data will be rounded up to the closest
-// multiple of 4 to be in accordance with ECC requirements
-// Example: DATA_SIZE = 3
-//          This will result in EEPROM Pages using 4 16-bit words
-//          for data, but will only write 3 words of valid data per page
-#define DATA_SIZE 64
-
-
-// Calculate the appropriate size of data in EEPROM Pages.
-// To comply with ECC, must be a multiple of 4 greater than or equal to the
-// DATA_SIZE specified by user
-#define EEPROM_PAGE_DATA_SIZE (DATA_SIZE + 3 - ((DATA_SIZE + 3) % 4))
-
-
-// Pointer Initialization
-#define RESET_BANK_POINTER Bank_Pointer = (uint16 *) (FLASH_BANK_SELECT + ((uint32)FIRST_AND_LAST_SECTOR[0] * FLASH_SECTOR_SIZE))
-#define RESET_PAGE_POINTER Page_Pointer = (uint16 *) (FLASH_BANK_SELECT + ((uint32)FIRST_AND_LAST_SECTOR[0] * FLASH_SECTOR_SIZE)) + 8
-
-// Define end address of last sector to be used in EEPROM Emulation
-#define END_OF_SECTOR (FLASH_BANK_SELECT + ((uint32)FIRST_AND_LAST_SECTOR[1] * FLASH_SECTOR_SIZE) + (FLASH_SECTOR_SIZE - 1));
-
-// Bank/Page Status Definitions
-#define EMPTY_BANK   0xFFFF
-#define CURRENT_BANK 0x5A5A
-#define BLANK_PAGE   0xFFFF
-#define CURRENT_PAGE 0xA5A5
-
-#define F28P65x_FLASH_SECTOR_SIZE 0x400
-
-#define F28P65x_NUM_FLASH_SECTORS 128
-
-
-// Function Prototypes
-extern int EEPROM_Config_Check();
-extern void EEPROM_GetValidBank(uint16 Read_Flag);
-extern void EEPROM_Erase();
-extern void EEPROM_Read(uint16* Read_Buffer);
-extern void EEPROM_Write(uint16* Write_Buffer);
-extern void EEPROM_UpdateBankStatus();
-extern void EEPROM_UpdatePageStatus();
-extern void EEPROM_UpdatePageData();
-extern void EEPROM_CheckStatus(Fapi_StatusType* oReturnCheck);
-extern void EEPROM_Get_64_Bit_Data_Address();
-extern void EEPROM_Program_64_Bits(uint16 Num_Words, uint16* Write_Buffer);
-extern uint64 Configure_Protection_Masks(uint16* Sector_Numbers, uint16 Num_EEPROM_Sectors);
-extern void Sample_Error();
-extern void Example_Done();
-extern void ClearFSMStatus();
-
-// Global Variables
-extern uint16 *Bank_Pointer;
-extern uint16 *Page_Pointer;
-extern uint16 *Sector_End;
-extern uint32 WE_Protection_A_Mask;
-extern uint32 WE_Protection_B_Mask;
-extern uint32 Bank_Size;
-extern uint16 Bank_Counter;
-extern uint16 Page_Counter;
-extern uint16 Bank_Status[8];
-extern uint16 Page_Status[8];
-extern uint16 NUM_EEPROM_SECTORS;
-extern uint16 FIRST_AND_LAST_SECTOR[2];
-
+// Redistribution and use in source and binary forms, with or without 
+// modification, are permitted provided that the following conditions 
+// are met:
+// 
+//   Redistributions of source code must retain the above copyright 
+//   notice, this list of conditions and the following disclaimer.
+// 
+//   Redistributions in binary form must reproduce the above copyright
+//   notice, this list of conditions and the following disclaimer in the 
+//   documentation and/or other materials provided with the   
+//   distribution.
+// 
+//   Neither the name of Texas Instruments Incorporated nor the names of
+//   its contributors may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// $
+//#############################################################################
 #ifndef FLASH_PROGRAMMING_F28P65X_H_
 #define FLASH_PROGRAMMING_F28P65X_H_
 
@@ -267,8 +184,6 @@ extern uint16 FIRST_AND_LAST_SECTOR[2];
 #define     FlashBank3EndAddress        0xFFFFFU
 #define     FlashBank4StartAddress      0x10FFFFU
 #define     FlashBank4EndAddress        0x11FFFFU
-
-
 
 //Sector length in number of 16bits
 #define Sector2KB_u16length   0x400U

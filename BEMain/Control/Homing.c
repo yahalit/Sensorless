@@ -57,8 +57,6 @@ long HomingHere(float f )
  */
 long HomeProfiler()
 {
-    long delta ;
-    float d1 , d2 , backref;
 
     if ( SysState.Homing.Method == EHM_Immediate)
     {
@@ -68,133 +66,7 @@ long HomeProfiler()
         return ImmediateHoming() ;
     }
 
-
-    delta = ClaState.Encoder1.Pos - SysState.Homing.EncoderOnStart ;
-    if ( fabsf(delta) > SysState.Homing.MaxEncoderTravelHoming )
-    {
-        SysState.Homing.Exception = exp_homing_too_faraway ;
-    }
-
-    if ( SysState.Homing.Exception &&  ( SysState.Homing.State < EMS_Decelerate2Fail) )
-    {
-        SysState.Homing.State = EMS_Decelerate2Fail ;
-    }
-
-    // Current filter, in use when the home method is "travel till hitting a wall"
-    SysState.Homing.HomingCurrentFilt =  SysState.Homing.HomingCurrentFilt +  SysState.Homing.HomingCurrentFilterCst *
-            (ClaState.CurrentControl.ExtIq -  SysState.Homing.HomingCurrentFilt) ;
-
-    // Look for the homing event
-    if ( SysState.Homing.State < EMS_LogEvent )
-    {
-        switch(SysState.Homing.Method )
-        {
-        case EHM_CollideLimit: // Looking for a hard end
-            if ( SysState.Homing.HomingCurrentFilt * SysState.Homing.Direction >   SysState.Homing.HomingCurrent * 0.85f  )
-            { // Found the hard end - end of homing
-                SysState.Homing.State = EMS_LogEvent ;
-                if ( SysState.Homing.Direction > 0 )
-                {
-                    ClaState.Encoder1.UserPosOnHome = SysState.UserPosOnHomingFW ;
-                }
-                else
-                {
-                    ClaState.Encoder1.UserPosOnHome = SysState.UserPosOnHomingRev ;
-                }
-            }
-            break ;
-        case EHM_SwitchLimit: // Looking for a switch
-            if ( SysState.Homing.Direction > 0 )
-            {
-                ClaState.Encoder1.UserPosOnHome = SysState.UserPosOnHomingFW ;
-            }
-            else
-            {
-                ClaState.Encoder1.UserPosOnHome = SysState.UserPosOnHomingRev ;
-            }
-            if ( SysState.Homing.SwInUse  == 0 )
-            {
-                if ( IsDin1() )
-                {
-                    SysState.Homing.State = EMS_LogEvent ;
-                }
-            }
-            else
-            {
-                if ( IsDin2() )
-                {
-                    SysState.Homing.State = EMS_LogEvent ;
-                }
-            }
-            break ;
-        }
-    }
-
-    switch( SysState.Homing.State )
-    {
-    case EHS_Init:
-        // Acceleration towards homing speed, then traveling with it
-        SysState.Mot.Homed = 0 ;
-        d1 = SysState.Homing.HomingSpeed * SysState.Homing.Direction -  SysState.SpeedControl.SpeedReference ;
-        d2 = fSat ( d1 , SysState.SpeedControl.ProfileAcceleration * SysState.Timing.Ts )  ;
-        SysState.SpeedControl.SpeedReference  += d2 ;
-        break;
-
-    case EMS_LogEvent:
-        // Found home, Log the homing event
-        d1 = -SysState.SpeedControl.SpeedReference ;
-        d2 = fSat ( d1 , ControlPars.MaxAcc * SysState.Timing.Ts )  ;
-        SysState.SpeedControl.SpeedReference  += d2 ;
-        ClaState.Encoder1.EncoderOnHome = ClaState.Encoder1.Pos ;
-        SysState.Homing.State = EMS_Stop ;
-        break ;
-
-    case EMS_Stop:
-        // Found home, Reduce speed to zero
-        // Revert the speed command towards exit from home position: first null the speed command
-        backref = -0.3f * SysState.Homing.HomingSpeed * SysState.Homing.Direction ; // Reference speed for exit
-        d1 = backref  -SysState.SpeedControl.SpeedReference ; // Gap to cross in the speed command
-        d2 = fSat ( d1 , ControlPars.MaxAcc * SysState.Timing.Ts )  ; // Limit the change to permitted acceleration
-        SysState.SpeedControl.SpeedReference  += d2 ; // Update speed reference (entire gap or permitted acceleration, the smaller)
-        if ( fabsf(SysState.SpeedControl.SpeedReference-backref) < 1e-3f)
-        { // Speed converged to new reference
-            SysState.SpeedControl.SpeedReference = backref;
-            SysState.Homing.State = EMS_ExitHome ;
-        }
-        break ;
-
-    case EMS_ExitHome: // Home already found, and back speed reference is converged just exit the home area
-        if ( ( ClaState.Encoder1.UserPosOnHome - ClaState.Encoder1.UserPos ) * SysState.Homing.Direction  >=
-                 SysState.Homing.HomingExitUserPos )
-        {
-            SysState.Homing.State = EMS_Final_Stop ;
-        }
-        break;
-    case EMS_Final_Stop: // Exited enough, final stop after process is over
-        d1 = -SysState.SpeedControl.SpeedReference ;
-        d2 = fSat ( d1 , SysState.SpeedControl.ProfileAcceleration * SysState.Timing.Ts )  ;
-        SysState.SpeedControl.SpeedReference  += d2 ;
-        if ( fabsf(SysState.SpeedControl.SpeedReference) < 1e-3f)
-        {
-            SysState.Homing.State = EMS_Done ;
-        }
-        break;
-    case EMS_Done:
-        // Done
-        SysState.Mot.Homed = 1 ;
-        SysState.SpeedControl.SpeedReference = 0 ;
-        break ;
-
-    case EMS_Decelerate2Fail: // Decelerating to failure
-        d1 = -SysState.SpeedControl.SpeedReference ;
-        d2 = fSat ( d1 , ControlPars.MaxAcc * SysState.Timing.Ts )  ;
-        SysState.SpeedControl.SpeedReference  += d2 ;
-        if ( fabsf(SysState.SpeedControl.SpeedReference) < 1e-3f)
-        {
-            SysState.Homing.State = EMS_Failure ;
-        }
-        break ;
-    }
+    SysState.Homing.Exception = exp_homing_too_faraway ;
     return SysState.Homing.Exception ;
 }
 

@@ -5,334 +5,8 @@
  *      Author: Gal Lior
  */
 #include "..\Application\StructDef.h"
+#define MCAN0_BASE MCANA_MSG_RAM_BASE
 
-//Control the brake release on motion start
-//Routine is called only if motor ON
-inline
-void ManageBrakeRelease(void)
-{
-    // Delay for brake release
-    if ( SysState.Mot.InBrakeReleaseDelay )
-    {
-        if ( SysState.Mot.InBrakeReleaseDelay == 1 )
-        {// Phase 1: Motor starts, but brake will not release
-            SysState.Mot.BrakeRelease = 0 ;
-            if ( IsSysTimerElapse ( TIMER_RELEASE_BRAKE,  &SysTimerStr  ))
-            { //Enough time for motor start, we now go to the overlap stage in which motor control is active beside the locked brak
-                SetSysTimerTargetSec ( TIMER_OVERLAP_BRAKE     , ControlPars.BrakeReleaseOverlap ,  &SysTimerStr  );
-                SysState.Mot.InBrakeReleaseDelay = 2 ;
-            }
-        }
-        else
-        {
-            if ( IsSysTimerElapse ( TIMER_OVERLAP_BRAKE,  &SysTimerStr  ))
-            { // Done , release brake
-                SysState.Mot.BrakeRelease = 1 ;
-                SysState.Mot.InBrakeReleaseDelay = 0 ;
-            }
-        }
-    }
-    else
-    {
-        // If brake is over ridden take the override; otherwise just release brake for motion
-        SysState.Mot.BrakeRelease = 1 ;
-    }
-}
-
-
-inline
-void ManageBrakeEngage( enum E_MotorOffType method)
-{
-    float Time2Stop ;
-    switch (SysState.Mot.InBrakeEngageDelay )
-    {
-    case INBD_EngageInit:
-        // Set a stop time to get rid of any existing speed
-        Time2Stop = __fmin( SysState.SpeedControl.SpeedReference / __fmax(ControlPars.MaxAcc,0.0001f) + 0.03f , 0.15f ) ;
-        SetSysTimerTargetSec ( TIMER_ENGAGE_BRAKE     ,  Time2Stop ,  &SysTimerStr  );
-        SysState.Mot.QuickStop = 1 ;
-        SysState.Mot.InBrakeEngageDelay = INBD_WaitZeroSpeedRef  ;
-        break ;
-    case INBD_WaitZeroSpeedRef:
-        SysState.Mot.QuickStop = 1 ;
-        if ( IsSysTimerElapse ( TIMER_ENGAGE_BRAKE,  &SysTimerStr  ))
-        { // Time elapsed, speed reference is by now zero + timed allotted for stabilization
-            SysState.Mot.BrakeRelease = 0 ; // Command brake engage
-            SysState.Mot.InBrakeEngageDelay = INBD_WaitBrakeEngage  ; // State is waiting for engagement
-            SetSysTimerTargetSec ( TIMER_ENGAGE_BRAKE     ,  ControlPars.BrakeReleaseOverlap ,  &SysTimerStr  );
-        }
-        break ;
-    case INBD_WaitBrakeEngage:
-        // Wait time for brake engagement
-        SysState.Mot.QuickStop = 1 ;
-        if ( IsSysTimerElapse ( TIMER_ENGAGE_BRAKE,  &SysTimerStr  ))
-        { // Elapsed
-            if (ClaState.SystemMode == E_SysMotionModeSafeFault)
-            {// If a fault is pending , activate it now
-                LogException( EXP_FATAL , SysState.Mot.SafeFaultCode) ;
-            }
-            else
-            {// Ok, just shut motor
-                SetMotorOff(method) ;
-            }
-            SysState.Mot.InBrakeEngageDelay = INBD_EngageNothing;
-        }
-        break ;
-    }
-}
-
-void TestPotRef(void)
-{
-     if ( ControlPars.UseCase  & (UC_USE_POT1|UC_USE_POT2|UC_USE_SW1_HM|UC_USE_SW2_HM)  )
-     {
-         if (ClaState.PotRefFail && ClaState.MotorOn )
-         {
-             LogException(EXP_SAFE_FATAL,exp_pot_ref_failed) ;
-         }
-     }
-}
-
-
-inline
-short SpeedManageAutomaticBrakeEngage(short unsigned PreventAutoStop)
-{
-
-    float dUser , delta ;
-    short unsigned mode  ;
-
-    mode = 0 ;
-    delta = ClaState.Encoder1.Pos - SysState.StartStop.RefEncoderCountsForAutoStop;
-    dUser = fabsf(delta * ClaState.Encoder1.Bit2Rev * ClaState.Encoder1.Rev2Pos) ;
-
-    SysState.StartStop.StartStopTimer =  GetRemainTimeSec( TIMER_AUTO_MOTOROFF );
-
-    if (fabsf(SysState.SpeedControl.SpeedTarget ) > 1.0e-3f)
-    { // Set to motor on, override "InAutoBrakeEngage" state
-        mode |= 1 ;
-        PreventAutoStop = 1  ;
-    }
-    if (fabsf(SysState.SpeedControl.SpeedTarget - SysState.SpeedControl.SpeedReference) > 1.0e-3f)
-    { // Set to motor on, override "InAutoBrakeEngage" state
-        mode |= 2 ;
-        PreventAutoStop = 1  ;
-    }
-    if ( dUser  > ControlPars.HiAutoMotorOffThold   )
-    { // Set to motor on, override "InAutoBrakeEngage" state
-        mode |= 4 ;
-        PreventAutoStop = 1  ;
-    }
-
-    if (  SysState.Mot.InAutoBrakeEngage   )
-    {
-        if ( PreventAutoStop )
-        {
-            SetMotorOn(2) ; // No auto stop in this mode
-        }
-    }
-    else
-    {
-        if (   ClaState.MotorOnRequest )
-        {  // Motor is on, seek conditions to shut
-            if ( dUser  > ControlPars.LowAutoMotorOffThold   )
-            { // Set to motor on, override "InAutoBrakeEngage" state
-                mode |= 16 ;
-                PreventAutoStop = 1  ;
-            }
-           // Test significant control error for wake-up
-            if ( PreventAutoStop == 0 )
-            {
-               if ( IsSysTimerElapse ( TIMER_AUTO_MOTOROFF,  &SysTimerStr)  )
-               {
-                   mode |= 32 ;
-                   SetMotorOff( E_OffForAutoEngage ) ;
-               }
-               else
-               {
-                   // Time the next possible shut-down ,and reset the the comparison position reference
-                  mode |= 64 ;
-                  ArmAutomaticMotorOff() ;
-               }
-            }
-            else
-            {
-                // Time the next possible shut-down ,and reset the the comparison position reference
-               mode |= 128 ;
-               ArmAutomaticMotorOff() ;
-            }
-        }
-    }
-    SysState.StartStop.ErrorForAutoStop = dUser ;
-    return mode ;
-}
-
-inline
-short PosManageAutomaticBrakeEngage(short unsigned PreventAutoStop )
-{
-    float dUser ;
-    short unsigned mode  ;
-
-    mode = 0 ;
-    dUser = fabsf(SysState.PosControl.PosErrorR );
-    SysState.StartStop.StartStopTimer =  GetRemainTimeSec( TIMER_AUTO_MOTOROFF );
-    if (  SysState.Mot.InAutoBrakeEngage   )
-    { // Test significant reference change for wake-up
-        dUser = __fmax( dUser, fabsf(SysState.StartStop.RefPositionCommandForAutoStop - SysState.PosControl.PosReference ) );
-        // Test significant control error for wake-up
-        dUser = __fmax( dUser, fabsf(SysState.StartStop.RefPositionCommandForAutoStop - SysState.PosControl.PosFeedBack) ) ;
-
-        if ( PreventAutoStop )
-        {
-            SetMotorOn(2) ; // No auto stop in this mode
-        }
-        else
-        {
-            if (  SysState.Mot.ReferenceMode == E_PosModePTP )
-            {
-                mode |= 1 ;
-                dUser = __fmax( dUser, fabsf(SysState.Profiler.PosTarget - SysState.PosControl.PosReference ) ) ;
-            }
-            if ( dUser  > ControlPars.HiAutoMotorOffThold   )
-            { // Set to motor on, override "InAutoBrakeEngage" state
-                mode |= 2 ;
-                SetMotorOn(2) ;
-            }
-        }
-    }
-    else
-    {
-        if (  (SysState.Mot.ReferenceMode == E_PosModePTP) && (SysState.Profiler.Done == 0 ))
-        {
-            PreventAutoStop = 1 ;
-        }
-        if (   ClaState.MotorOnRequest )
-        {  // Motor is on, seek conditions to shut
-            // Test significant control error for wake-up
-            if ( PreventAutoStop == 0 )
-            {
-               mode |= 8 ;
-               if (  dUser  < ControlPars.LowAutoMotorOffThold)
-               { // Small enough error for enough time - shut down , and mark automatic shutdown
-                   mode |= 16 ;
-                   if ( IsSysTimerElapse ( TIMER_AUTO_MOTOROFF,  &SysTimerStr)  )
-                   {
-                       mode |= 32 ;
-                       SetMotorOff( E_OffForAutoEngage ) ;
-                   }
-               }
-               else
-               {
-                   // Time the next possible shut-down ,and reset the the comparison position reference
-                  mode |= 64 ;
-                  ArmAutomaticMotorOff() ;
-               }
-            }
-            else
-            {
-                // Time the next possible shut-down ,and reset the the comparison position reference
-               mode |= 128 ;
-               ArmAutomaticMotorOff() ;
-            }
-        }
-    }
-    SysState.StartStop.ErrorForAutoStop = dUser ;
-    return mode ;
-}
-
-/*
- * Manage automatic brake engagement if motion is converged
- */
-void ManageAutomaticBrakeEngage(void)
-{
-    short unsigned PreventAutoStop ;
-    if ( ClaState.MotorOnRequest)
-    {
-        if ( (ClaState.SystemMode == E_SysMotionModeSafeFault)
-                || SysState.Mot.InBrakeReleaseDelay
-                || SysState.Mot.InBrakeEngageDelay )
-        { // Already in auto braking mode, do not disturb
-            SetSysTimerTargetSec ( TIMER_AUTO_MOTOROFF , ControlPars.AutoMotorOffTime + ControlPars.BrakeReleaseOverlap + ControlPars.BrakeReleaseDelay , &SysTimerStr  );
-            return  ;
-        }
-    }
-
-    if ( (SysState.Mot.LoopClosureMode == E_LC_EXTDual_Pos_Mode)
-            ||  (SysState.Mot.ReferenceMode == E_PosModePT)
-            ||  SysState.Status.DisableAutoBrake
-            ||  SysState.SteerCorrection.bSteeringComprensation  || SysState.IntfcDisableWheelAutoStop )
-    {
-        PreventAutoStop = 1 ;
-    }
-    else
-    {
-        PreventAutoStop = 0 ;
-    }
-
-    if ( SysState.Mot.LoopClosureMode > E_LC_Torque_Mode )
-    {
-        if ( SysState.Mot.LoopClosureMode == E_LC_Speed_Mode)
-        {
-            //TODO: Make it work SysState.StartStop.mode = SpeedManageAutomaticBrakeEngage(PreventAutoStop);
-        }
-        else
-        {
-            SysState.StartStop.mode = PosManageAutomaticBrakeEngage(PreventAutoStop);
-        }
-    }
-#ifdef SLAVE_DRIVER
-    // When steering moves controlled, wheels musn not auto-stop
-    if ( ( SysState.Mot.InAutoBrakeEngage == 0 ) && ClaState.MotorOnRequest )
-    {
-        SysState.Cmd2Intfc.bit.DisableAutoBrake = 1;
-    }
-    else
-
-    {
-        SysState.Cmd2Intfc.bit.DisableAutoBrake = 0;
-
-    }
-#endif
-}
-
-
-/*
- * Test matching between motor encoder reading and wheel encoder reading
- */
-inline
-void TestEncoderMatching()
-{
-    long delta1 , delta2 , pos  , outint ;
-    short unsigned mask ;
-
-    mask = BlockInts() ;
-    pos    = ClaState.Encoder1.Pos ;
-    outint = SysState.OuterSensor.OuterPosInt.l ;
-    RestoreInts(mask);
-    //float dUser1 , dUser2 ;
-    // Difference passed on motor encoder
-        delta1 = pos - SysState.EncoderMatchTest.MotorEncoderRef ;
-        // Transform it do distance in user units
-        SysState.EncoderMatchTest.DeltaEncoderMotor = delta1 * ClaState.Encoder1.Bit2Rev * ClaState.Encoder1.Rev2Pos ;
-
-        // Distance passed on auxiliary encoder
-        delta2 = outint - SysState.EncoderMatchTest.WheelEncoderRef ;
-        // Transform it do distance in user units
-        SysState.EncoderMatchTest.DeltaEncoderWheel  = delta2 * ControlPars.OuterSensorBit2User ;
-
-        if ( __fmax( fabsf(SysState.EncoderMatchTest.DeltaEncoderMotor) ,fabsf(SysState.EncoderMatchTest.DeltaEncoderWheel)) > SysState.EncoderMatchTest.DeltaTestUser)
-        {
-            SysState.EncoderMatchTest.DeltaDeviation = fabsf(SysState.EncoderMatchTest.DeltaEncoderMotor - SysState.EncoderMatchTest.DeltaEncoderWheel);
-            if ( SysState.EncoderMatchTest.DeltaDeviation > SysState.EncoderMatchTest.DeltaTestTol)
-            {//  Thats an error
-                if (  SysState.EncoderMatchTest.bTestEncoderMatch  &&
-                    ( SysState.Mot.LoopClosureMode == E_LC_Speed_Mode) && ClaState.MotorOnRequest )
-                {
-                    LogException( EXP_SAFE_FATAL , exp_wheel_encoder_mismatch);
-                }
-            }
-            SysState.EncoderMatchTest.MotorEncoderRef = pos  ;
-            SysState.EncoderMatchTest.WheelEncoderRef = outint ;
-        }
-}
 
 
 void IdleCbit(void)
@@ -345,7 +19,7 @@ void IdleCbit(void)
         short unsigned us[2] ;
         long  unsigned ul ;
     } u ;
-    short unsigned stat , mon , br ;
+    short unsigned stat , mon  ;
     union UMultiType um ;
     long unsigned dt ;
 
@@ -389,29 +63,6 @@ void IdleCbit(void)
         LocalBit.all |= CBIT_NO_CALIB_MASK ;
     }
 
-    // Manage automatic brake engage (start/stop)
-    if ( ControlPars.UseCase & US_SUPPORT_AUTOBRAKE )
-    {
-        if ( IsSysTimerElapse ( TIMER_AUTO_MIN_MOTORON,  &SysTimerStr)  )
-        {
-            ManageAutomaticBrakeEngage() ;
-        }
-        else
-        {
-            ArmAutomaticMotorOff() ;
-        }
-    }
-    else
-    {
-        SysState.Status.DisableAutoBrake = 1 ;
-    }
-
-#ifdef SLAVE_DRIVER
-    if ( SysState.AxisSelector == FSI_TAG_FOR_WHEEL   )
-    {// Test encoders match
-        TestEncoderMatching() ;
-    }
-#endif
 
     if ( SysState.Mot.Homed &&  (SysState.Mot.LoopClosureMode == E_LC_Dual_Pos_Mode ) && (SysState.Debug.bDisablePotEncoderMatchTest == 0 ) )
     {
@@ -424,8 +75,7 @@ void IdleCbit(void)
     // If auto on-off is disabled, exclude the brake manipulation time from readiness reports
     if ( ClaState.SystemMode > E_SysMotionModeFault)
     {
-        if ( SysState.Mot.InAutoBrakeEngage || ((SysState.Status.DisableAutoBrake==0) && mon ) ||
-                ( mon && (SysState.Mot.InBrakeReleaseDelay==0)  && (SysState.Mot.InBrakeEngageDelay==0) ) )
+        if ( mon )
         {// Ready
             if ( SysState.Mot.MotionConverged )
             {
@@ -436,23 +86,6 @@ void IdleCbit(void)
         }
     }
 
-    if (mon )
-    {
-        // Separate because brake management must be considered before later decisions of Motor On
-        if ( SysState.Mot.InBrakeEngageDelay )
-        {
-            ManageBrakeEngage( SysState.Mot.InAutoBrakeEngage ? E_OffForAutoEngage :  E_OffForFinal  ) ;
-        }
-        else
-        {
-            ManageBrakeRelease() ;
-        }
-    }
-    else
-    {
-        SysState.Mot.InBrakeReleaseDelay = INBD_EngageNothing ;
-        SysState.Mot.InBrakeEngageDelay = 0 ;
-    }
 
 
     if (mon )
@@ -531,49 +164,8 @@ void IdleCbit(void)
     u.us[1] = SysState.Mot.KillingException ;
     SysState.Status.LongException = u.ul ;
 
-    if ( ControlPars.UseCase &  UC_SUPPORT_BRAKE  )
-    {
-        if ( SysState.Mot.BrakeControlOverride )
-        {
-            br = SysState.Mot.ExtBrakeReleaseRequest ;
-        }
-        else
-        {
-            if ( LocalBit.bit.StoEvent == 0) // && (ClaState.SystemMode != E_SysMotionModeSafeFault) )
-            {
-                br = SysState.Mot.BrakeRelease ;
-            }
-            else
-            {
-                br = 0 ;
-            }
-        }
-    }
-    else
-    {
-        br = 0 ;
-    }
-    if ( br )
-    {
-        LocalBit.bit.BrakesReleaseCmd = 1 ;
-        OutBrakeVolts( ControlPars.BrakeReleaseVolts  );
-    }
-    else
-    {
-        OutBrakeVolts( 0  );
-    }
-
     SysState.CBit.bit.Pdo3IsPotDiff = ( ((short unsigned) ControlPars.UseCase & 3 ) == 3 ) ? 1 : 0 ;
 
-    if ( ControlPars.UseCase &  UC_USE_SW1_HM )
-    {
-        LocalBit.bit.Din1 = IsDin1() ;
-    }
-
-    if ( ControlPars.UseCase &  UC_USE_SW2_HM )
-    {
-        LocalBit.bit.Din2 = IsDin2() ;
-    }
 
 /*
     // If this is a potentiometer axis, check if it is homed
@@ -601,11 +193,6 @@ void IdleCbit(void)
         MCAN_setOpMode(MCAN0_BASE, MCAN_OPERATION_MODE_NORMAL);
     }
 
-    //If no more in auto mode, clear the start-stop control made by the auto process
-    if (ClaState.SystemMode != E_SysMotionModeAutomatic)
-    {
-        SysState.Status.DisableAutoBrake &= (~2)  ;
-    }
 
 
     if ( ClaState.MotorOnRequest == 0 )
@@ -632,12 +219,8 @@ void IdleCbit(void)
     SysState.CBit.all = LocalBit.all ;
 
     LocalBit2.all = 0 ;
-    LocalBit2.bit.EnableAutoBrakeEngage = ( SysState.Status.DisableAutoBrake ) ? 0 : 1 ;
-    LocalBit2.bit.InAutoBrakeEngage = SysState.Mot.InAutoBrakeEngage ? 1  : 0 ;
     LocalBit2.bit.bAutoBlocked = SysState.MCanSupport.bAutoBlocked ;
     LocalBit2.bit.NodeStopped =  SysState.MCanSupport.NodeStopped?  1 : 0  ;
-    LocalBit2.bit.InBrakeReleaseDelay = SysState.Mot.InBrakeReleaseDelay ? 1 : 0 ;
-    LocalBit2.bit.InBrakeEngageDelay = SysState.Mot.InBrakeEngageDelay ? 1 : 0 ;
 
 
     SysState.CBit2.all = LocalBit2.all ;

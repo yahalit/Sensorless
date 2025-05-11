@@ -40,10 +40,11 @@ void CLA_configClaMemory(void)
     while(MemCfgRegs.MSGxINITDONE.bit.INITDONE_CPUTOCLA1 != 1){};
 
     //
-    // CLA Program will reside in RAMLS0 and data in RAMLS1, RAMLS2
+    // CLA Program will reside in RAMLS01 and data in RAMLS23
     //
     MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS0 = 1U;
-    MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS1 = 0U;
+    MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS1 = 1U;
+    MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS2 = 0U;
     MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS2 = 0U;
 
     //
@@ -52,6 +53,7 @@ void CLA_configClaMemory(void)
     MemCfgRegs.LSxMSEL.bit.MSEL_LS0 = 1U;
     MemCfgRegs.LSxMSEL.bit.MSEL_LS1 = 1U;
     MemCfgRegs.LSxMSEL.bit.MSEL_LS2 = 1U;
+    MemCfgRegs.LSxMSEL.bit.MSEL_LS3 = 1U;
 
     EDIS;
 }

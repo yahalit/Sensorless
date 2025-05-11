@@ -134,9 +134,6 @@ void InitAppData(void)
     NVParamsPassWord = 0 ;
 
 
-    // Test identity
-    ApplyIdentity(pUIdentity,pUNVParams);
-
     Correlations.fPtrs[0] = &ClaState.Encoder1.UserPos ;
     Correlations.fPtrs[1] = &ClaState.CurrentControl.ExtCurrentCommand ;
     Correlations.fPtrs[2] = &ClaState.CurrentControl.ExtIq ;
@@ -150,14 +147,6 @@ void InitAppData(void)
 
     SlaveSdo.SlaveBuf = (unsigned long* ) SlaveSdoBuf ;
 
-#ifdef SLAVE_DRIVER
-    SysState.pOutMsgBufTx = &SysState.OutMsgBuf;
-
-    InitFsiService() ;
-
-    SysState.bCanTxCounter = 0 ;
-
-#endif
     SysState.Timing.Ts = CUR_SAMPLE_TIME_USEC * 1e-6 ;
     SysState.Timing.TsTraj = SysState.Timing.Ts ;
     SysState.Timing.TsInTicks = (CPU_CLK_MHZ * CUR_SAMPLE_TIME_USEC  ) ;
@@ -179,7 +168,7 @@ void InitAppData(void)
     ProjId = 0xffff ; // Ilegal
     InitControlParams();
 
-    InitLinService();
+    //InitLinService();
 
 
     FlashCalib =  Sector_AppCalib_start ;
@@ -193,9 +182,6 @@ void InitAppData(void)
     // Just in case
     InitRecorder(FAST_INTS_IN_C, FAST_TS_USEC, SDO_BUF_LEN_LONGS);
 
-#ifdef PVTEnabled
-    InitPVT() ;
-#endif
     SysState.PT.Init = 0 ;
 
     DealCalibration (1) ; // Deal with calibration
@@ -208,14 +194,6 @@ void InitAppData(void)
 
         ClearMemRpt( (short unsigned * ) &CalibProg.C.Calib , sizeof(struct CCalib)  ) ;
 
-#ifdef ON_BOARD_GYRO
-        //ClaState.SystemMode =  ; // Born in fault ....
-        for ( cnt = 0 ; cnt < 4 ; cnt++ )
-        {
-            Calib.qImu2ZeroENUPos[cnt]  = Geom.DefaultqImu2ZeroENUPos[cnt];
-        }
-        ProcessIMUTransformation() ;
-#endif
     }
 
 
@@ -243,16 +221,6 @@ void InitAppData(void)
 
     InitPosPrefilter() ;
 
-#ifndef NEW_WHEEL_GEAR_RATIO
-    SysState.EncoderMatchTest.bTestEncoderMatch = 1 ; // Do encoder matching test
-#endif
-
-/*
-    PosRange = __fmax( ControlPars.MaxPositionCmd - ControlPars.MinPositionCmd, 0.0001f) ;
-    PosPrefilter.InPosScale = 1073741824.0f / PosRange ; // 2^30  /PosRange
-    PosPrefilter.OutPosScale = 9.313225746154785e-10f * PosRange ;
-    PosPrefilter.OutSpeedScale = PosPrefilter.OutPosScale / (CUR_SAMPLE_TIME_USEC*1e-6f) ; // PosRange * 2^(-30)
-*/
 }
 
 void InitPosPrefilter(void)
@@ -303,10 +271,7 @@ void main(void)
         //DevCfgRegs.BANKMUXSEL.bit.BANK4 = 3U;
     EDIS;
 
-    SetupFlash() ;
-
-
-
+    SetupFlash(1 , CPU_CLK_MHZ) ;
 
     InitAppData() ;
 //

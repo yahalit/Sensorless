@@ -116,18 +116,6 @@ struct CClaControlPars
     float ExtCutCst ; // Filtering constant for reported current on PDO
 };
 
-/**
- * \struct Robot geometry an dimensional data
- */
-struct CRobotGeom
-{
-    float Pot1RatCenter ; // !< Potentiometer 1 center
-    float Pot2RatCenter ; // !< Potentiometer 2 center
-    float Pot1Rat2Rad    ; // !< Pot 1 conversion factor from ratio to radian
-    float Pot2Rat2Rad    ; // !< Pot 2 conversion factor from ratio to radian
-    float DefaultqImu2ZeroENUPos[4] ; //  !< Quaternion of nominal IMU position
-} ;
-
 
 
 #ifdef CLA_VAR_OWNER
@@ -136,11 +124,9 @@ struct CRobotGeom
 #pragma DATA_SECTION(ClaMailOut, "Cla1ToCpuMsgRAM");
 
 
-
 #pragma DATA_SECTION(ClaState, "cla_shared");
 #pragma DATA_SECTION(ClaControlPars, "cla_shared");
 #pragma DATA_SECTION(Calib, "cla_shared");
-#pragma DATA_SECTION(Geom, "cla_shared");
 
 #else
 #define EXTERN_CLA extern
@@ -156,7 +142,6 @@ EXTERN_CLA struct CClaRecs ClaRecs ;
 EXTERN_CLA struct CClaMailIn ClaMailIn ;
 EXTERN_CLA struct CClaMailOut ClaMailOut ;
 EXTERN_CLA struct CClaControlPars ClaControlPars ;
-EXTERN_CLA struct CRobotGeom Geom ;
 /*
 struct CCalib
 {
@@ -177,6 +162,34 @@ struct CCalib
     long  cs ; // !< Long checksum
 };
 */
+
+struct CCalib
+{
+    long  PassWord ; // A password replica
+    float PotCenter1Obsolete ; // Add this to the steering pot or right neck pot for calibration
+    float PotCenter2Obsolete ; // Add this to the left neck pot for calibration
+    float PotGainFac1Obsolete ; // Add this to the steering pot  right neck pot gain for calibration
+    float PotGainFac2Obsolete ; // Add this to the left neck pot gain for calibration
+    float qImu2ZeroENUPos[4] ; // !< Quaternion from IMU installation to body frame
+    float ACurGainCorr ; // !< Calibration of current measurement A
+    float BCurGainCorr ; // !< Calibration of current measurement B
+    float CCurGainCorr ; // !< Calibration of current measurement C
+    float Pot1CalibP3 ;
+    float Pot1CalibP2 ;
+    float Pot1CalibP1 ;
+    float Pot1CalibP0 ;
+    float Pot2CalibP3 ;
+    float Pot2CalibP2 ;
+    float Pot2CalibP1 ;
+    float Pot2CalibP0 ;
+    float CalibSpareFloat[5] ;
+    float CalibSpareLong    ;
+    long  CalibDate       ; // !< Calibration revision date
+    long  CalibData       ; // !< Calibration additional revision data
+    long  Password0x12345678 ; // !< Must be 0x12345678
+    long  cs ; // !< Long checksum
+};
+
 EXTERN_CLA struct CCalib Calib ;
 
 
@@ -226,15 +239,7 @@ struct CClaCurrentControl
     float ExtIqFilt  ; // Q currents with direction correction  ExtIqFilt
 } ;
 
-struct CPot
-{
-    float PotRat[2] ;
-    float PotFilt[2] ;
-    float Position[2] ;
-    float PosCenter ;
-    float PosDiff   ;
-    float RefFailCnt ;
-};
+
 
 struct CEncoder
 {
@@ -312,7 +317,6 @@ struct CClaState
     struct CClaCurrentControl CurrentControl;
     struct CEncoder Encoder1 ;
     struct CClaTiming Timing ;
-    struct CPot Pot ;
     long unsigned TzFlag ;
 };
 EXTERN_CLA struct CClaState ClaState ;
@@ -321,7 +325,7 @@ EXTERN_CLA struct CClaState ClaState ;
 
 
 
-#ifdef CLA_VAR_OWNER_CLA
+#ifdef CLA_VAR_OWNER
 
 //#pragma DATA_ALIGN ( ClaState , 128 );
 

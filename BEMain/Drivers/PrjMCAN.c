@@ -624,8 +624,7 @@ void RtCanService(void)
                 case 0: // PDO3_CONFIG_ROTARY_POT
                     u2.us[0] = Angle2Short( SysState.PosControl.FilteredPosReference ) ;
                     u2.us[1] = Angle2Short( SysState.PosControl.PosFeedBack ) ;
-                    u3.us[0] = Angle2Short( ClaState.Pot.Position[0] ) ;
-                    u3.us[1] = Angle2Short( ClaState.Pot.Position[1] ) ;
+                    u3.ul = 0 ;
                     TxMsg.data[0] = u2.ul ;
                     TxMsg.data[1] = u3.ul ;
                     SetMsg2HW(&TxMsg ) ;
@@ -641,8 +640,7 @@ void RtCanService(void)
                 case 3: // PDO3_CONFIG_2_ROTARY_POT
                     u2.us[0] = Angle2Short( SysState.PosControl.FilteredPosReference ) ;
                     u2.us[1] = Angle2Short( SysState.PosControl.PosFeedBack ) ;
-                    u3.us[0] = Angle2Short( ClaState.Pot.PosDiff  ) ;
-                    u3.us[1] = Angle2Short( ClaState.Pot.PosCenter  ) ;
+                    u3.ul = 0 ;
                     TxMsg.data[0] = u2.ul ;
                     TxMsg.data[1] = u3.ul ;
                     SetPDO2HW(&TxMsg , 3 ) ;

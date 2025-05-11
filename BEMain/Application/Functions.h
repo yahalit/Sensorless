@@ -83,7 +83,7 @@ short unsigned GetDMALastValid(void);
 short unsigned GetRecorderTotalLength(void )  ;
 
 // FlashDrv
-void   SetupFlash(void);
+short   SetupFlash(short unsigned cpu , unsigned long u32HclkFrequencyMHz  );
 void Sample_Error() ;
 short PrepFlash4Burn(void);
 short EraseSector(unsigned long SecAddress );
