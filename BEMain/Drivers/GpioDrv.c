@@ -179,5 +179,21 @@ void setupGpio(void)
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+
+
+#undef NGP
+#define NGP 79 // Fault input
+    GPIO_setPinConfig(GPIO_79_GPIO79);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+
+
+#undef NGP
+#define NGP 99 // Enable output
+    GPIO_setPinConfig(GPIO_99_GPIO99);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
 }
 
