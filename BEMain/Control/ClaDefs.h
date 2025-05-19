@@ -325,7 +325,7 @@ EXTERN_CLA struct CClaState ClaState ;
 
 
 
-#ifdef CLA_VAR_OWNER
+#ifdef CLA_VAR_OWNER_CLA
 
 //#pragma DATA_ALIGN ( ClaState , 128 );
 
@@ -355,6 +355,17 @@ const struct CClaConst  c = { .piOver32 = 9.817477042468103e-02f , .Halfsqrt3 = 
                               .OneOverTwoPi = 1.591549430918953e-01f , .TwoPi = 6.283185307179586e+00f , .TwoThirds = 0.666666666666667f};
 #endif
 
+
+
+
+interrupt void Cla1Task1 ( void );
+interrupt void Cla1Task2 ( void );
+interrupt void Cla1Task3 ( void );
+interrupt void Cla1Task4 ( void );
+interrupt void Cla1Task5 ( void );
+interrupt void Cla1Task6 ( void );
+interrupt void Cla1Task7 ( void );
+interrupt void Cla1Task8 ( void );
 
 
 

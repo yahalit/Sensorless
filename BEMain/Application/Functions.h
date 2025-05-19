@@ -48,6 +48,13 @@ void CLA_configClaMemory(void) ;
 void CLA_initCpu1Cla1(void);
 
 
+// CAN Slave
+long unsigned  NoSuchGetObject( struct CSdo * pSdo ,short unsigned *nData);
+long unsigned  NoSuchSetObject( struct CSdo * pSdo ,short unsigned nData);
+void CanSlave (void);
+short PutCanSlaveQueue( struct CCanMsg * pMsg);
+
+
 // Commutation
 short GetCommAnglePu(long Encoder);
 short GetHallComm(void);
@@ -84,10 +91,10 @@ short unsigned GetRecorderTotalLength(void )  ;
 
 // FlashDrv
 short   SetupFlash(short unsigned cpu , unsigned long u32HclkFrequencyMHz  );
-void Sample_Error() ;
-short PrepFlash4Burn(void);
-short EraseSector(unsigned long SecAddress );
-short ProgramPageAutoECC( unsigned short * , long unsigned, long unsigned buflen);
+//void Sample_Error() ;
+//short PrepFlash4Burn(void);
+short EraseSectors( long unsigned FlashAddress , long unsigned buflen32);
+short WriteToFlash( long unsigned FlashAddress , long unsigned * Write_Buffer , long unsigned buflen);
 
 
 
@@ -97,6 +104,13 @@ long unsigned SetAbsPosition( float pos);
 long unsigned InitHomingProc( void );
 long ImmediateHoming(void);
 long HomingHere(float f );
+
+
+// Idle loop
+void IdleLoop(void);
+void DealFaultState(void);
+
+
 
 // MainApp
 void InitAppData(void);
@@ -108,12 +122,11 @@ short CheckAlign ( short unsigned * ptr , short unsigned pw );
 short SetProjectSpecificData( short unsigned proj );
 void CfgBlockTransport(void);
 void InitPosPrefilter(void);
-short ApplyIdentity(union UIdentity * pId, union UNVParams *pPars);
 void SetProjectId(void);
 void FlushCanQueues(void);
 short  SetMotionCommandLimits(void) ;
-
-
+void SetupDMA(void);
+void InitEPwm1(void);
 
 // ObjectDict
 short unsigned GetOdSize( void ) ;

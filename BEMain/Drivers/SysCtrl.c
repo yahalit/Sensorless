@@ -136,12 +136,12 @@ void InitPeripheralClocksCpu1(void)
     CpuSysRegs.PCLKCR4.bit.EQEP4 = 1;
     CpuSysRegs.PCLKCR4.bit.EQEP5 = 1;
     CpuSysRegs.PCLKCR4.bit.EQEP6 = 1;
-
+*/
     CpuSysRegs.PCLKCR6.bit.SD1 = 1;
     CpuSysRegs.PCLKCR6.bit.SD2 = 1;
     CpuSysRegs.PCLKCR6.bit.SD3 = 1;
     CpuSysRegs.PCLKCR6.bit.SD4 = 1;
-*/
+
     CpuSysRegs.PCLKCR7.bit.SCI_A = 1;
     CpuSysRegs.PCLKCR7.bit.SCI_B = 1;
     CpuSysRegs.PCLKCR7.bit.UART_A = 1;

@@ -6,8 +6,8 @@
  */
 
 #include "..\Application\StructDef.h"
-#include "ClaDef.h"
-
+//#include "ClaDef.h"
+//
 
 
 //

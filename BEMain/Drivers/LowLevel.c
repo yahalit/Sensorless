@@ -1,6 +1,58 @@
 #include "..\Application\StructDef.h"
 
 
+// Linker Defined variables
+
+
+
+void ResetHardwareSysTimer(void)
+{
+    HWREG(CPUTIMER0_BASE + CPUTIMER_O_TIM) = 0 ;
+}
+
+// MCP9700 from MicroChip
+float GetTemperatureFromAdc(float volts)
+{
+    return ( volts - 0.5f ) * 100.0f ;
+}
+
+
+
+void PauseInts(void)
+{
+//    Interrupt_disable(INT_ADCA1);
+//    Interrupt_disable(INT_TIMER0);
+    SysCtl_disableWatchdog();
+}
+
+void UnpauseInts(void)
+{
+//    Interrupt_enable(INT_ADCA1);
+//    Interrupt_enable(INT_TIMER0);
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
+}
+
+
+void SetClaAllSw(void)
+{
+    KillMotor() ;
+
+    EALLOW ;
+    HWREGH(CLA1_BASE + CLA_O_MIER) = 0 ;
+    CLA_setTriggerSource(CLA_TASK_1, CLA_TRIGGER_SOFTWARE); //CLA_TRIGGER_EPWM1INT
+    CLA_setTriggerSource(CLA_TASK_2, CLA_TRIGGER_SOFTWARE); //CLA_TRIGGER_EPWM1INT
+    CLA_setTriggerSource(CLA_TASK_3, CLA_TRIGGER_SOFTWARE); //CLA_TRIGGER_EPWM1INT
+
+    EALLOW ;
+    HWREGH(CLA1_BASE + CLA_O_MICLR) = 0xff ;
+    while ( HWREGH(CLA1_BASE + CLA_O_MIRUN  ) | HWREGH(CLA1_BASE + CLA_O_MIFR  ) )
+    {
+        HWREGH(CLA1_BASE + CLA_O_MICLR) = 0xff ;
+    }
+
+    CLA_setTriggerSource(CLA_TASK_8, CLA_TRIGGER_SOFTWARE);
+}
+
 
 void InitPeripherals(void)
 {
@@ -48,6 +100,9 @@ void InitPeripherals(void)
 
     InitEPwm1();    // Setup EPWM1
     SetupDMA();     // Setup DMA to be triggered on SPI-A
+
+
+    setupGpio() ;
 
 //
 // Allow EPWM TBCTRs to count

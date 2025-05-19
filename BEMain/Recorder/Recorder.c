@@ -40,6 +40,29 @@ void ClearDebugVars(void)
     }
 }
 
+/**
+ * \brief
+ */
+float *  GetFSignalPtr( short si )
+{
+    struct CCmdMode mode ;
+
+    if ( si < 1 ||si >= NREC_SIG  ||
+            (long unsigned)RecorderSigRaw[si].ptr == 0 ||
+            (long unsigned)RecorderSigRaw[si].ptr == 0xffffffff)
+    {
+        return (float *) 0  ;
+    }
+
+    mode = *( (struct CCmdMode *) & RecorderSigRaw[si].flags ) ;
+    if( mode.IsFloat == 0  )
+    {
+        return (float *) 0  ;
+    }
+    return (float *) RecorderSigRaw[si].ptr  ;
+}
+
+
 
 #ifdef PROJ_OPTIMIZE
 #pragma FUNCTION_OPTIONS ( EmptyRecorderTrigger, "--opt_level=3" );

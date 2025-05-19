@@ -31,10 +31,10 @@
 
 #include "..\device_support\f28p65x\common\include\device.h"
 
-#ifndef CLA_FILETYPE
-#include "..\Ti\libraries\flash_api\f28003x\include\FlashAPI\F021_F28003x_C28x.h"
-#include "..\Ti\flash_programming_f28003x.h"
-#endif
+//#ifndef CLA_FILETYPE
+//#include "..\Ti\libraries\flash_api\f28003x\include\FlashAPI\F021_F28003x_C28x.h"
+//#include "..\Ti\flash_programming_f28003x.h"
+//#endif
 
 //
 // Function Prototypes

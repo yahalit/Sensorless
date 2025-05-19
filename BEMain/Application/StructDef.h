@@ -32,7 +32,7 @@
 #include "ProjControlPars.h"
 
 #include "..\Recorder\Recorder.h"
-#include "..\Drivers\ClaDefs.h"
+#include "..\Control\ClaDefs.h"
 #include "Revisions.h"
 #include "..\Control\TrapezeProfiler.h"
 #include "..\Drivers\EEPROM_Config.h"
@@ -810,9 +810,6 @@ struct CFloatParRecord
 
 
 EXTERN_TAG float FloatParRevision        ;
-EXTERN_TAG union UIdentity * pUIdentity ;
-EXTERN_TAG union UNVParams * pUNVParams ;
-EXTERN_TAG long NVParamsPassWord ;
 
 
 #define GetOffsetC(x,y)  offsetof(struct CCalib, x)

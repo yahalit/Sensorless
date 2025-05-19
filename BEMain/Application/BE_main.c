@@ -59,6 +59,8 @@
 //
 
 #define VARS_OWNER
+#define CLA_VAR_OWNER
+
 #include "StructDef.h"
 
 //
@@ -129,9 +131,9 @@ void InitAppData(void)
     ClearMemRpt((short unsigned *) &Correlations,sizeof( Correlations) );
     ClearMemRpt((short unsigned *) &FlashProg,sizeof( FlashProg) );
 
-    pUIdentity   = ( union UIdentity *) Sector_AppIdentity_start ;
-    pUNVParams   = ( union UNVParams *) Sector_AppParams_start ;
-    NVParamsPassWord = 0 ;
+    ClearMemRpt((short unsigned *) &ClaState,sizeof( ClaState) );
+    ClearMemRpt((short unsigned *) &ClaMailIn,sizeof( ClaMailIn) );
+
 
 
     Correlations.fPtrs[0] = &ClaState.Encoder1.UserPos ;
@@ -308,7 +310,8 @@ void main(void)
 //
     for(;;)
     {
-        asm ("          NOP");
+        IdleLoop() ;
+        SysCtl_serviceWatchdog() ;
     }
 }
 
@@ -317,7 +320,7 @@ void main(void)
 //
 // InitEPwm1 - Function to Initialize EPWM1
 //
-void InitEPwm1()
+void InitEPwm1(void)
 {
     EPwm1Regs.TBPRD = 6000;                        // Set timer period
     EPwm1Regs.TBPHS.bit.TBPHS = 0x0000;            // Phase is 0
@@ -354,7 +357,7 @@ void InitEPwm1()
 //
 // SetupDMA - Function to Setup DMA
 //
-void SetupDMA()
+void SetupDMA(void)
 {
     volatile Uint16 *destination;
     volatile Uint16 *DMADest, *DMASource;
@@ -383,6 +386,105 @@ void SetupDMA()
                      CHINT_END,CHINT_ENABLE);
     StartDMACH5();
 }
+
+
+/**
+ * \brief Get calibration conversion factors
+ * \param:
+ *  0: Zero calibration 1: Read from flash and apply 2: From programmed calibration
+ *
+ */
+struct CCalib CalibTmp ;
+short DealCalibration (short unsigned rd)
+{
+    short unsigned mask ;
+    //float m[3][3] ;
+    short RetVal = 0 ;
+    switch ( rd)
+    {
+    case 0:
+        ClearMemRpt( (short unsigned * ) &CalibTmp , sizeof(Calib)  ) ;
+        break ;
+    case 1:
+        if ( ReadCalibFromFlash ( (long unsigned*) &CalibTmp ,   FlashCalib   ) < 0 )
+        {
+            ClearMemRpt( (short unsigned * ) &CalibTmp , sizeof(Calib)  ) ;
+            RetVal = -1 ;
+        }
+        break ;
+    case 2:
+        CalibTmp = CalibProg.C.Calib ;
+        break ;
+    }
+
+
+    mask = BlockInts( ) ;
+    Calib = CalibTmp ;
+    RestoreInts(mask) ;
+    return RetVal ;
+}
+
+
+short ReadCalibFromFlash ( long unsigned *Dest , long unsigned Src_in   )
+{
+    long unsigned cs ;
+    short unsigned cnt ;
+    long unsigned *Src ;
+    long unsigned *uPtr ;
+    short unsigned len = sizeof( struct CCalib ) ;
+
+    Src  = (unsigned long *) Src_in ;
+    uPtr = Src ;
+
+    ClearMemRpt( (short unsigned * ) Dest , len ) ;
+
+    if ( CheckAlign( (short unsigned *) Dest , 1 ) || CheckAlign( (short unsigned *) Src , 1 ) )
+    { // Check both are on long boundary
+        return -1 ;
+    }
+
+    len = ( len >> 1 ) ; // Because of shorts
+
+    if ( uPtr[len-2] != 0x12345678)
+    {
+        return -1 ;
+    }
+    cs = 0 ;
+    for ( cnt = 0 ; cnt < len ; cnt++)
+    {
+        cs -= *uPtr++  ;
+    }
+    if ( cs )
+    {
+        return -1 ;
+    }
+    for ( cnt = 0 ; cnt < len ; cnt++)
+    {
+        *Dest++ = *Src++  ;
+    }
+    return 0 ;
+}
+
+
+
+short CheckAlign ( short unsigned * ptr , short unsigned pw )
+{
+    short unsigned cnt ;
+    long unsigned ul ;
+    ul = ( long unsigned ) ptr ;
+    for ( cnt = 0 ; cnt < pw ; cnt++ )
+    {
+        if ( ul & ( 1L << cnt ) )
+        {
+            return -1 ;
+        }
+    }
+    return 0 ;
+}
+
+
+
+
 
 //
 // dma_isr - DMA Interrupt Service Routine (Uncomment to enable DMA ISR)

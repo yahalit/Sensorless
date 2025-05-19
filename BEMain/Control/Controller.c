@@ -1191,3 +1191,190 @@ void DecodeBhCmdValue(float f )
 
 
 
+/*
+ * Calculate controller filter parameters based on poles and damping
+ */
+void InitControlFilter(struct CFilt2 * pFilt , float Ts )
+{
+    float z , b00 , a1 , a2 , bw , xi , b0 , b1 , b2 , sum  ;
+    short IsSimple ;
+    short unsigned mask ;
+
+    bw = pFilt->PBw ;
+    xi = pFilt->PXi ;
+
+    if ( pFilt->Cfg.bit.IsInUse )
+    {
+        IsSimple = pFilt->Cfg.bit.IsSimplePole ;
+
+        if ( bw <= 10000 )
+        {
+            z = __iexp2( -Ts * Log2OfE * xi * bw * Pi2 );
+        }
+        else
+        {
+            z = 0 ;
+        }
+
+        if ( IsSimple )
+        {
+            a2 = 0 ;
+            a1 = -z ;
+        }
+        else
+        {
+            a2 = z * z ;
+            a1  = -2.0f * __cos( __sqrt(1-xi*xi) * bw * Pi2 * Ts ) * z ;
+        }
+
+        b00 = 1 + a1 + a2  ;
+
+        bw = pFilt->ZBw ;
+        xi = pFilt->ZXi ;
+        IsSimple = pFilt->Cfg.bit.IsSimpleZero ;
+
+        if ( bw <= 10000 )
+        {
+            z = __iexp2( -Ts * Log2OfE * xi * bw * Pi2 );
+        }
+        else
+        {
+            z = 0 ;
+        }
+        if ( IsSimple )
+        {
+            b2 = 0 ;
+            b1 = -z ;
+            b0 = 1  ;
+        }
+        else
+        {
+            b2 = z * z ;
+            b1  = -2.0f * __cos( __sqrt(1-xi*xi) * bw * Pi2 * Ts ) * z ;
+            b0 = 1 ;
+        }
+        sum = b0 + b1 + b2 ;
+        if ( sum < 1e-7f )
+        {
+            b0 = 0 ; b1 = 0 ; b2 = 0 ;
+        }
+        else
+        {
+            sum = 1.0 / __fmax( sum, 1e-7f) ;
+            b0 = b0 * sum ;
+            b1 = b1 * sum ;
+            b2 = b2 * sum ;
+        }
+    }
+    else
+    {
+        b00 = 0 ;
+        a2  = 0 ;
+        b0 =  0 ;
+        b1 =  0 ;
+        b2 =  0 ;
+    }
+    mask = BlockInts() ;
+    pFilt->b00 = b00 ;
+    pFilt->a2  = a2 ;
+    pFilt->b0  = b0 ;
+    pFilt->b1  = b1 ;
+    pFilt->b2  = b2 ;
+    RestoreInts(mask) ;
+}
+
+
+short  SetMotionCommandLimits(void)
+{
+    short unsigned mask ;
+    float  PosRange ;
+    mask = BlockInts() ;
+    if ( ControlPars.MaxSupportedClosure >= E_LC_Pos_Mode )
+    {
+        PosRange = ControlPars.MaxPositionCmd  - ControlPars.MinPositionCmd ;
+        if ( PosRange <= 0.001f )
+        {
+            return exp_ilegal_position_range ;
+        }
+
+        // PosPrefilter.InPosScale = 536870912.0f / PosRange ;
+        // PosPrefilter.OutPosScale = 1.862645149230957e-09f * PosRange ;
+        // PosPrefilter.OutSpeedScale = PosPrefilter.OutPosScale * (0.00390625f / (CUR_SAMPLE_TIME_USEC*1e-6f)) ;
+
+        PosPrefilter.InPosScale = 1073741824.0f / PosRange ; // 2^30  /PosRange
+        PosPrefilter.OutPosScale = 9.313225746154785e-10f * PosRange ;
+        PosPrefilter.OutSpeedScale = PosPrefilter.OutPosScale / (CUR_SAMPLE_TIME_USEC*1e-6f) ; // PosRange * 2^(-30)
+        PosPrefilterMotorOff( SysState.PosControl.PosFeedBack );
+    }
+
+    RestoreInts(mask) ;
+    return 0 ;
+}
+
+
+
+/*
+ * Initialize controller parameters
+ */
+short InitControlParams(void)
+{
+    float fTemp , z , xi , a0   ;
+    //InitOverCurrentTholds();
+
+    ControlPars.SpeedAWU = ControlPars.SpeedKi * SysState.Timing.Ts /  \
+            ( ControlPars.SpeedKp + ControlPars.SpeedKi * SysState.Timing.Ts ) ;
+
+    ClaControlPars.OneOverPP = 1.0f / __fmax( ClaControlPars.nPolePairs, 1.0f) ;
+    ClaControlPars.Bit2Amp = ControlPars.FullAdcRangeCurrent * (1.0f/2048.0f) ;
+    ClaControlPars.Amp2Bit = 1.0f /__fmax( ClaControlPars.Bit2Amp, 1.e-7f) ;
+
+    ClaControlPars.Pos2Rev = 1.0f / __fmax( ClaControlPars.Rev2Pos , 1e-8f) ; // !< Scale position units to revolutions
+
+    ClaMailIn.SimdT = SysState.Timing.Ts ;
+
+    ControlPars.I2tPoleS = 1.0f - __iexp2( SysState.Timing.Ts * 256 * Log2OfE / __fmax( 0.0001f , ControlPars.I2tCurTime ) );
+    ClaControlPars.SpeedFilterCst = 1.0f - __iexp2( SysState.Timing.Ts * Log2OfE * Pi2 * ControlPars.SpeedFilterBWHz  );
+
+   // {& ClaControlPars.CurrentRefFiltA0,12, -1.0f,1.0e6f,-1.745485231989130f} ,//  !< Ref filter parameter A[0]
+   // {& ClaControlPars.CurrentRefFiltA1,14, -1.0f,1.0e6f,0.776790921324546f} ,//  !< Ref filter parameter A[1]
+    xi = 0.67f ;
+    z = __iexp2( -SysState.Timing.Ts * Log2OfE * xi * ControlPars.CurrentFilterBWHz * Pi2 );
+
+    ClaMailIn.CurPrefiltA1 = z * z ;
+    a0  = -2.0f * __cos( __sqrt(1-xi*xi) * ControlPars.CurrentFilterBWHz * Pi2 * SysState.Timing.Ts ) * z ;
+    ClaMailIn.CurPrefiltB  = 1 + a0 + ClaMailIn.CurPrefiltA1 ;
+
+    fTemp = __fmin( ControlPars.I2tCurLevel , ControlPars.FullAdcRangeCurrent * 0.95f) ;
+    ControlPars.I2tCurThold = fTemp * fTemp  ;
+
+    Commutation.EncoderCountsFullRev = ControlPars.EncoderCountsFullRev ;
+    ClaControlPars.InvEncoderCountsFullRev = 1.0f / __fmax( ControlPars.EncoderCountsFullRev, 1) ;
+    Commutation.Encoder2CommAngle = (float)ClaControlPars.nPolePairs * ClaControlPars.InvEncoderCountsFullRev  ;
+
+    ClaState.Encoder1.Bit2Rev = ClaControlPars.InvEncoderCountsFullRev ;
+    ClaState.Encoder1.Rev2Bit = (long) ControlPars.EncoderCountsFullRev ;
+    ClaState.Encoder1.Rev2Pos = ClaControlPars.Rev2Pos  ;
+
+    SysState.Timing.OneOverTsTraj = 1.0f / SysState.Timing.TsTraj ;
+
+    SysState.MCanSupport.OneOverNomMessageTime = 1.0f / __fmax( SysState.MCanSupport.NomInterMessageTime, 1e-4f ) ;
+    SysState.MCanSupport.OneOverActMessageTime = SysState.MCanSupport.OneOverNomMessageTime ;
+    SysState.MCanSupport.InterMessageTime = SysState.MCanSupport.NomInterMessageTime ;
+
+    CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_7); // Initialize CLA current loop prefilter
+
+    InitControlFilter( & ControlPars.qf0 , SysState.Timing.Ts );
+    InitControlFilter( & ControlPars.qf1 , SysState.Timing.Ts );
+
+    //SpeedScale/ Tics = speed
+    ClaState.Encoder1.MinMotSpeedHz   = 0.05f / ( ControlPars.EncoderCountsFullRev * SysState.Timing.Ts)  ;
+
+    SysState.MCanSupport.OneOverNomInterMessageTime = 1.0 / __fmax(SysState.MCanSupport.NomInterMessageTime,5.0e-5f);
+
+    ControlPars.PdoCurrentReportScale = 680.0f / ControlPars.MaxCurCmd  ;
+    // Keep position to limits
+    return SetMotionCommandLimits() ;
+}
+
+
+

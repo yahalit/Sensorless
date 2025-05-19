@@ -111,6 +111,20 @@ const short unsigned SizeofObjDict =  sizeof(ObjDictionaryItem)/sizeof(struct CO
 #endif
 
 
+float fGetSamplingTime( short unsigned ind)
+{
+    switch ( ind )
+    {
+        case 2:
+            return (float)VLOOP_SAMPLE_TIME_USEC * 1e-6 ;
+        case 3:
+            return  (float)VLOOP_SAMPLE_TIME_USEC * 1e-6 / (float)FAST_TS_USEC ;
+        default:
+            break ;
+    }
+    return SysState.Timing.Ts  ;
+}
+
 /**
  * \brief Get the index of parameter in the parameters table , brute force search
  *
@@ -1625,6 +1639,7 @@ long unsigned  GetCalibCmd( struct CSdo * pSdo ,short unsigned *nData)
 
 short SafePrepFlash(void)
 {
+    /*
     short stat ;
     short unsigned mask ;
     if (SysState.FlashPrepared )
@@ -1644,9 +1659,12 @@ short SafePrepFlash(void)
     RestoreInts(mask) ;
     UnpauseInts() ;
     return stat ;
+     *
+     */
+    return 0 ;
 }
 
-short SafeEraseFlash(long unsigned sect)
+short SafeEraseFlash(long unsigned sect , long unsigned BufLen32 )
 {
     short stat ;
     short unsigned mask ;
@@ -1654,7 +1672,7 @@ short SafeEraseFlash(long unsigned sect)
     PauseInts() ;
     mask = BlockInts() ;
     SysState.Mot.DisablePeriodicService = 1 ;
-    stat = EraseSector( sect   );
+    stat = EraseSectors( sect   , BufLen32 );
     SysState.Mot.DisablePeriodicService = 0 ;
     RestoreInts(mask)  ;
     UnpauseInts() ;
@@ -1669,7 +1687,10 @@ short SafeProgramFlash( short unsigned * Buffer_in , long unsigned FlashAddress 
     PauseInts() ;
     mask = BlockInts() ;
     SysState.Mot.DisablePeriodicService = 1 ;
-    stat = ProgramPageAutoECC(Buffer_in , FlashAddress , buflen ) ;
+
+    stat = WriteToFlash(  FlashAddress , (long unsigned *) Buffer_in , buflen>>1) ;
+
+    //stat = ProgramPageAutoECC(Buffer_in , FlashAddress , buflen ) ;
     SysState.Mot.DisablePeriodicService = 0 ;
     RestoreInts(mask)  ;
     UnpauseInts() ;
@@ -1769,7 +1790,7 @@ long unsigned  SetCalibCmd( struct CSdo * pSdo ,short unsigned nData)
 
     case 252:
     //case 32:// Clear sector of calibration
-        stat = SafeEraseFlash(Sector_AppCalib_start)  ;
+        stat = SafeEraseFlash(Sector_AppCalib_start, CALIB_SECT_LENGTH )  ;
         if ( stat )
         {
             return GetManufacturerSpecificCode(ERR_COULD_NOT_ERASE_OLD_CALIB) ; ;
@@ -1807,7 +1828,7 @@ long unsigned  SetCalibCmd( struct CSdo * pSdo ,short unsigned nData)
             CalibProg.C.Calib.cs -= *uPtr++  ;
         }
 
-        stat = SafeEraseFlash(Sector_AppCalib_start)  ;
+        stat = SafeEraseFlash(Sector_AppCalib_start,CALIB_SECT_LENGTH)  ;
 
 
         if ( stat )
@@ -1882,7 +1903,7 @@ long unsigned  GetParamCmd( struct CSdo * pSdo ,short unsigned *nData)
     return 0 ;
 }
 
-
+long unsigned NVParamsPassWord = 0 ;
 
 /**
  * \brief Object 0x2304 Set parameters command
@@ -1951,7 +1972,7 @@ long unsigned  SetParamCmd( struct CSdo * pSdo ,short unsigned nData)
     //case 32:// Clear sector of parameters
         if ( ul == 12345  )
         {
-            stat = SafeEraseFlash(Sector_AppParams_start) ;
+            stat = SafeEraseFlash(Sector_AppParams_start,PARAMS_SECT_LENGTH) ;
         }
         else
         {
@@ -2208,7 +2229,7 @@ long unsigned  SetFwCmd(    struct CSdo * pSdo ,short unsigned nData)
     short unsigned si  ;
     short stat ;
     unsigned long ul , pw ;
-    long mask ;
+    //long mask ;
     si = pSdo->SubIndex ;
     ul =* ((unsigned long *) pSdo->SlaveBuf);
 
@@ -2243,14 +2264,14 @@ long unsigned  SetFwCmd(    struct CSdo * pSdo ,short unsigned nData)
     switch ( si )
     {
     case 1:
-        mask = BlockInts() ;
-        stat = PrepFlash4Burn();
-        RestoreInts(mask) ;
+        //mask = BlockInts() ;
+        //stat = PrepFlash4Burn();
+        //RestoreInts(mask) ;
         FlashProg.PassWord = ul ;
-        if ( stat )
-        {
-            return General_parameter_incompatibility_reason ;
-        }
+        //if ( stat )
+        //{
+        //    return General_parameter_incompatibility_reason ;
+        //}
         break ; // Already accepted
     case 2:
         if ( ul > PROG_BUF_LEN - 256 )
@@ -2271,7 +2292,7 @@ long unsigned  SetFwCmd(    struct CSdo * pSdo ,short unsigned nData)
         {
              return General_parameter_incompatibility_reason ;
         }
-        stat = SafeEraseFlash(Sector_AppVerify_start);
+        stat = SafeEraseFlash(Sector_AppVerify_start,IDENTITY_SECT_LENGTH);
 
         if ( stat )
         {

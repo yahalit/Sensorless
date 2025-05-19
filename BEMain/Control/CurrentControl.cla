@@ -6,7 +6,7 @@
  */
 
 #define CLA_FILETYPE
-#define CLA_VAR_OWNER
+#define CLA_VAR_OWNER_CLA
 
 #include "..\Application\WhoIsThisProject.h"
 #include <stdint.h>
@@ -17,6 +17,8 @@ typedef float                                   float32_t;
 #include "..\Drivers\LowLevel.h"
 #include "ClaDefs.h"
 #include "..\Application\Revisions.h"
+
+
 //#include "..\driverlib\epwm.h"
 //#include "..\driverlib\ecap.h"
 
