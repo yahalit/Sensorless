@@ -293,8 +293,9 @@ void main(void)
 //    PieVectTable.DMA_CH5_INT= &dma_isr;
 //    IER |= M_INT7;
 //    EDIS;
+    setupPwmParams() ;
 
-
+    SetupIsr();
 //
 // Enable global Interrupts and higher priority real-time debug
 // events:

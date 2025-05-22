@@ -916,3 +916,122 @@ void SetExtendedBootUpMessage( void )
     PutCanSlaveQueue( &Msg);
 }
 
+
+void RTDealBlockUpload(void)
+{
+
+    short unsigned nleft , statenext ;
+    long unsigned *pNext ;
+    short unsigned *pU;
+    //short stat ;    //TxRdy &= ~(1L<<Next);
+
+    // Assure hardware ability to xmit
+#ifdef ON_BOARD_CAN
+    union
+    {
+        long unsigned ul ;
+        short unsigned us[2] ;
+    }u2 ;
+    u2.ul = ~HWREG(MCAN0_BASE + MCAN_TXBRP) ;
+
+    u2.us[0] &= MCAN_TX_MASK_OTHER ; // (SysState.MCanSupport.TxNumElements-1)  ; // Look only at implemented boxes
+    if (  u2.us[0] == 0 )
+    {// All clogged, go home
+        return  ;
+    }
+#else
+    if ( SysState.BlockUpload.DelayCntr == 0 )
+    {
+        SysState.BlockUpload.DelayCntr = MAX_BLOCK_DELAY_CNTR ;
+    }
+    else
+    {
+        SysState.BlockUpload.DelayCntr -= 1;
+        return ;
+    }
+
+    if ( ( GetPlaceInMessageQueue() < 8 ) || (SysState.PlaceInIntfcTxBuf < 8 ) )
+    {
+        return ;
+    }
+#endif
+
+    switch ( SysState.BlockUpload.InBlockUload )
+    {
+    /*
+    case 2:
+        // Block SDO service
+        stat = SetCanMsg2Hardware(CAN_REGSA,& SysState.BlockUpload.StartBlockMsg ,Next+1) ;
+        if ( stat == 0 )
+        {
+            SysState.BlockUpload.InBlockUload = 3 ;
+        }
+        TxRdy &= ~(1L<<Next);
+        break ;
+ */
+    case 3:
+        statenext = 3;
+        SysState.BlockUpload.SeqNo = (SysState.BlockUpload.SeqNo+1)&127  ;
+        nleft  = 4 - ( SysState.BlockUpload.BytesTransmitted  & 3 )  ;
+        switch ( nleft )
+        {
+        case 1:
+            SysState.BlockUpload.InBlockMsg.data[0] = ( SysState.BlockUpload.pBuf[0] >> 16 ) +  ( SysState.BlockUpload.pBuf[1] << 16 ) ;
+            SysState.BlockUpload.InBlockMsg.data[1] = ( SysState.BlockUpload.pBuf[1] >> 16 ) +  ( SysState.BlockUpload.pBuf[2] << 16 ) ;
+            pNext  = SysState.BlockUpload.pBuf + 2 ;
+            break ;
+        case 2:
+            SysState.BlockUpload.InBlockMsg.data[0] = ( SysState.BlockUpload.pBuf[0] >> 8 ) +  ( SysState.BlockUpload.pBuf[1] << 24 ) ;
+            SysState.BlockUpload.InBlockMsg.data[1] = ( SysState.BlockUpload.pBuf[1] >> 8 ) +  ( SysState.BlockUpload.pBuf[2] << 24 ) ;
+            pNext  = SysState.BlockUpload.pBuf + 2 ;
+            break ;
+        case 3:
+            SysState.BlockUpload.InBlockMsg.data[0] = ( SysState.BlockUpload.pBuf[0] & 0xffffff00 ) ;
+            SysState.BlockUpload.InBlockMsg.data[1] =  SysState.BlockUpload.pBuf[1];
+            pNext  = SysState.BlockUpload.pBuf + 2 ;
+            break ;
+        default:
+            SysState.BlockUpload.InBlockMsg.data[0] = ( SysState.BlockUpload.pBuf[0] << 8 ) ;
+            SysState.BlockUpload.InBlockMsg.data[1] = ( SysState.BlockUpload.pBuf[0] >> 24 ) +  ( SysState.BlockUpload.pBuf[1] << 8 ) ;
+            pNext  = SysState.BlockUpload.pBuf + 1 ;
+            break ;
+        }
+        pU = (short unsigned *)SysState.BlockUpload.InBlockMsg.data ;
+        pU[0] = (pU[0] & 0xff00 ) | SysState.BlockUpload.SeqNo ;
+        SysState.BlockUpload.BytesTransmitted += 7 ;
+        if  ( SysState.BlockUpload.BytesTransmitted >= SysState.BlockUpload.nBytes  )
+        { // Last
+            SysState.BlockUpload.BytesTransmitted = SysState.BlockUpload.nBytes ;
+            pU[0]  |= 0x80 ;
+            statenext = 4 ;
+        }
+        else
+        {
+            if ( SysState.BlockUpload.SeqNo == 127 )
+            {
+                statenext = 4 ;
+            }
+        }
+        SetMsg2HW( &SysState.BlockUpload.InBlockMsg ) ;
+        SysState.BlockUpload.pBuf = pNext ;
+        SysState.BlockUpload.InBlockUload = statenext ;
+        break ;
+    case 4: // Wait confirm sub-block
+        break;
+    case 5:
+        // TX end block
+        SysState.BlockUpload.EndBlockMsg.data[0] = 0xc1 + ((long unsigned)SysState.BlockUpload.crc << 8 ) + ( SysState.BlockUpload.BytesEmptyAtEnd << 2 ) ;
+
+        SetMsg2HW(& SysState.BlockUpload.EndBlockMsg) ;
+        {
+            SysState.BlockUpload.InBlockUload = 7 ; // Wait end
+        }
+        break ;
+    case 6:
+        SysState.BlockUpload.AbortBlockMsg.data[1] = SysState.BlockUpload.emcy ;
+        SetMsg2HW(& SysState.BlockUpload.AbortBlockMsg ) ;
+        SysState.BlockUpload.InBlockUload = 0;
+        break ;
+    }
+}
+

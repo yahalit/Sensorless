@@ -36,6 +36,54 @@ void setupGpioCAN(void)
 void setupGpioPWM(void)
 {
 
+#undef NGP
+#define NGP 0
+    GPIO_setPinConfig(GPIO_0_EPWM1_A);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_SYNC);
+
+
+#undef NGP
+#define NGP 1
+    GPIO_setPinConfig(GPIO_1_EPWM1_B);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_SYNC);
+
+#undef NGP
+#define NGP 2
+    GPIO_setPinConfig(GPIO_2_EPWM2_A);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_SYNC);
+
+
+#undef NGP
+#define NGP 3
+    GPIO_setPinConfig(GPIO_3_EPWM2_B);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_SYNC);
+
+
+#undef NGP
+#define NGP 14
+    GPIO_setPinConfig(GPIO_14_EPWM8_A);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_SYNC);
+
+
+#undef NGP
+#define NGP 15
+    GPIO_setPinConfig(GPIO_15_EPWM8_B);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_SYNC);
+
+
+
 }
 
 
@@ -87,10 +135,9 @@ void setupGpioSigmaDelta(void)
 
 }
 
-void setupGpio(void)
+
+void setupGpioGpio(void)
 {
-    setupGpioCAN() ;
-    setupGpioSigmaDelta() ;
 
 // Setup DAC control IO
 #undef NGP
@@ -182,6 +229,22 @@ void setupGpio(void)
 
 
 #undef NGP
+#define NGP 37 // IA DIAG DC
+    GPIO_setPinConfig(GPIO_37_GPIO37);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+
+#undef NGP
+#define NGP 36 // UA DIAG DC
+    GPIO_setPinConfig(GPIO_36_GPIO36);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+
+
+
+#undef NGP
 #define NGP 79 // Fault input
     GPIO_setPinConfig(GPIO_79_GPIO79);
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
@@ -191,9 +254,18 @@ void setupGpio(void)
 
 #undef NGP
 #define NGP 99 // Enable output
+    GpioDataRegs.GPDSET.bit.GPIO99 = 1 ;
     GPIO_setPinConfig(GPIO_99_GPIO99);
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+}
+
+void setupGpio(void)
+{
+    setupGpioGpio() ;
+    setupGpioCAN() ;
+    setupGpioSigmaDelta() ;
+    setupGpioPWM() ;
 }
 

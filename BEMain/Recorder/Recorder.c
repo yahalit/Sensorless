@@ -857,7 +857,7 @@ long  unsigned   ActivateProgrammedRecorder(void)
     {
         uss1 = maxlen ;
     }
-    uss2 =  Recorder.PreTrigCnt;
+    uss2 =  RecorderProg.PreTrigCnt;
     if ( uss2 >= (uss1-1))
     {
         uss2 = uss1-2 ;
@@ -1477,6 +1477,24 @@ void RtUltraFastRecorder(void)
         }
     } // end if ( Recorder.TriggerActive == 0 )
 }
+
+
+// Get a synchronized variable snap
+void SnapIt( short unsigned * pSnap )
+{
+    short unsigned cnt ;
+    short unsigned ** pList ;
+    short unsigned * pNext ;
+    pList = (short unsigned **) &RecorderProg.RecorderList[0];
+    for ( cnt = 0 ; cnt < RecorderProg.RecorderListLen ; cnt++ )
+    {
+        pNext   = *pList++ ;
+        *pSnap++ = *pNext++ ;
+        *pSnap++ = *pNext ;
+    }
+}
+
+
 
 
 
