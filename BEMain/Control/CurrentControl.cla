@@ -231,6 +231,7 @@ void ClaSinCosPu( float pu_arg_in )
 //#pragma FUNCTION_OPTIONS ( Cla1Task1, "--opt_level=3" );
 
 
+
 float maxDeltaCur     ;
 
 __attribute__((interrupt)) void Cla1Task1 ( void )
@@ -241,10 +242,47 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
     long t ;
     long pa , pb  ;
 
+    // Deal DAC pulses
+    // These are the most time-critical
+    // DACMux: (1) Phase 2 (2) Phase 3 (3) Phase 1 (4) DC
+    // DAC1 goes from Phase 2 to Phase 3
+    // DAC2 goes from Phase 1 to DC
+
+//    float DcCurUncalib ;
+//    float DcCur        ;
+    HWREGH(GPIODATA_BASE + GPIO_O_GPDSET) = 128 ; // GPIO103
+
+
+    if ( ClaState.DacPulseCntr == 0 )
+    {
+        HWREGH(GPIODATA_BASE + GPIO_O_GPASET) = 512 ; // GPIO9
+        HWREGH(GPIODATA_BASE + GPIO_O_GPCSET+1) = 16 ; // GPIO84
+        ClaState.Analogs.PhaseVoltUnCalib[1] = ADC_READ_VOLT2 ;
+        ClaState.Analogs.PhaseVoltUnCalib[0] = ADC_READ_VOLT1 ;
+        HWREGH(DACA_BASE + DAC_O_VALS) =
+                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[1] , 4090 ) , 5 ) ;
+        HWREGH(DACC_BASE + DAC_O_VALS) =
+                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[0] , 4090 ) , 5 ) ;
+        ClaState.DacPulseCntr = 1 ;
+    }
+    else
+    {
+        HWREGH(GPIODATA_BASE + GPIO_O_GPACLEAR) = 512 ;
+        HWREGH(GPIODATA_BASE + GPIO_O_GPCCLEAR+1) = 16 ;
+        ClaState.Analogs.PhaseVoltUnCalib[2] = ADC_READ_VOLT3 ;
+        ClaState.Analogs.DcCurUncalib = ADC_READ_VOLTDC ;
+        HWREGH(DACA_BASE + DAC_O_VALS) =
+                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[2] , 4090 ) , 5 ) ;
+        HWREGH(DACC_BASE + DAC_O_VALS) =
+                __mmaxf32 (__mminf32 (ClaControlPars.DcCurrentDacGain * ClaState.Analogs.DcCurUncalib , 4090 ) , 5 ) ;
+        ClaState.DacPulseCntr = 0 ;
+    }
+
+
     t = HWREG(ECAP3_BASE + ECAP_O_TSCTR);
-    ClaState.AdcRaw.PhaseCurAdc[0] = ADC_READ_CUR1 ;
-    ClaState.AdcRaw.PhaseCurAdc[1] = ADC_READ_CUR2 ;
-    ClaState.AdcRaw.PhaseCurAdc[2] = ADC_READ_CUR3 ;
+    ClaState.AdcRaw.PhaseCurAdc[0] = ( ADC_READ_CUR1_H1 + ADC_READ_CUR1_H2 ) * 0.5f ;
+    ClaState.AdcRaw.PhaseCurAdc[1] = ( ADC_READ_CUR2_H1 + ADC_READ_CUR2_H2 ) * 0.5f  ;
+    ClaState.AdcRaw.PhaseCurAdc[2] = ( ADC_READ_CUR3_H1 + ADC_READ_CUR3_H2 ) * 0.5f  ;
 
 
     ClaState.Analogs.PhaseCurUncalibA = ( ClaState.AdcRaw.PhaseCurAdc[0] - 2048.0f - ClaMailIn.IaOffset ) * ClaControlPars.Bit2Amp ;
@@ -449,6 +487,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 */
     ClaState.tTask = (HWREG(ECAP3_BASE + ECAP_O_TSCTR) - t) * 8.333333333333333e-03f ;
 
+    HWREGH(GPIODATA_BASE + GPIO_O_GPDCLEAR) = 128 ; // GPIO103
 }
 
 /*-----------------------------------------------------------------------------
@@ -510,9 +549,9 @@ __attribute__((interrupt))  void Cla1Task3 ( void )
         __mdebugstop();
     }
 
-    ClaState.AdcRaw.PhaseCurAdc[0] = ADC_READ_CUR1 ;
-    ClaState.AdcRaw.PhaseCurAdc[1] = ADC_READ_CUR2 ;
-    ClaState.AdcRaw.PhaseCurAdc[2] = ADC_READ_CUR3 ;
+    ClaState.AdcRaw.PhaseCurAdc[0] = ( ADC_READ_CUR1_H1 + ADC_READ_CUR1_H2 ) * 0.5f ;
+    ClaState.AdcRaw.PhaseCurAdc[1] = ( ADC_READ_CUR2_H1 + ADC_READ_CUR2_H2 ) * 0.5f  ;
+    ClaState.AdcRaw.PhaseCurAdc[2] = ( ADC_READ_CUR3_H1 + ADC_READ_CUR3_H2 ) * 0.5f  ;
 
     ClaState.Analogs.PhaseCurUncalibA = ( ClaState.AdcRaw.PhaseCurAdc[0] - 2048.0f - ClaMailIn.IaOffset ) * ClaControlPars.Bit2Amp ;
     ClaState.Analogs.PhaseCurUncalibB = ( ClaState.AdcRaw.PhaseCurAdc[1] - 2048.0f - ClaMailIn.IbOffset ) * ClaControlPars.Bit2Amp ;

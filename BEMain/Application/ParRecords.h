@@ -3,7 +3,9 @@
    {& ControlPars.MaxSpeedCmd,4, 1.0e-3f,1.0e6f,100.0f} ,// !< Maximum permissible speed command
    {& ControlPars.SpeedCtlDelay,5, 0.0f,1.0f,0.1f} ,// !< Delay to account for when preparing speed control command
    {& ControlPars.MaxCurCmd,9, 1.0f,1.0e6f,20.0f} ,// !< Maximum permissible current command
-   {& ClaControlPars.MaxCurCmdDdt,11, 1.0f,1.0e6f,10000.0f} ,//  !< Maximum permissible rate for current command
+   {& ClaControlPars.VoltageDacGain,11, 1.0e-3f,1.0e6f,10000.0f} ,//  !< DAC gain for integrating phase voltage
+   {& ClaControlPars.DcCurrentDacGain,12, 1.0e-3f,1.0e6f,1.0f} ,//  !< DAC gain for integrating DC supply current
+   {& ClaControlPars.MaxCurCmdDdt,14, 1.0f,1.0e6f,1.0f} ,//  !< Maximum permissible rate for current command
    {& ClaControlPars.KeHz,15, 0.0000f,1.0e6f,0.0f} ,// !< Speed to required motor voltage
    {& ClaControlPars.KpCur,16, 1.0e-6f,1.0e1f,1.5f} ,// !< Kp for current control
    {& ClaControlPars.KiCur,17, 1.0e-6f,3.0e4f,6000.0f} ,// !< Ki for current control

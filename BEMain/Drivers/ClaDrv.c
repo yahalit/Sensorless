@@ -188,7 +188,7 @@ void CLA_initCpu1Cla1(void)
     //
     // Enable CLA interrupts at the group and subgroup levels
     //
-    PieCtrlRegs.PIEIER11.all = 0xFFFF;
-    IER |= (M_INT11 );
+    //PieCtrlRegs.PIEIER11.all = 0xFFFF;
+    //IER |= (M_INT11 );
 }
 

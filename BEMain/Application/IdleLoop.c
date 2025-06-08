@@ -16,7 +16,6 @@ long unsigned zevel ;
 void IdleLoop(void)
 {
     UpdateSysTimer() ;
-
 /*
     if ( SysState.Timing.IntCntr - zevel > 100)
     {

@@ -10,9 +10,9 @@ MEMORY
    // RAMD3            : origin = 0x00A000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x01C000. User should comment/uncomment based on core selection
    // RAMD4            : origin = 0x00C000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x01E000. User should comment/uncomment based on core selection
    // RAMD5            : origin = 0x00E000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x020000. User should comment/uncomment based on core selection
-   RAMD45            : origin = 0x00C000, length = 0x004000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x01E000. User should comment/uncomment based on core selection
+   RAMD45            : origin = 0x00C000, length = 0x00c000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x01E000. User should comment/uncomment based on core selection
 
-   RAMGS0           : origin = 0x010000, length = 0x002000
+   RAMGS4             : origin = 0x018000, length = 0x00a000
    //RAMGS1           : origin = 0x012000, length = 0x002000
    //RAMGS2           : origin = 0x014000, length = 0x002000
    //RAMGS3           : origin = 0x016000, length = 0x002000
@@ -72,7 +72,7 @@ SECTIONS
 
   #if defined(__TI_EABI__)
        .TI.ramfunc : {} LOAD = FLASH_BANK3,  // Use flash that is mapped to CPU2
-                        RUN = RAMGS0,
+                        RUN = RAMGS4,
                         LOAD_START(RamfuncsLoadStart),
                         LOAD_SIZE(RamfuncsLoadSize),
                         LOAD_END(RamfuncsLoadEnd),
@@ -82,7 +82,7 @@ SECTIONS
                         ALIGN(8)
    #else
        .TI.ramfunc : {} LOAD = FLASH_BANK3,  // Use flash that is mapped to CPU2
-                        RUN = RAMGS0,
+                        RUN = RAMGS4,
                         LOAD_START(_RamfuncsLoadStart),
                         LOAD_SIZE(_RamfuncsLoadSize),
                         LOAD_END(_RamfuncsLoadEnd),

@@ -1,0 +1,32 @@
+{
+	"Calib": {
+		"PassWord": 305419804,
+		"PotCenter1": -0.07351496401,
+		"LNeckPotCenter": 0.06346823142,
+		"PotGainFac1": 0.01700527631,
+		"LNeckPotGainFac": 0.0128410308,
+		"qImu2ZeroENUPos0": 0,
+		"qImu2ZeroENUPos1": 0,
+		"qImu2ZeroENUPos2": 0,
+		"qImu2ZeroENUPos3": 0,
+		"ACurGainCorr": 0,
+		"BCurGainCorr": 0,
+		"CCurGainCorr": 0,
+		"CalibSpareFloat8": 0,
+		"CalibSpareFloat7": 0,
+		"CalibSpareFloat6": 0,
+		"CalibSpareFloat5": 0,
+		"CalibSpareFloat4": 0,
+		"CalibSpareFloat3": 0,
+		"CalibSpareFloat2": 0,
+		"CalibSpareFloat1": 0,
+		"CalibSpareFloat0": 0,
+		"CalibSpareLong7": 0,
+		"CalibSpareLong6": 0,
+		"CalibSpareLong5": 0,
+		"CalibSpareLong4": 0,
+		"CalibSpareLong3": 0,
+		"CalibDate": 739330,
+		"CalibData": 1
+	}
+}

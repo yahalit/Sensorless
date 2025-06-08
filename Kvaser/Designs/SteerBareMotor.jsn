@@ -1,0 +1,25 @@
+{
+	"CtlDesign": {
+		"TS": 50,
+		"BW": 50,
+		"PosBw": 12,
+		"MaxAcc": "",
+		"PiZero": 12,
+		"B1_Include": true,
+		"B1_F1": 150,
+		"B1_Xi1": 0.55,
+		"B1_IsSimpleZero": true,
+		"B1_SimpleZero": "_Inf_",
+		"B1_F2": 100,
+		"B1_Xi2": 0.85,
+		"B2_Include": false,
+		"B2_F1": 100,
+		"B2_Xi1": 0.15,
+		"B2_IsSimpleZero": true,
+		"B2_SimpleZero": "_Inf_",
+		"B2_F2": 100,
+		"B2_Xi2": 0.85,
+		"M": 1.2,
+		"nDispPts": 300
+	}
+}

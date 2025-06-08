@@ -1,6 +1,7 @@
 #ifndef APPLICATION_REVISIONS_H_
 #define APPLICATION_REVISIONS_H_
 
+#include "CalibStrDef.h"
 
 #define nUserCfgPars 128
 

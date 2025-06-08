@@ -229,6 +229,7 @@ void InitPeripheralClocksCpu1(void)
     EDIS;
 }
 
+extern volatile short unsigned kuku ;
 
 // Bring CPU2 into action
 void Bsp_bootCPU2(void) // uint32_t bootmode)
@@ -241,26 +242,38 @@ void Bsp_bootCPU2(void) // uint32_t bootmode)
     //
     // Set IPC Flag 0
     //
+    EALLOW;
+    HWREG(DEVCFG_BASE + SYSCTL_O_CPU2RESCTL)  = 0xa5a50001 ; // Reset
+
+    SysCtl_disableWatchdog() ;
+    //while( kuku ==0 );
+
     HWREG(IPC_CPUXTOCPUX_BASE+IPC_O_CPU1TOCPU2IPCSET) = IPC_FLAG0;
 
+    //while( kuku ==1 );
     //
     // Bring CPU2 out of reset. Wait for CPU2 to go out of reset.
     //
-    SysCtl_controlCPU2Reset(SYSCTL_CORE_DEACTIVE);
+    EALLOW;
+    HWREG(DEVCFG_BASE + SYSCTL_O_CPU2RESCTL)  = 0xa5a50000  ; // Clear to go
+
+    //while( kuku ==0 );
 
     // Wait till CPU 2 wakes up
     while(SysCtl_isCPU2Reset() == 0x1U);
+
+    //while( kuku ==3 );
+
 }
 
-
+extern volatile short unsigned kuku ;
 void PrepCpu2Work(void)
 {
 
-    Bsp_bootCPU2() ; // BOOTMODE_BOOT_TO_FLASH_SECTOR0) ; // IPCLtoRFlagSet(IPC_FLAG0);
-
-
     // Give CPU2 its dues memories
-    GrantCpu2ItsMemories() ;
+    //GrantCpu2ItsMemories() ;
+
+    Bsp_bootCPU2() ; // BOOTMODE_BOOT_TO_FLASH_SECTOR0) ; // IPCLtoRFlagSet(IPC_FLAG0);
 
     // Flag CPU2 its time to wakeup
     Cpu1toCpu2IpcRegs.CPU1TOCPU2IPCSET.all |= 0x10 ;

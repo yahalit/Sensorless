@@ -15,6 +15,10 @@ void MemClr(short unsigned *pTr, short unsigned siz); // Clear a memory chunk
 long GetUnalignedLong(short unsigned *uPtr);
 float GetUnalignedFloat(short unsigned *uPtr);
 
+// BEInterface
+void SetGateDriveEnable(short unsigned set  );
+short unsigned GetInfineonFault(void  ) ;
+
 // GpioDrv
 void setupGpio(void);
 void setupGpioCAN(void);
@@ -126,6 +130,7 @@ void SetProjectId(void);
 void FlushCanQueues(void);
 short  SetMotionCommandLimits(void) ;
 void SetupDMA(void);
+void setupDAC(void) ;
 void InitEPwm1(void);
 
 // ObjectDict
@@ -164,6 +169,8 @@ void SetupPwmPacer(uint32_t base,unsigned short pwmPeriod_usec );
 void setupPwmParams(void);
 void ClearTrip(void) ;
 void SetGateDriveEable(short in);
+void InitEPwm7AsMasterCounetr();
+void setupPWM4DacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long DisablePeriod_nsec,unsigned long pwmPeriod_nsec); \
 
 // PT Driver
 void InitPVT(void);

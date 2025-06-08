@@ -1,0 +1,25 @@
+{
+	"Calib": {
+		"PassWord": 305419808,
+		"GainFacV36": -0.1310,
+		"OffsetV36": 0,
+		"GainFacV24": 0,
+		"OffsetV24": 0,
+		"GainFacV12": 0,
+		"OffsetV12": 0,
+		"GainFacVBat": 0,
+		"OffsetVBat": 0,
+		"GainFacVSrv": 0,
+		"OffsetVSrv": 0,
+		"ParArr11": 0,
+		"ParArr12": 0,
+		"ParArr13": 0,
+		"ParArr14": 0,
+		"ParArr15": 0,
+		"ParArr16": 0,
+		"ParArr17": 0,
+		"ParArr18": 0,
+		"CalibDate": 0,
+		"CalibData": 0
+	}
+}

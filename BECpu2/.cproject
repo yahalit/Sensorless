@@ -189,7 +189,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="28p65x_generic_ram_lnk_cpu2.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="f28p65x_usdelay.asm|f28p65x_sysctrl.c|device_support/f28p65x/common/source/f28p65x_codestartbranch.asm|f28p65x_cputimers.c|f28p65x_dma.c|f28p65x_gpio.c|f28p65x_piectrl.c|f28p65x_pievect.c|f28p65x_globalvariabledefs.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

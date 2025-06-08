@@ -60,6 +60,7 @@
 
 #define VARS_OWNER
 #define CLA_VAR_OWNER
+#define CONFIG_OWNER
 
 #include "StructDef.h"
 
@@ -119,6 +120,7 @@ void InitAppData(void)
     struct CFloatParRecord *pPar ;
     short unsigned cnt ;
     //float PosRange;
+    Cpu2HadWatchdogReset = 0 ;
     ClearMemRpt((short unsigned *) &Commutation,sizeof( Commutation) );
     ClearMemRpt((short unsigned *) &SysState,sizeof( SysState) );
 
@@ -167,7 +169,7 @@ void InitAppData(void)
         *pPar->ptr = pPar->dflt ;
     }
 
-    ProjId = 0xffff ; // Ilegal
+    ProjId = 105 ; // Ilegal
     InitControlParams();
 
     //InitLinService();
@@ -235,6 +237,8 @@ void InitPosPrefilter(void)
     PosPrefilter.a22 = 2114346702 ;
 }
 
+
+volatile short unsigned kuku ;
 //
 // Main
 //
@@ -244,6 +248,7 @@ void main(void)
 //
 // Disable CPU interrupts
 //
+    kuku = 0 ;
     DINT ;
 
 
@@ -266,8 +271,8 @@ void main(void)
     // Write the controller select setting into the appropriate field.
     //
     EALLOW;
-        MemCfgRegs.GSxMSEL.bit.MSEL_GS0 = 1U;
-        DevCfgRegs.MCUCNF1.all |= 0x30 ; // D4 and D5 go to CPU2
+        MemCfgRegs.GSxMSEL.all |= 0x1fU  ; // Abduct all GS memories
+        DevCfgRegs.MCUCNF1.all |= 0x3c ; // D2 to D5 go to CPU2
 
         //DevCfgRegs.BANKMUXSEL.bit.BANK3 = 3U;
         //DevCfgRegs.BANKMUXSEL.bit.BANK4 = 3U;
@@ -315,6 +320,140 @@ void main(void)
         SysCtl_serviceWatchdog() ;
     }
 }
+
+
+
+short SetProjectSpecificData( short unsigned proj )
+{
+    struct CProjSpecificData * pProjData ;
+    struct CProjSpecificCtl * pProjCtl ;
+    if ( proj <= PROJ_TYPE_UNDEFINED || proj >= PROJ_TYPE_LAST  )
+    {
+        return -1 ;
+    }
+
+    if ( (proj >= nProjSpecificData)  || (proj >= nProjSpecificCtl) )
+    {
+        return -1 ;
+    }
+
+    pProjData = (struct CProjSpecificData *) & ProjSpecificData[proj] ;
+
+    pProjCtl  = (struct CProjSpecificCtl *)  &ProjSpecificCtl[proj] ;
+
+    if (( pProjData->ProjIndex != proj ) || (pProjCtl)->ProjIndex != proj )
+    {
+        return -1 ;
+    }
+
+    ControlPars.I2tCurLevel  = pProjData->I2tCurLevel ;
+    ControlPars.I2tCurTime   = pProjData->I2tCurTime  ;
+
+    ControlPars.FullAdcRangeCurrent = pProjData->FullAdcRangeCurrent ;
+    ControlPars.EncoderCountsFullRev = pProjData->EncoderCountsFullRev ;
+    ClaControlPars.Rev2Pos = pProjData->Rev2Pos ;
+    HallDecode.HallAngleOffset = pProjData->HallAngleOffset ;
+    ClaControlPars.nPolePairs = pProjData->nPolePairs ;
+    ClaControlPars.PhaseOverCurrent = pProjData->PhaseOverCurrent ;
+    ControlPars.DcShortCitcuitTripVolts = pProjData->DcShortCitcuitTripVolts ;
+    ControlPars.MaxCurCmd = pProjData->MaxCurCmd ;
+    ClaControlPars.KpCur = pProjData->KpCur ;
+    ClaControlPars.KiCur = pProjData->KiCur ;
+
+    ClaControlPars.MaxCurCmdDdt   = pProjData->MaxCurCmdDdt ; // Maximum current command slope
+    ControlPars.CurrentFilterBWHz = pProjData->CurrentFilterBWHz ; // Bandwidth (Hz) of current prefilter
+    ControlPars.BrakeReleaseVolts = pProjData->BrakeReleaseVolts ;
+
+    ClaControlPars.CurrentCommandDir = pProjData->CurrentCommandDir ;
+
+
+    HallTable[0] = pProjData->HallVal0 ;
+    HallTable[1] = pProjData->HallVal1 ;
+    HallTable[2] = pProjData->HallVal2 ;
+    HallTable[3] = pProjData->HallVal3 ;
+    HallTable[4] = pProjData->HallVal4 ;
+    HallTable[5] = pProjData->HallVal5 ;
+    HallTable[6] = pProjData->HallVal6 ;
+    HallTable[7] = pProjData->HallVal7 ;
+    ClaState.Encoder1.InvertEncoder = pProjData->InvertEncoder ;
+
+    ControlPars.qf0.PBw = pProjCtl->qf0PBw ;
+    ControlPars.qf0.PXi = pProjCtl->qf0PXi ;
+    ControlPars.qf0.ZBw = pProjCtl->qf0ZBw ;
+    ControlPars.qf0.ZXi = pProjCtl->qf0ZXi ;
+    ControlPars.qf0.Cfg.ul = pProjCtl->qf0Cfg ;
+    ControlPars.qf1.PBw = pProjCtl->qf1PBw ;
+    ControlPars.qf1.PXi = pProjCtl->qf1PXi ;
+    ControlPars.qf1.ZBw = pProjCtl->qf1ZBw ;
+    ControlPars.qf1.ZXi = pProjCtl->qf1ZXi ;
+    ControlPars.qf1.Cfg.ul = pProjCtl->qf1Cfg ;
+    ControlPars.SpeedKp = pProjCtl->SpeedKp ;
+    ControlPars.SpeedKi = pProjCtl->SpeedKi ;
+    ControlPars.PosKp = pProjCtl->PosKp ;
+    ControlPars.MaxAcc = pProjCtl->MaxAcc ;
+    ControlPars.MinPositionCmd = pProjCtl->MinPositionCmd ;
+    ControlPars.MaxPositionCmd = pProjCtl->MaxPositionCmd ;
+    ControlPars.MinPositionFb = pProjCtl->MinPositionFb ;
+    ControlPars.MaxPositionFb = pProjCtl->MaxPositionFb ;
+    ControlPars.MotionConvergeWindow = pProjCtl->MotionConvergeWindow  ;
+    ControlPars.MaxSupportedClosure = pProjCtl->MaxSupportedClosure ;
+    ControlPars.MaxSpeedCmd   = pProjCtl->MaxSpeedCmd;
+    SysState.Homing.HomingSpeed = __fmin(pProjCtl->HomingSpeed,ControlPars.MaxSpeedCmd)  ;
+    //ClaState.Encoder1.UserPosOnHome = pProjCtl->UserPosOnHome ;
+    SysState.UserPosOnHomingFW = pProjCtl->UserPosOnHomingFW ;
+    SysState.UserPosOnHomingRev = pProjCtl->UserPosOnHomingRev ;
+
+    SysState.Homing.HomingExitUserPos = pProjCtl->HomingExitUserPos ;
+
+    SysState.Homing.Direction = pProjCtl->HomingDirection ;
+    SysState.Homing.Method = pProjCtl->HomingMethod ;
+    SysState.Homing.SwInUse = pProjCtl->HomingSwInUse ;
+
+
+    ControlPars.HighDeadBandThold = pProjCtl->HighDeadBandThold ; // High side dead band hysteresis for position error
+    ControlPars.LowDeadBandThold  = pProjCtl->LowDeadBandThold ; // Low side dead band hysteresis for position error;
+
+
+    SysState.Profiler.vmax = __fmin( ControlPars.MaxSpeedCmd , pProjCtl->Profiler_vmax ) ;
+    SysState.Profiler.slowvmax = SysState.Profiler.vmax * 0.5f  ;//If someone needs it someday, let him make better access to variable
+
+    SysState.Profiler.accel = __fmin( ControlPars.MaxAcc , pProjCtl->Profiler_accel ) ;
+    SysState.Profiler.dec = __fmin( ControlPars.MaxAcc , pProjCtl->Profiler_decel ) ;
+
+    SysState.SpeedControl.ProfileAcceleration = __fmin(ControlPars.MaxAcc, pProjCtl->SpeedProfileAcceleration) ;
+
+    SysState.OuterSensor.OuterMergeCst = pProjCtl->OuterMergeCst ;
+    ControlPars.UseCase = pProjCtl->UseCase ;
+
+    return 0 ;
+}
+
+
+void SetProjectId(void)
+{
+    //if ( DBaseConf.IsValidDatabase  )
+    {
+        ProjId =   PROJ_TYPE_BESENSORLESS ;
+    }
+
+    CanId = ProjSpecificData[ProjId].CanId ;
+
+    if ( SetProjectSpecificData( ProjId) )
+    {
+        LogException(EXP_FATAL,err_undefined_proj_id) ;
+        SysState.SeriousError = 1 ;
+    }
+    else
+    {
+        if ( InitControlParams() )
+        {
+            LogException(EXP_FATAL,err_bad_proj_pars) ;
+            SysState.SeriousError = 1 ;
+        }
+    }
+}
+
+
 
 
 

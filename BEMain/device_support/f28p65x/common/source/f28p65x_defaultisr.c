@@ -46,6 +46,7 @@
 #include "f28p65x_device.h"       // f28p65x Header File Include File
 #include "f28p65x_examples.h"     // f28p65x Examples Include File
 
+extern unsigned short Cpu2HadWatchdogReset ;
 //
 // CPU Timer 1 Interrupt
 //
@@ -133,7 +134,8 @@ interrupt void EMU_ISR(void)
 
 //
 // Non-Maskable Interrupt
-//
+uint32_t  GetNmiFlag() ;//
+uint32_t  kkk;
 interrupt void NMI_ISR(void)
 {
     //
@@ -144,6 +146,12 @@ interrupt void NMI_ISR(void)
     // Next two lines for debug only to halt the processor here
     // Remove after inserting ISR Code
     //
+    kkk = GetNmiFlag() ;
+    if ( kkk == 513 )
+    {
+        Cpu2HadWatchdogReset = 1 ;
+        return ;
+    }
     asm ("      ESTOP0");
     for(;;);
 }

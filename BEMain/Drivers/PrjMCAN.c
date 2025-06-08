@@ -164,7 +164,7 @@ void setupMCAN(void)
     //
     // Configure the divisor for the MCAN bit-clock
     //
-    SysCtl_setMCANClk(SYSCTL_MCANA,SYSCTL_MCANCLK_DIV_3);
+    SysCtl_setMCANClk(SYSCTL_MCANA,SYSCTL_MCANCLK_DIV_5);
 
     // Initialize MCAN Init parameters.
     //

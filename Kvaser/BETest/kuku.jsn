@@ -1,0 +1,22 @@
+{
+	"Cfg": {
+		"MinInterMessage": 0.006000000052,
+		"MaxInterMessage": 0.009999999776,
+		"GRef_Amp": 0,
+		"GRef_F": 105,
+		"GRef_Dc": 0,
+		"GRef_Duty": 0.5,
+		"GRef_bAngleSpeed": 0,
+		"GRef_AnglePeriod": 1,
+		"TRef_Amp": 0,
+		"TRef_F": 100,
+		"TRef_Dc": 0,
+		"TRef_Duty": 0.5,
+		"MaxCommChangeInCycle": 0.1700000018,
+		"CommutationMode": 3,
+		"EncoderOnZero": 0,
+		"NomInterMessageTime": 0.008191999979,
+		"EncoderWhInvert": -1,
+		"BrakeReleaseVolts": 12
+	}
+}

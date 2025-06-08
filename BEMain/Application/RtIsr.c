@@ -39,39 +39,27 @@ void ResetRefGens(void)
     SysState.Debug.TRef.State = 0 ;
 }
 
+void ReadEncPosition1( void);
+
+short unsigned PwmAtInt ;
 #pragma FUNCTION_OPTIONS ( AdcIsr, "--opt_level=3" );
 __interrupt void AdcIsr(void)
 {
     SysState.EcapOnInt = HWREG (ECAP3_BASE + ECAP_O_TSCTR );
-
-#ifdef SLAVE_DRIVER
-    // Acknowledge interrupt
-    HWREGH(PIECTRL_BASE + PIE_O_ACK) = INTERRUPT_ACK_GROUP1 ;
-    //HWREGH( GPIODATA_BASE + GPIO_O_GPASET+1) = (1<<8) ; // Toggle GPIO
-    FsiRtService() ;
-#else
-    long unsigned port ;
-    union
-    {
-        long unsigned ul ;
-        short unsigned us[2] ;
-        short unsigned s[2] ;
-        float f;
-    } u ;
-    short unsigned potcase ;
-
+    GpioDataRegs.GPASET.bit.GPIO18 = 1 ;
+    //long unsigned port ;
+    //short unsigned potcase ;
 
     // Acknowledge interrupt
-    HWREGH(PIECTRL_BASE + PIE_O_ACK) = INTERRUPT_ACK_GROUP1 ;
+    HWREGH(PIECTRL_BASE + PIE_O_ACK) = INTERRUPT_ACK_GROUP3 ;
+    HWREGH(PWM_CPU_PACER+EPWM_O_ETCLR) = 0xd ;
 
     // Take time
-    u.ul = HWREGH(PWM_A_BASE+EPWM_O_TBCTR) ;
-    SysState.Timing.UsecTimer = ~HWREG( CPUTIMER1_BASE+CPUTIMER_O_TIM) - ( long) ( u.ul * INV_CPU_CLK_MHZ) ;
+    PwmAtInt = HWREGH(PWM_CPU_PACER+EPWM_O_TBCTR) ;
+    SysState.Timing.UsecTimer = ~HWREG( CPUTIMER1_BASE+CPUTIMER_O_TIM) - ( long) (PwmAtInt * INV_CPU_CLK_MHZ) ;
 
     //SysState.Timing.UsecTimer = -HWREG(CPUTIMER1_BASE + CPUTIMER_O_TIM);
     SysState.Timing.IntCntr   += 1 ;
-
-#endif
 
     // Doing the flash , all services cut
     if ( SysState.Mot.DisablePeriodicService )
@@ -80,6 +68,7 @@ __interrupt void AdcIsr(void)
         {
             LogException(EXP_SAFE_FATAL, exp_periodc_service_cut_while_on) ;
         }
+        GpioDataRegs.GPACLEAR.bit.GPIO18 = 1 ;
         return ;
     }
 
@@ -203,6 +192,7 @@ __interrupt void AdcIsr(void)
 
     SysState.Timing.ClocksOfInt =  HWREG (ECAP3_BASE + ECAP_O_TSCTR ) - SysState.EcapOnInt ;
 
+    GpioDataRegs.GPACLEAR.bit.GPIO18 = 1 ;
 }
 
 

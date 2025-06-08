@@ -7,6 +7,7 @@
 #include "..\Application\StructDef.h"
 
 
+void ProcessEncoderData(struct CEncoder *pEnc, long pos );
 
 
 

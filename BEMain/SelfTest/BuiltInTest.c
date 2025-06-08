@@ -221,6 +221,7 @@ void IdleCbit(void)
     LocalBit2.all = 0 ;
     LocalBit2.bit.bAutoBlocked = SysState.MCanSupport.bAutoBlocked ;
     LocalBit2.bit.NodeStopped =  SysState.MCanSupport.NodeStopped?  1 : 0  ;
+    LocalBit2.all = (LocalBit2.all & ~INFINEON_DIAG_MASK ) | GetInfineonFault() ;
 
 
     SysState.CBit2.all = LocalBit2.all ;
@@ -235,6 +236,8 @@ void IdleCbit(void)
             SetLoopClosureMode(E_LC_Pos_Mode);
         }
     }
+
+    SysState.CbitCpu2.bit.Cpu2HadWatchdogReset = Cpu2HadWatchdogReset ;
  }
 
 

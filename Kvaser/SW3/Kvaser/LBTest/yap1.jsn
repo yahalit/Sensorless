@@ -1,0 +1,33 @@
+{
+	"Calib": {
+		"PassWord": 305419808,
+		"RSteerPotCenter": -0.001767509733,
+		"LSteerPotCenter": -0.006944611203,
+		"RSteerPotGainFac": 0.0432420522,
+		"LSteerPotGainFac": 0.03933193907,
+		"RNeckPotCenter": 0.04371496612,
+		"LNeckPotCenter": 0.04818431591,
+		"RNeckPotGainFac": -0.05349062624,
+		"LNeckPotGainFac": -0.01446118275,
+		"AccOffsetX": 0,
+		"AccOffsetY": 0,
+		"AccOffsetZ": 0,
+		"GyroOffsetX": 0,
+		"GyroOffsetY": 0,
+		"GyroOffsetZ": 0,
+		"qImu2Body0": 0.991756022,
+		"qImu2Body1": -0.01152049098,
+		"qImu2Body2": 0.1276127845,
+		"qImu2Body3": 0.00148238265,
+		"LaserGainCorrection": 0,
+		"LaserOffsetCorrection": 0,
+		"Spare3": 0,
+		"Spare4": 0,
+		"Spare5": 0,
+		"NeckGainAddFac": 0,
+		"Spare1": 0,
+		"Spare2": 0,
+		"CalibDate": 738551,
+		"CalibData": 1
+	}
+}

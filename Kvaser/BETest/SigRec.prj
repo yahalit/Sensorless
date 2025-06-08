@@ -1,0 +1,159 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration build-checksum="4261675451" file="C:\GIT\Drivers\Kvaser\WhTest\SigRec.prj" location="C:\GIT\Drivers\Kvaser\WhTest" name="SigRec" preferred-package-location="C:\GIT\Compiled - Drv\SigRec\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+    <param.appname>SigRec</param.appname>
+    <param.icon />
+    <param.icons />
+    <param.version>1.0</param.version>
+    <param.authnamewatermark />
+    <param.email />
+    <param.company />
+    <param.summary />
+    <param.description>Delete all .Mat files.</param.description>
+    <param.screenshot />
+    <param.guid />
+    <param.installpath.string>\SigRec\</param.installpath.string>
+    <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.target.install.notes />
+    <param.intermediate>C:\GIT\Compiled - Drv\SigRec\for_testing</param.intermediate>
+    <param.files.only>C:\GIT\Compiled - Drv\SigRec\for_redistribution_files_only</param.files.only>
+    <param.output>C:\GIT\Compiled - Drv\SigRec\for_redistribution</param.output>
+    <param.logdir>C:\GIT\Compiled - Drv\SigRec</param.logdir>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options>-C</param.user.defined.mcr.options>
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>true</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file />
+    <param.native.matlab>false</param.native.matlab>
+    <param.checkbox>false</param.checkbox>
+    <param.example />
+    <param.help.text>Syntax 
+	 SigRec -? 
+	 SigRec varargin 
+ Input Arguments 
+	 -?  print help on how to use the application 
+	 varargin  input arguments 
+ Description 
+ 	 Delete all .Mat files.</param.help.text>
+    <unset>
+      <param.icon />
+      <param.icons />
+      <param.version />
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.summary />
+      <param.screenshot />
+      <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
+      <param.logo />
+      <param.install.notes />
+      <param.target.install.notes />
+      <param.enable.clean.build />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.windows.command.prompt />
+      <param.create.log />
+      <param.log.file />
+      <param.native.matlab />
+      <param.checkbox />
+      <param.example />
+    </unset>
+    <fileset.main>
+      <file>C:\GIT\SW3\Kvaser\Recorder\SigRec.m</file>
+    </fileset.main>
+    <fileset.resources>
+      <file>C:\GIT\Drivers\Kvaser\Control</file>
+      <file>C:\GIT\Drivers\Kvaser\ControlDes</file>
+      <file>C:\GIT\Drivers\Kvaser\DownloadFW</file>
+      <file>C:\GIT\Drivers\Kvaser\Emulation</file>
+      <file>C:\GIT\Drivers\Kvaser\Identification</file>
+      <file>${PROJECT_ROOT}\AtpStart.m</file>
+      <file>${PROJECT_ROOT}\AtpStartNew.m</file>
+      <file>${PROJECT_ROOT}\HelpDoc</file>
+      <file>${PROJECT_ROOT}\Test</file>
+      <file>C:\GIT\Drivers\Neck37\Application</file>
+      <file>C:\GIT\Drivers\Neck37\Application\ConstDef.h</file>
+      <file>C:\GIT\SW3\Kvaser\KvaserCom</file>
+      <file>C:\GIT\SW3\Kvaser\LBTest</file>
+      <file>C:\GIT\SW3\Kvaser\LBTest\AtpStartCom.m</file>
+      <file>C:\GIT\SW3\Kvaser\Recorder</file>
+      <file>C:\GIT\SW3\Kvaser\Recorder\GetDataType.m</file>
+      <file>C:\GIT\SW3\Kvaser\Util</file>
+      <file>C:\GIT\SW3\Kvaser\Util\DlgTimerObj.m</file>
+      <file>C:\GIT\SW3\Matlab\JavaTreeWrapper</file>
+      <file>C:\GIT\SW3\Matlab\jsonlab-1.5</file>
+      <file>C:\GIT\SW3\Matlab\Rgb</file>
+    </fileset.resources>
+    <fileset.package />
+    <fileset.depfun>
+      <file>${PROJECT_ROOT}\FindLatestFile.m</file>
+      <file>${PROJECT_ROOT}\Get2ndOrder.m</file>
+      <file>${PROJECT_ROOT}\GetCfgPar.m</file>
+      <file>${PROJECT_ROOT}\GetCommAnglePu.m</file>
+      <file>${PROJECT_ROOT}\GetDetectedSlavePars.m</file>
+      <file>${PROJECT_ROOT}\GetEntityByVersion.m</file>
+      <file>${PROJECT_ROOT}\GetFwString.m</file>
+      <file>${PROJECT_ROOT}\GetPlantFromXls.m</file>
+      <file>${PROJECT_ROOT}\GetProjectAttributesByName.m</file>
+      <file>${PROJECT_ROOT}\GetProjTypeString.m</file>
+      <file>${PROJECT_ROOT}\GetSignalIndex.m</file>
+      <file>${PROJECT_ROOT}\GetSignalsByList.m</file>
+      <file>${PROJECT_ROOT}\GetSourceVersion.m</file>
+      <file>${PROJECT_ROOT}\GetTargetCanId.m</file>
+      <file>${PROJECT_ROOT}\grstam.m</file>
+      <file>${PROJECT_ROOT}\InsertF.m</file>
+      <file>${PROJECT_ROOT}\KpKi2ZG.m</file>
+      <file>${PROJECT_ROOT}\ProgCfg.m</file>
+      <file>${PROJECT_ROOT}\ProjSelect.mlapp</file>
+      <file>${PROJECT_ROOT}\ReadDefFile.m</file>
+      <file>${PROJECT_ROOT}\SaveCfg.m</file>
+      <file>${PROJECT_ROOT}\SetCanComTarget.m</file>
+      <file>${PROJECT_ROOT}\SetCanComTargetByCanId.m</file>
+      <file>${PROJECT_ROOT}\SGetState.m</file>
+      <file>${PROJECT_ROOT}\ViewNic.m</file>
+    </fileset.depfun>
+    <build-deliverables>
+      <file location="C:\GIT\Compiled - Drv\SigRec\for_testing" name="SigRec.ctf" optional="false">C:\GIT\Compiled - Drv\SigRec\for_testing\SigRec.ctf</file>
+      <file location="C:\GIT\Compiled - Drv\SigRec\for_testing" name="SigRec.exe" optional="false">C:\GIT\Compiled - Drv\SigRec\for_testing\SigRec.exe</file>
+      <file location="C:\GIT\Compiled - Drv\SigRec\for_testing" name="splash.png" optional="false">C:\GIT\Compiled - Drv\SigRec\for_testing\splash.png</file>
+      <file location="C:\GIT\Compiled - Drv\SigRec\for_testing" name="readme.txt" optional="true">C:\GIT\Compiled - Drv\SigRec\for_testing\readme.txt</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2024a</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

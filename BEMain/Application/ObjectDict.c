@@ -1294,6 +1294,11 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
         HomingHere(f) ;
         break ;
 
+
+    case 27:
+        SetGateDriveEnable(us);
+        break;
+
     case 200:
         SysState.Debug.GRef.Type = us ;
         break ;
@@ -2143,7 +2148,7 @@ long unsigned  GetFwCmd(    struct CSdo * pSdo ,short unsigned *nData)
         break ;
 
     case 8:
-        * ulPtr = 100 ; // THISCARD ;
+        * ulPtr = 105 ; // THISCARD ;
         break ;
 
     default:

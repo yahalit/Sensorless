@@ -89,59 +89,107 @@ void MyADC_setupSOC(uint32_t base, ADC_SOCNumber socNumber, ADC_Trigger trigger,
 }
 
 
-
+#define ADC_SOC_EVENT ADC_TRIGGER_EPWM4_SOCA
 void SetAdcMux(void)
 {
-
-    // DC link voltage
-    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN4);
-    // AMC current , DC link
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER1, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN1);
-    // Hall current ,DC link
-    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER1, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN7);
-
-
-    // Phase A voltage
-    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN0);
-    // Phase A Hall current
-    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN6);
-    // Phase A AMC current
-    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN4);
-
-
-    // Phase B voltage
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN0);
-    // Phase B Hall current
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN6);
-    // Phase B AMC current
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN7);
-
-
-    // Phase C voltage
-    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
-                 ADC_CH_ADCIN5);
-    // Phase C Hall current
-    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
+    // Each sample will take about 280nsec, so interrupt will be 1.4usec after sampling starts
+    // Next CLA interrupt will be at about 1.7u
+// ADCA
+////////////////////
+    // ok Phase C Hall current
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_SOC_EVENT,
                  ADC_CH_ADCIN15);
-    // Phase C AMC current
-    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_TRIGGER_EPWM2_SOCA,
+
+    // ok Phase C AMC current
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER1, ADC_SOC_EVENT,
                  ADC_CH_ADCIN10);
+
+    // ok Phase C voltage
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER2, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN5);
+
+    // ok again Phase C Hall current
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER3, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN15);
+
+    // ok DC link voltage
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER4, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN4);
+
+// ADCB
+////////////////////
+    // ok Phase A Hall current
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER0, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN6);
+
+    // ok Phase A AMC current
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER1, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN4);
+    // ok Phase A voltage
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER2, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN0);
+
+    // ok Again Phase A Hall current
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER3, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN6);
+
+    // ok AMC current ,DC link
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER4, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN7);
+
+
+// ADCC
+////////////////////
+
+    // ok Phase B AMC current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER0, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN7);
+
+    // ok Phase B voltage
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER1, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN0);
+
+    // ok Phase B Hall current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER2, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN6);
+
+    // Again Phase B AMC current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER3, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN7);
+
+    // ok Hall current , DC link
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER4, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN1);
+
+    // ok NTC temperature
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER5, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN4);
 
 }
 
 
+#define DAC_O_REV     0x0U   // DAC Revision Register
+#define DAC_O_CTL     0x1U   // DAC Control Register
+#define DAC_O_VALA    0x2U   // DAC Value Register - Active
+#define DAC_O_VALS    0x3U   // DAC Value Register - Shadow
+#define DAC_O_OUTEN   0x4U   // DAC Output Enable Register
+#define DAC_O_LOCK    0x5U   // DAC Lock Register
+#define DAC_O_TRIM    0x6U   // DAC Trim Register
+
+void setupDAC(void)
+{
+    EALLOW ;
+    HWREGH(DACA_BASE + DAC_O_CTL) = (3<<4) + (1<<2) + 3 ; // Load by PWM sync (PWM4) , MODE = DACREFSEL = 1
+    HWREGH(DACC_BASE + DAC_O_CTL) = (4<<4) + (1<<2) + 3 ; // Load by PWM sync (PWM4) , MODE = DACREFSEL = 1
+    HWREGH(DACA_BASE + DAC_O_OUTEN)= 1 ;
+    HWREGH(DACC_BASE + DAC_O_OUTEN)= 1 ;
+    //DAC_tuneOffsetTrim
+}
+
 //
 // SetupADCEpwm - Setup ADC EPWM acquisition window
 //
+/*
 void SetupADCEpwm(Uint16 channel)
 {
     Uint16 acqps;
@@ -170,3 +218,4 @@ void SetupADCEpwm(Uint16 channel)
     AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1; //make sure INT1 flag is cleared
     EDIS;
 }
+*/

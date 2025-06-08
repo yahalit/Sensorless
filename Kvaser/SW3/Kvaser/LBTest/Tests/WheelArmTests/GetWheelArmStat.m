@@ -1,0 +1,6 @@
+function out = GetWheelArmStat(st)
+out = struct('RPinState',bitextract(st , 3, 0 ),'LPinState', bitextract(st , 3, 2 ),'WheelArmState', bitextract(st , 15, 4 ),...
+    'Axis', bitextract(st , 3, 8 ) ,'OtherAxis',bitextract(st , 3, 10 ),'ShelfSubSubMode',bitextract(st , 15, 12 ),...
+    'tOutCnt',bitextract(st , 2047 , 16 ),'TargetArmDone',bitextract(st , 7 , 28 ),'bActive',bitextract(st , 1 , 31 )) ; 
+end
+

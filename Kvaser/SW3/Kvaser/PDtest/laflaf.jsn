@@ -1,0 +1,25 @@
+{
+	"Calib": {
+		"PassWord": 305419808,
+		"RDoorCenter": -2439,
+		"RDoorGainFac": 1.329125895e-05,
+		"LDoorCenter": -1651,
+		"LDoorGainFac": -0.0001166478848,
+		"ShoulderCenter": 0,
+		"ElbowCenter": 0,
+		"WristCenter": 0,
+		"ParManipArr8": 0,
+		"ParManipArr9": 0,
+		"ParManipArr10": 0,
+		"ParManipArr11": 0,
+		"ParManipArr12": 0,
+		"ParManipArr13": 0,
+		"ParManipArr14": 0,
+		"ParManipArr15": 0,
+		"ParManipArr16": 0,
+		"ParManipArr17": 0,
+		"ParManipArr18": 0,
+		"CalibDate": 0,
+		"CalibData": 0
+	}
+}

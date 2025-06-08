@@ -202,23 +202,6 @@ void SetupPwmPacer(uint32_t base,unsigned short pwmPeriod_usec )
         // setup the Trip Zone Select Register (TZSEL)
         HWREGH(base + EPWM_O_TZSEL) = 0 ;
 
-#ifdef SLAVE_DRIVER
-// If this is steering
-        if ( SysState.AxisSelector != FSI_TAG_FOR_WHEEL)
-        {
-            // Synch the pacer from INPUT 6
-            HWREGH(base + EPWM_O_SYNCINSEL) = 0x19  ; // Input XBAR input 6
-            XBAR_setInputPin(INPUTXBAR_BASE, XBAR_INPUT3, 18);
-            XBAR_setInputPin(INPUTXBAR_BASE, XBAR_INPUT6, 18);
-            HWREGH(base + EPWM_O_TBCTL) = 0x600c  ; // Up count, immediate period load, emulation stop at next frame start , phase enable
-        }
-        else
-        {
-            //HWREGH(base + EPWM_O_SYNCINSEL) =  PWM_SYNCSEL ;
-            HWREGH(base + EPWM_O_TBCTL) = 0x6008  ; // Up count, immediate period load, emulation stop at next frame start
-            setupSync(EPWM6_BASE,pwmPeriod_usec);
-        }
-#endif
         HWREGH(base + EPWM_O_AQSFRC) = 0x05   ; // Shadowed continuous software load, next counter = 0
 
         HWREGH(base + EPWM_O_SYNCOUTEN) = 2 ; // Sync out on zero
@@ -227,11 +210,80 @@ void SetupPwmPacer(uint32_t base,unsigned short pwmPeriod_usec )
 }  // end of HAL_setupPWMs() function
 
 
+/*
+ * Setup PWM5 as master-mind counter. It just ticks. Not connected to ant external pins
+ */
+void InitEPwm7AsMasterCounetr()
+{
+    EPwm7Regs.TBPRD = (unsigned short) (CPU_CLK_MHZ * 250UL)-1;                        // Set timer period
+    EPwm7Regs.TBPHS.bit.TBPHS = 0x0000;            // Phase is 0
+    EPwm7Regs.TBCTR = 0x0000;                      // Clear counter
+
+    //
+    // Setup TBCLK to 50MHZ
+    //
+    EPwm7Regs.TBCTL.bit.CTRMODE = TB_COUNT_UP  ; // Count up
+    EPwm7Regs.TBCTL.bit.PHSEN = TB_DISABLE;        // Disable phase loading
+    EPwm7Regs.TBCTL.bit.HSPCLKDIV = TB_DIV4;       // Clock ratio to SYSCLKOUT
+    EPwm7Regs.TBCTL.bit.CLKDIV = TB_DIV1;
+
+    // Set sync out on zero
+    EPwm7Regs.EPWMSYNCOUTEN.all = 0x2 ; // Sync out on zero
+}
+
+
+void setupPWM4DacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long DisablePeriod_nsec,unsigned long pwmPeriod_nsec)
+{
+    HWREGH(base + EPWM_O_TBCTL) = 0xc00b ; // Stop, immediate period load
+
+    // setup the Timer-Based Phase Register (TBPHS)
+    EPWM_setPhaseShift(base, 0);
+
+    // setup the Time-Base Counter Register (TBCTR)
+    EPWM_setTimeBaseCounter(base, 0);
+
+    // setup the Time-Base Period Register (TBPRD)
+    // set to zero initially
+    EPWM_setTimeBasePeriod(base, (pwmPeriod_nsec / CPU_CLK_NSEC) - 1 );
+    HWREGH(base + EPWM_O_CMPA + 0x1U)  = (short unsigned) (DisablePeriod_nsec  / CPU_CLK_NSEC) ;
+
+    // setup the Counter-Compare Control Register (CMPCTL)
+    EALLOW ;
+
+    HWREGH( base + EPWM_O_CMPCTL)  =  0x55 ; // Load A B immediate
+    HWREGH( base + EPWM_O_CMPCTL2) =  0x55  ; // Immediate load for C and for D
+
+
+    HWREGH(base + EPWM_O_AQCTLA) =  0x21 ; // Zero on zero rise on A up
+
+    HWREGH(base + EPWM_O_AQCTL) = 0x0a ; // Load on either event , immediate action qualifier writes
+
+    HWREGH(base + EPWM_O_TZSEL) = 0 ; // One shot disablers, events A1 and B1
+
+    HWREGH(base + EPWM_O_TZCTL) = 0 ;
+
+    HWREGH(base + EPWM_O_TBCTL) = 0x600c ; // Up , phase enable , immediate period load, emulation stop at next frame start
+
+    HWREGH(base + EPWM_O_AQSFRC) = 0x0   ; // Shadowed continuous software load, next counter = 0
+
+    // Set PWM synchronization scheme all to PWM5
+    HWREGH(base + EPWM_O_HRPCTL) = 0x40  ; // CMPC will synchronize DAC
+    HWREGH(base + EPWM_O_CMPC) = (short unsigned) (DacSet_nsec/ CPU_CLK_NSEC )  ; // CMP3 will synchronize DAC
+
+    HWREGH(base + EPWM_O_SYNCINSEL) = PWM_SYNCSEL ;
+
+    return;
+
+}
+
 //
 void SetupPWM(uint32_t base,unsigned short pwmPeriod_usec )
 {
     short unsigned Halfprd ;
+    uint32_t LUT_BASE =   base + EPWM1MINDBLUT_BASE -  EPWM1_BASE ;
+
         HWREGH(base + EPWM_O_TBCTL) = 0xc00b ; // Stop, immediate period load
+
 
         // setup the Timer-Based Phase Register (TBPHS)
         EPWM_setPhaseShift(base, 0);
@@ -307,8 +359,16 @@ void SetupPWM(uint32_t base,unsigned short pwmPeriod_usec )
 
         HWREGH(base + EPWM_O_AQSFRC) = 0x0   ; // Shadowed continuous software load, next counter = 0
 
-        // Set PWM synchronization scheme all to PWM2
+        // Set PWM synchronization scheme all to PWM5
         HWREGH(base + EPWM_O_SYNCINSEL) = PWM_SYNCSEL ;
+
+        //Invoke dead-band prevention module
+
+        HWREGH(LUT_BASE+EPWM_O_MINDBCFG) = 0x00090009 ; // Each block selects its mate as its blocking source , enabled
+        HWREGH(LUT_BASE+EPWM_O_MINDBDLY) = 0x000c000c ; // Set 80nsec as minimum delay
+        HWREGH(LUT_BASE+EPWM_O_LUTCTLA) = 0x00cc0000  ; // Set equal to in1
+        HWREGH(LUT_BASE+EPWM_O_LUTCTLB) = 0x00cc0000  ; // Set equal to in1
+
         return;
 }  // end of HAL_setupPWMs() function
 

@@ -1,0 +1,16 @@
+This number is to set in Bluetooth Parameters (2) - Remote bluetooth address 
+Canlink Bluetooth Configurator 2.2.2
+Before doing that, Proemion must be powered down, and power is set on while search 
+immediately after correct COM port selection.
+
+
+
+0012F3361A07	105  (Remote name = BH_R105)
+0012F3361A0b       104 (Remote name = BH_R104)
+0012f33618b2	103 (Remote name = BH_R103)
+
+Then Write to Can Device 
+Then go to Normal mode
+
+Power down /up, can remove now RS232 
+Connection marked by 5Hz blue flash (1Hz is serching)

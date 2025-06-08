@@ -28,6 +28,8 @@
 #include "BITTimerAlloc.h"
 #include "TimerArr.h"
 #include "WhoIsThisProject.h"
+
+#include "Revisions.h"
 #include "HwConfig.h"
 #include "ProjControlPars.h"
 
@@ -292,6 +294,13 @@ struct CCBit
 };
 
 
+struct CCBitCpu2
+{
+    int unsigned Cpu2HadWatchdogReset: 1 ;
+    int unsigned Spare: 15 ;
+};
+
+
 union UCBit
 {
     struct CCBit  bit ;
@@ -299,11 +308,23 @@ union UCBit
     short unsigned us[2] ;
 };
 
+#define INFINEON_DIAG_MASK (0xff<<3)
+
 struct CCBit2
 {
     int unsigned bAutoBlocked : 1 ;
     int unsigned NodeStopped :  1 ;
-    int unsigned bRsvd : 14 ;
+    int unsigned YobtVoyomat :  1 ;
+    int unsigned InfineonFault: 1 ;
+    int unsigned IaDiagPhU : 1 ;
+    int unsigned UaDiagPhU : 1 ;
+    int unsigned IaDiagPhV : 1 ;
+    int unsigned UaDiagPhV : 1 ;
+    int unsigned IaDiagPhW : 1 ;
+    int unsigned UaDiagPhW : 1 ;
+    int unsigned IaDiagDc : 1 ;
+    int unsigned UaDiagDc : 1 ;
+    int unsigned bRsvd : 4 ;
 };
 
 union UCBit2
@@ -313,6 +334,12 @@ union UCBit2
     long unsigned  Lall ;
 };
 
+union UCBitCpu2
+{
+    struct CCBitCpu2  bit ;
+    short unsigned all ;
+    long unsigned  Lall ;
+};
 
 
 struct CRejectWarning
@@ -545,6 +572,7 @@ struct CSysState
     struct CHoming  Homing ;
     struct CPT PT ;
     union UCBit CBit ; // !< Status summary
+    union UCBitCpu2 CbitCpu2 ;
     float IdPinVolts ; // !< Volts at the ID pin
     float ConfigDone ; // Approve that master completed configuration
     float InterpolationPosRef ; // Position reference for interpolation
@@ -796,7 +824,7 @@ EXTERN_TAG long unsigned CfgDirty[8] ;
 
 
 EXTERN_TAG struct CClaRecs ClaRecsCopy ;
-
+EXTERN_TAG short unsigned Cpu2HadWatchdogReset ;
 
 
 struct CFloatParRecord

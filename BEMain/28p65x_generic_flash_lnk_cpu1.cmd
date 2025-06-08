@@ -8,8 +8,8 @@ MEMORY
 
    //RAMD0            : origin = 0x00C000, length = 0x002000
    //RAMD1            : origin = 0x00E000, length = 0x002000
-   RAMD2            : origin = 0x01A000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0x8000. User should comment/uncomment based on core selection
-   RAMD3            : origin = 0x01C000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0xA000. User should comment/uncomment based on core selection
+   //RAMD2            : origin = 0x01A000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0x8000. User should comment/uncomment based on core selection
+   //RAMD3            : origin = 0x01C000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0xA000. User should comment/uncomment based on core selection
 
    //RAMD4            : origin = 0x01E000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0xC000. User should comment/uncomment based on core selection
    //RAMD5            : origin = 0x020000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU2, use the address 0xE000. User should comment/uncomment based on core selection
@@ -18,7 +18,7 @@ MEMORY
    //RAMLS1           : origin = 0x008800, length = 0x000800
    RAMLS23           : origin = 0x009000, length = 0x001000
    //RAMLS3           : origin = 0x009000, length = 0x000800
-   RAMLS4to9        : origin = 0x00a000, length = 0x006000  // Including D0 to D3
+   RAMLS4to7        : origin = 0x00a000, length = 0x006000  // Including D0 to D1
    //RAMLS4           : origin = 0x00A000, length = 0x000800
    //RAMLS5           : origin = 0x00A800, length = 0x000800
    //RAMLS6           : origin = 0x00B000, length = 0x000800
@@ -30,7 +30,7 @@ MEMORY
    // RAMLS9_CLA    : origin = 0x006000, length = 0x002000  // Use only if configured as CLA program memory
 
    //RAMGS0           : origin = 0x010000, length = 0x002000
-   RAMGS1to4           : origin = 0x012000, length = 0x008000
+   //RAMGS1to4           : origin = 0x012000, length = 0x008000
    //RAMGS2           : origin = 0x014000, length = 0x002000
    //RAMGS3           : origin = 0x016000, length = 0x002000
    //RAMGS4           : origin = 0x018000, length = 0x002000
@@ -72,12 +72,12 @@ SECTIONS
 
    .stack           : > RAMM1
 #if defined(__TI_EABI__)
-   .bss             : > RAMLS4to9
-   .bss:output      : > RAMLS4to9
+   .bss             : > RAMLS4to7
+   .bss:output      : > RAMLS4to7
    .init_array      : > FLASH_BANK0, ALIGN(8)
    .const           : > FLASH_BANK0, ALIGN(8)
-   .data            : > RAMGS1to4
-   .sysmem          : > RAMLS4to9
+   .data            : > RAMLS4to7
+   .sysmem          : > RAMLS4to7
 #else
    .pinit           : > FLASH_BANK0, ALIGN(8)
    .ebss            : >> RAMLS4to9

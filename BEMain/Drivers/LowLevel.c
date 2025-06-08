@@ -82,6 +82,8 @@ void InitPeripherals(void)
 
     ConfigureADC() ;
 
+    // If identity is specified by user data, take it
+    SetProjectId()  ;
 
 
     //
@@ -91,6 +93,8 @@ void InitPeripherals(void)
     CLA_configClaMemory();
     CLA_initCpu1Cla1();
 
+    setupMCAN();
+
 //
 // Freeze TBCTR of EPWMs, setup EPWM1 and DMA
 //
@@ -98,7 +102,30 @@ void InitPeripherals(void)
     CpuSysRegs.PCLKCR0.bit.TBCLKSYNC = 0;
     EDIS;
 
-    InitEPwm1();    // Setup EPWM1
+
+    /*
+     * Setup PWM5 as master-mind counter. It just ticks. Not connected to ant external pins
+     * PWM 1,2,8 are trasnsistor drives
+     * PWM 3 is DAC2 ena
+     * PWM 4 is DAC1 enable
+     */
+    SysCtl_setEPWMClockDivider(SYSCTL_EPWMCLK_DIV_1);
+    InitEPwm7AsMasterCounetr();    // Setup EPWM5 as master counter
+    //InitEPwm1();    // Setup EPWM1
+
+    SetupPWM( PWM_A_BASE,CUR_SAMPLE_TIME_USEC);
+    SetupPWM( PWM_B_BASE,CUR_SAMPLE_TIME_USEC);
+    SetupPWM( PWM_C_BASE,CUR_SAMPLE_TIME_USEC);
+
+    setupPWM4DacEna(EPWM4_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
+    setupPWM4DacEna(EPWM5_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
+
+    // Just for ADC conversion
+    setupPWM4DacEna(EPWM6_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,CONTROL_PERIOD_NSEC) ;
+
+    setupDAC(); // Setup the DACs
+
+
     SetupDMA();     // Setup DMA to be triggered on SPI-A
 
 
@@ -114,59 +141,68 @@ void InitPeripherals(void)
 }
 
 
-
+/*
+ * Interrupts are 50usec
+ * ADC cycle and CLA are 50usec.
+ * It works as follows:
+ * PWM5 is the master timer. It synchronizes all. It works 1msec
+ * PWM1 , PWM2 and PWM8 are bridge drivers. They work 50usec
+ * PWM3 is ENA / event driver for DAC1
+ * PWM4 is ENA / event driver for DAC2
+ *
+ */
 __interrupt void AdcIsr(void);
 void SetupIsr(void)
 {
 
 
     // setup the Event Trigger Selection Register (ETSEL)
-    //EPWM_setInterruptSource(PWM_A_BASE, EPWM_INT_TBCTR_PERIOD);
+    //EPWM_setInterruptSource(PWM_SCD_BASE, EPWM_INT_TBCTR_PERIOD);
     DINT ;
     EALLOW ;
-    HWREGH(ADCA_BASE+ADC_O_INTSEL1N2) |= ( (1<<6) | (1 << 5) )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
-    HWREGH(ADCB_BASE+ADC_O_INTSEL1N2) |= ( (1<<6) | (1 << 5) )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+    // Channel 4 EOC will trigger interrupt
+    HWREGH(ADCA_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 4 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+    // Channel 5 EOC will trigger interrupt
+    HWREGH(ADCC_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 5 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
 
-    Interrupt_register(INT_ADCA1, &AdcIsr);
+    Interrupt_register(INT_EPWM6, &AdcIsr);
 
-    EPWM_disableInterrupt(PWM_A_BASE);
-
-    EPWM_setADCTriggerSource(PWM_A_BASE,EPWM_SOC_A, EPWM_SOC_TBCTR_D_CMPC);
-
-    EPWM_enableADCTrigger(PWM_A_BASE, EPWM_SOC_A);
-
-    EPWM_setInterruptEventCount(PWM_A_BASE, 1);
-    EPWM_setADCTriggerEventPrescale(PWM_A_BASE, EPWM_SOC_A,1);
-
-    // setup the Event Trigger Clear Register (ETCLR)
-    EPWM_clearEventTriggerInterruptFlag(PWM_A_BASE);
-    EPWM_clearADCTriggerFlag(PWM_A_BASE, EPWM_SOC_A);
+    EPWM_disableInterrupt(PWM_CPU_PACER);
+    EALLOW ;
+    HWREGH(PWM_CPU_PACER + EPWM_O_ETPS) = 1 ; // Each event
+    HWREGH(PWM_CPU_PACER + EPWM_O_ETSEL) = 0xc ; // CMPA on increment, interrupt enabled
+    Interrupt_enable(INT_EPWM6); // Sets IER
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP3);
+    HWREGH(PWM_CPU_PACER + EPWM_O_CMPA+1) = ADC_BEFORE_ControlIsr_nsec / CPU_CLK_NSEC ;
 
     // write the PWM data value  for ADC trigger
-    EPWM_setCounterCompareValue(PWM_A_BASE, EPWM_COUNTER_COMPARE_C, (short unsigned)(ADC_START_BEFORE_CYC_USEC * CPU_CLK_MHZ) );
+    HWREGH(PWM_SCD_BASE+EPWM_O_CMPC) = HWREGH(PWM_SCD_BASE+EPWM_O_TBPRD)  - 1 - ADC_BEFORE_PWM0_nsec / CPU_CLK_NSEC ;
 
+    EPWM_setADCTriggerSource(PWM_SCD_BASE,EPWM_SOC_A, EPWM_SOC_TBCTR_U_CMPC);
+    EPWM_enableADCTrigger(PWM_SCD_BASE, EPWM_SOC_A);
+    EPWM_setInterruptEventCount(PWM_SCD_BASE, 1);
+    EPWM_setADCTriggerEventPrescale(PWM_SCD_BASE, EPWM_SOC_A,1);
 
-    Interrupt_enable(INT_ADCA1);
-    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
-
+    // setup the Event Trigger Clear Register (ETCLR)
+    EPWM_clearEventTriggerInterruptFlag(PWM_SCD_BASE);
+    EPWM_clearADCTriggerFlag(PWM_SCD_BASE, EPWM_SOC_A);
 
     CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_7); // Initialize current filter
     CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_8); // Initialize CLA counters
 
-    CLA_setTriggerSource(CLA_TASK_1, CLA_TRIGGER_ADCB1); // Thats immediately upon getting current samples
-    CLA_setTriggerSource(CLA_TASK_2, CLA_TRIGGER_ADCA1); // And that is later after all ADC is complete
+    CLA_setTriggerSource(CLA_TASK_1, CLA_TRIGGER_ADCA1); // Thats immediately upon getting current samples
+    //CLA_setTriggerSource(CLA_TASK_2, CLA_TRIGGER_ADCC1); // And that is later after all ADC is complete
 
     // enable the ePWM module time base clock sync signal
     SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);
 }
 
 
-
-
-void GrantCpu2ItsMemories(void)
+uint32_t GetNmiFlag()
 {
-    MemCfgRegs.GSxMSEL.bit.MSEL_GS1 = 1;    // Give CPU2 control of GS1
+    return HWREGH(NMI_BASE + NMI_O_FLG);
 }
+
 
 
 void GrantCpu2ItsDuePeripherals(void)

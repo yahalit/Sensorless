@@ -1,0 +1,1 @@
+MyErrDlg({'You are attempting to run the WheelDrv','From the wong directory'}) ; 

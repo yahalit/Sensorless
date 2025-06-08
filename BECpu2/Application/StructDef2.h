@@ -10,6 +10,10 @@
 
 
 #include "f28x_project.h"
+#include "..\device_support\f28p65x\common\include\driverlib.h"
+#include "..\device_support\f28p65x\common\include\device.h"
+
+
 #include "..\Algorithm\ProjMath.h"
 #include "..\SelfTest\ErrorCode.h"
 

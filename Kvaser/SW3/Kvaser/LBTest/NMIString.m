@@ -1,0 +1,19 @@
+function str = NMIString( x ) 
+if x < 0 , x = x+2^32 ; end
+str = [':',dec2hex(x),':'] ; 
+if bitand( x,1) , str = [str,':NMIINT:'] ; end 
+if bitand( x,2) , str = [str,':CLOCKFAIL:'] ; end 
+if bitand( x,4) , str = [str,':RAMUNCERR:'] ; end 
+if bitand( x,8) , str = [str,':FLUNCERR:'] ; end 
+if bitand( x,16) , str = [str,':CPU1HWBISTERR:'] ; end
+if bitand( x,32) , str = [str,':CPU2HWBISTERR:'] ; end
+if bitand( x,64) , str = [str,':PIEVECTERR:'] ; end 
+if bitand( x,128) , str = [str,':ERADNMI:'] ; end 
+if bitand( x,256) , str = [str,':CLBNMI:'] ; end 
+if bitand( x,512) , str = [str,':CPU2WDRSn:'] ; end 
+if bitand( x,2^10) , str = [str,':CPU2NMIWDRSn:'] ; end 
+if bitand( x,2^12) , str = [str,':CMNMIWDRSn:'] ; end 
+if bitand( x,2^13) , str = [str,':ECATNMIn:'] ; end 
+if bitand( x,2^14) , str = [str,':CRC_FAIL:'] ; end 
+if bitand( x,2^15) , str = [str,':WAS_NMIINT:'] ; end 
+end

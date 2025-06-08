@@ -138,24 +138,32 @@ void setupGpioSigmaDelta(void)
 
 void setupGpioGpio(void)
 {
+#undef NGP
+#define NGP 18 // MUX EN 2
+    GPIO_setPinConfig(GPIO_18_GPIO18);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_ASYNC);
 
 // Setup DAC control IO
 #undef NGP
 #define NGP 6 // MUX EN 2
-    GPIO_setPinConfig(GPIO_6_GPIO6);
+    GPIO_setPinConfig(GPIO_6_EPWM4_A);
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_ASYNC);
 
 #undef NGP
 #define NGP 7 //MUXA12
+    GpioDataRegs.GPADAT.bit.GPIO7 = 1 ;
     GPIO_setPinConfig(GPIO_7_GPIO7);
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_ASYNC);
 
+#undef NGP
 #define NGP 8 // MUX EN 1
-    GPIO_setPinConfig(GPIO_8_GPIO8);
+    GPIO_setPinConfig(GPIO_8_EPWM5_A);
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_ASYNC);
@@ -166,10 +174,12 @@ void setupGpioGpio(void)
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_ASYNC);
+    GPIO_setControllerCore(NGP,GPIO_CORE_CPU1_CLA1) ;
 
 
 #undef NGP
 #define NGP 57 // MUXA11
+    GpioDataRegs.GPBDAT.bit.GPIO57 = 0 ;
     GPIO_setPinConfig(GPIO_57_GPIO57);
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
@@ -182,6 +192,7 @@ void setupGpioGpio(void)
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_ASYNC);
+    GPIO_setControllerCore(NGP,GPIO_CORE_CPU1_CLA1) ;
 
 // Setup diagnostic inputs
 #undef NGP
@@ -254,11 +265,21 @@ void setupGpioGpio(void)
 
 #undef NGP
 #define NGP 99 // Enable output
-    GpioDataRegs.GPDSET.bit.GPIO99 = 1 ;
+    SetGateDriveEnable(0) ;
     GPIO_setPinConfig(GPIO_99_GPIO99);
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+
+#undef NGP
+#define NGP 103 // CLA timing diagnostic
+    GPIO_setPinConfig(GPIO_103_GPIO103);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_ASYNC);
+    GPIO_setControllerCore(NGP,GPIO_CORE_CPU1_CLA1) ;
+
+
 }
 
 void setupGpio(void)

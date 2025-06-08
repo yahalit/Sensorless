@@ -1,0 +1,1 @@
+MyErrDlg({'You are attempting to run the BurnIdentity','From the wong directory'}) ; 

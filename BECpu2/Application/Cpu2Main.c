@@ -50,7 +50,8 @@
 //
 // Included Files
 //
-#include "f28x_project.h"
+#define CORE2_VARS_OWNER
+#include "StructDef2.h"
 
 //
 // Pragma - Put the ePWM CMP value into shared RAM
@@ -69,15 +70,28 @@ void load_buffer(void);
 // Global variable used in this example
 //
 
+void DisableWatchdog(void)
+{
+EALLOW;
+//
+// Clear the bit enables the watchdog to wake up the device from STANDBY.
+//
+HWREGH(CPUSYS_BASE + SYSCTL_O_WDCR) = ( HWREGH(CPUSYS_BASE + SYSCTL_O_WDCR) & 0xff87 ) | 0x68 ;
+}
+
+
+
 //
 // Main
 //
-#define CORE2_VARS_OWNER
-#include "StructDef2.h"
-
-
+volatile short unsigned kuku ;
 void main(void)
 {
+//    SysCtl_disableWatchdog() ;
+    DisableWatchdog() ;
+
+    kuku = 0 ;
+    while (kuku == 0) ;
 //
 // Initialize System Control:
 // PLL, WatchDog, enable Peripheral Clocks

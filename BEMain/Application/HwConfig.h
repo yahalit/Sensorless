@@ -9,10 +9,7 @@
 #define APPLICATION_HWCONFIG_H_
 
 
-#define INTERFACECARD 99
-#define NECKCARD 100
-#define WHEELCARD 101
-
+#define BESENSORLESSCARD 105
 
 
 // Modes
@@ -29,7 +26,7 @@ enum E_LoopClosureMode
 
 
 
-    #define PROJ_TYPE 0x9300UL
+    #define PROJ_TYPE 0x9700UL
     #define BootCanId  38
 
     //#define ON_BOARD_POT
@@ -38,13 +35,18 @@ enum E_LoopClosureMode
     #define ON_BOARD_ENCODER
     #define ON_BOARD_HALL
     #define ON_BOARD_CAN
-    #define PWM_SYNCSEL 1
-    #define PWM_A_BASE EPWM2_BASE
-    #define PWM_B_BASE EPWM3_BASE
-    #define PWM_C_BASE EPWM4_BASE
+    #define PWM_SYNCSEL 7 // 1msec
+    #define PWM_CPU_PACER EPWM6_BASE
+    #define PWM_SCD_BASE EPWM4_BASE
+    #define PWM_A_BASE EPWM1_BASE
+    #define PWM_A_LUTBASE EPWM1MINDBLUT_BASE
+    #define PWM_B_BASE EPWM2_BASE
+    #define PWM_B_LUTBASE EPWM2MINDBLUT_BASE
+    #define PWM_C_BASE EPWM8_BASE
+    #define PWM_C_LUTBASE EPWM8MINDBLUT_BASE
 
-    #define PWM_PACER_BASE EPWM1_BASE
-    #define CUR_SAMP_PACER_MULT 1
+    //#define PWM_PACER_BASE EPWM1_BASE
+    //#define CUR_SAMP_PACER_MULT 1
     #define DEAD_TIME_USEC 0.28f
 
 
@@ -53,9 +55,18 @@ enum E_LoopClosureMode
 #define ENCODER_BASE EQEP1_BASE
 #endif
 
-#define ADC_READ_CUR1  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT0))
-#define ADC_READ_CUR2  (4096-HWREGH(ADCBRESULT_BASE+ADC_O_RESULT0))
-#define ADC_READ_CUR3  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT0))
+#define ADC_READ_CUR1_H1  (4096-HWREGH(ADCBRESULT_BASE+ADC_O_RESULT0))
+#define ADC_READ_CUR2_H1  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT0))
+#define ADC_READ_CUR3_H1  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT0))
+#define ADC_READ_CUR1_H2  (4096-HWREGH(ADCBRESULT_BASE+ADC_O_RESULT3))
+#define ADC_READ_CUR2_H2  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT3))
+#define ADC_READ_CUR3_H2  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT3))
+
+#define ADC_READ_VOLT1  (4096-HWREGH(ADCBRESULT_BASE+ADC_O_RESULT0))
+#define ADC_READ_VOLT2  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT0))
+#define ADC_READ_VOLT3  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT2))
+#define ADC_READ_VOLTDC (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT4))
+
 
 #define CMPSS_VBUS_BASE   CMPSS2_BASE
 #define CMPSS_BUSCUR_BASE CMPSS3_BASE
@@ -152,85 +163,9 @@ struct CProjSpecificData
 #define HALL_SENSORS_OFFSET 0.0f
 
 // Old wheels , transmission ratio 40:44 , new is 28:44 (difference : 1.571 factor)
-#ifdef OLD_WHEELS
-{.ProjIndex = 1 ,// PROJ_TYPE_WHEEL_R
- .ProjSpecificDataRevision = HwConfigRevision,
-    .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = 0.6559f , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
-    .KpCur = 3.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
-    .MaxCurCmdDdt = 9000.0f , .CurrentFilterBWHz = 8000.0f ,
-   .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
-   .BrakeReleaseVolts = 23.0f,
-   .Pot1RatRad  = 3.1415926f  ,
-   .Pot2RatRad  = 3.1415926f  ,
-   .Pot1CenterRat = 0.5f,
-   .Pot2CenterRat = 0.5f,
-   .I2tCurLevel  = 24.0f ,
-   .I2tCurTime   = 24.0f ,
-   .CurrentCommandDir = 1.0f ,
-   .CanId = 22
-} ,
 
-{.ProjIndex = 3 ,// PROJ_TYPE_WHEEL_L
-  .ProjSpecificDataRevision = HwConfigRevision,
- .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = 0.6559f , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
-     .KpCur = 3.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
-     .MaxCurCmdDdt = 9000.0f , .CurrentFilterBWHz = 8000.0f ,
-    .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
-    .BrakeReleaseVolts = 23.0f,
-    .Pot1RatRad  = 3.1415926f  ,
-    .Pot2RatRad  = 3.1415926f  ,
-    .Pot1CenterRat = 0.5f,
-    .Pot2CenterRat = 0.5f,
-    .I2tCurLevel  = 24.0f,
-    .I2tCurTime   = 24.0f ,
-    .CurrentCommandDir = 1.0f ,
-    .CanId = 12
- } ,
-#endif
 
-#ifdef NEW_WHEELS
-      {.ProjIndex = 1 ,// PROJ_TYPE_WHEEL_R
-       .ProjSpecificDataRevision = HwConfigRevision,
-          .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = 0.4174f  , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
-          .KpCur = 3.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
-          .MaxCurCmdDdt = 9000.0f , .CurrentFilterBWHz = 8000.0f ,
-         .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
-         .BrakeReleaseVolts = 23.0f,
-         .Pot1RatRad  = 3.1415926f  ,
-         .Pot2RatRad  = 3.1415926f  ,
-         .Pot1CenterRat = 0.5f,
-         .Pot2CenterRat = 0.5f,
-         .I2tCurLevel  = 24.0f ,
-         .I2tCurTime   = 24.0f ,
-         .CurrentCommandDir = 1.0f ,
-         .CanId = 22
-      } ,
-
-      {.ProjIndex = 3 ,// PROJ_TYPE_WHEEL_L
-        .ProjSpecificDataRevision = HwConfigRevision,
-       .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = 0.4174f  , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
-           .KpCur = 3.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
-           .MaxCurCmdDdt = 9000.0f , .CurrentFilterBWHz = 8000.0f ,
-          .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
-          .BrakeReleaseVolts = 23.0f,
-          .Pot1RatRad  = 3.1415926f  ,
-          .Pot2RatRad  = 3.1415926f  ,
-          .Pot1CenterRat = 0.5f,
-          .Pot2CenterRat = 0.5f,
-          .I2tCurLevel  = 24.0f,
-          .I2tCurTime   = 24.0f ,
-          .CurrentCommandDir = 1.0f ,
-          .CanId = 12
-       } ,
-     } ,
-#endif
-
-#define NEW_WHEEL_GEAR_RATIO
-#ifdef NEW_WHEEL_GEAR_RATIO
 #define WHEEL_REV2POS  0.4157f // was 0.4174
-#else
-#define WHEEL_REV2POS  0.6559f
-#endif
 
 #define INVERT_ENCODER TRUE
 // End generic defaults
@@ -258,7 +193,7 @@ struct CProjSpecificData
      } ,
 
 
-      {.ProjIndex = 1 ,// PROJ_TYPE_WHEEL_R
+      {.ProjIndex = 1 ,// PROJ_TYPE_BESENSORLESS
        .ProjSpecificDataRevision = HwConfigRevision,
           .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = WHEEL_REV2POS  , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
           .KpCur = 3.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
@@ -272,171 +207,9 @@ struct CProjSpecificData
          .I2tCurLevel  = 24.0f ,
          .I2tCurTime   = 24.0f ,
          .CurrentCommandDir = 1.0f ,
-         .CanId = 22
+         .CanId = 44
       } ,
 
-
-     {.ProjIndex = 2 ,// PROJ_TYPE_STEERING_R
-      .ProjSpecificDataRevision = HwConfigRevision,
-          .FullAdcRangeCurrent = STEERING_CUR_ADC_RANGE , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = 0.005561374054295f , .HallAngleOffset = 0.044214f , .nPolePairs=2, .InvertEncoder=1 ,
-          .KpCur = 3.0f , .KiCur = 14000.0f , .PhaseOverCurrent = 15 ,.DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 5.0f ,
-          .MaxCurCmdDdt = 8000.0f , .CurrentFilterBWHz = 2500.0f ,
-         .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 1 , .HallVal2 = 5 , .HallVal3 = 0 , .HallVal4 = 3 , .HallVal5 = 2 , .HallVal6 = 4  , .HallVal7 = HALL_BAD_VALUE,
-         .BrakeReleaseVolts = 0 ,
-         .Pot1RatRad  = 3.1415926f  ,
-         .Pot2RatRad  = 3.1415926f  ,
-         .Pot1CenterRat = 0.5f,
-         .Pot2CenterRat = 0.5f,
-         .I2tCurLevel  = 5.0f ,
-         .I2tCurTime   = 24.0f ,
-        .CurrentCommandDir = 1.0f ,
-         .CanId = 21
-     } ,
-
-
-     {.ProjIndex = 3 ,// PROJ_TYPE_WHEEL_L
-      .ProjSpecificDataRevision = HwConfigRevision,
-     .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = WHEEL_REV2POS  , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
-         .KpCur = 3.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
-         .MaxCurCmdDdt = 9000.0f , .CurrentFilterBWHz = 8000.0f ,
-        .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
-        .BrakeReleaseVolts = 23.0f,
-        .Pot1RatRad  = 3.1415926f  ,
-        .Pot2RatRad  = 3.1415926f  ,
-        .Pot1CenterRat = 0.5f,
-        .Pot2CenterRat = 0.5f,
-        .I2tCurLevel  = 24.0f,
-        .I2tCurTime   = 24.0f ,
-        .CurrentCommandDir = 1.0f ,
-        .CanId = 12
-     } ,
-
-
-    {.ProjIndex = 4 ,// PROJ_TYPE_STEERING_L
-     .ProjSpecificDataRevision = HwConfigRevision,
-         .FullAdcRangeCurrent = STEERING_CUR_ADC_RANGE , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = 0.005561374054295f , .HallAngleOffset = 0.044214f , .nPolePairs=2, .InvertEncoder=1 ,
-         .KpCur = 3.0f , .KiCur = 14000.0f , .PhaseOverCurrent = 15 ,.DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 5.0f ,
-         .MaxCurCmdDdt = 8000.0f , .CurrentFilterBWHz = 2500.0f ,
-        .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 1 , .HallVal2 = 5 , .HallVal3 = 0 , .HallVal4 = 3 , .HallVal5 = 2 , .HallVal6 = 4  , .HallVal7 = HALL_BAD_VALUE,
-        .BrakeReleaseVolts = 0 ,
-        .Pot1RatRad  = 3.1415926f  ,
-        .Pot2RatRad  = 3.1415926f  ,
-        .Pot1CenterRat = 0.5f,
-        .Pot2CenterRat = 0.5f,
-        .I2tCurLevel  = 5.0f ,
-        .I2tCurTime   = 24.0f ,
-        .CurrentCommandDir = 1.0f ,
-        .CanId = 11
-    } ,
-
-    // The encoder and the motor are 1:1 ,  Cycloidal gear is 1:35 , spur#1 (internal) is 62/18  , spur#2 (external)is 60/18 so total gear is 401.852
-    // Rev2Pos is 2 * pi / 401.852
-    {.ProjIndex = 5 , // PROJ_TYPE_NECK
-     .ProjSpecificDataRevision = HwConfigRevision,
-          .FullAdcRangeCurrent = 44 , .EncoderCountsFullRev = 1440 ,  .Rev2Pos = 0.015635570576181f , .HallAngleOffset = 0 , .nPolePairs=4, .InvertEncoder=1 ,
-          .KpCur = 1.5f , .KiCur = 6000 , .PhaseOverCurrent = 25 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 12.0f ,
-          .MaxCurCmdDdt = 8000.0f , .CurrentFilterBWHz = 2500.0f ,
-         .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 3 , .HallVal2 = 1 , .HallVal3 = 2 , .HallVal4 = 5 , .HallVal5 = 4 , .HallVal6 = 0  , .HallVal7 = HALL_BAD_VALUE,
-         .BrakeReleaseVolts = 24.5f,
-         .Pot1RatRad  = 8.3776f  ,
-         .Pot2RatRad  = 7.8540f  ,
-         .Pot1CenterRat = 0.5f,
-         .Pot2CenterRat = 0.5f,
-         .I2tCurLevel  = 12.0f ,
-         .I2tCurTime   = 24.0f,
-         .CurrentCommandDir = 1.0f ,
-         .CanId = 30
-     } ,
-
-     // Neck old motor with on-gear encoder
-     {.ProjIndex = 6 ,// PROJ_TYPE_NECK2
-      .ProjSpecificDataRevision = HwConfigRevision,
-          .FullAdcRangeCurrent = 44 , .EncoderCountsFullRev = 1440 ,  .Rev2Pos = 0.05 , .HallAngleOffset = 0 , .nPolePairs=4, .InvertEncoder=1 ,
-          .KpCur = 4.0f , .KiCur = 12000 , .PhaseOverCurrent = 25 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 15.0f ,
-          .MaxCurCmdDdt = 8000.0f , .CurrentFilterBWHz = 2500.0f ,
-         .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
-         .BrakeReleaseVolts = 0,
-         .Pot1RatRad  = 3.1415926f  ,
-         .Pot2RatRad  = 3.1415926f  ,
-         .Pot1CenterRat = 0.5f,
-         .Pot2CenterRat = 0.5f,
-         .I2tCurLevel  = 12.0f ,
-         .I2tCurTime   = 24.0f ,
-        .CurrentCommandDir = 1.0f ,
-         .CanId = 30
-     } ,
-
-     // Neck old motor with on-board encoder
-     {.ProjIndex = 7 ,// PROJ_TYPE_NECK3
-      .ProjSpecificDataRevision = HwConfigRevision,
-          .FullAdcRangeCurrent = 44 , .EncoderCountsFullRev = 10000 ,  .Rev2Pos = 0.05 ,  .HallAngleOffset = 0 , .nPolePairs=4, .InvertEncoder=0 ,
-          .MaxCurCmdDdt = 8000.0f , .CurrentFilterBWHz = 2500.0f ,
-          .KpCur = 4.0f , .KiCur = 12000 , .PhaseOverCurrent = 25 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 10.0f ,
-         .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
-         .BrakeReleaseVolts = 0,
-         .Pot1RatRad  = 3.1415926f  ,
-         .Pot2RatRad  = 3.1415926f  ,
-         .Pot1CenterRat = 0.5f,
-         .Pot2CenterRat = 0.5f,
-         .I2tCurLevel  = 10.0f ,
-         .I2tCurTime   = 24.0f ,
-         .CurrentCommandDir = 1.0f ,
-         .CanId = 30
-     } ,
-
-    // Tray rotation motor 42BLS80-2166-MBM-CD 42JX49G1022B
-    {.ProjIndex = 8 , // PROJ_TYPE_TRAY_ROTATOR
-     .ProjSpecificDataRevision = HwConfigRevision,
-         .FullAdcRangeCurrent = FULL_ADC_RANGE_CURRENT_NECK , .EncoderCountsFullRev = 4000 ,  .Rev2Pos = 0.015810644f,  .HallAngleOffset = 0 , .nPolePairs=4, .InvertEncoder=0 ,
-         .MaxCurCmdDdt = 18000.0f , .CurrentFilterBWHz = 7500.0f ,
-         .KpCur = 3.3f , .KiCur = 13000 , .PhaseOverCurrent = 25 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 12.0f ,
-        .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 1 , .HallVal2 = 3 , .HallVal3 = 2 , .HallVal4 = 5 , .HallVal5 = 0 , .HallVal6 = 4  , .HallVal7 = HALL_BAD_VALUE,
-        .BrakeReleaseVolts = 16.5f,
-        .Pot1RatRad  = -3.1415926f  ,
-        .Pot2RatRad  = 3.1415926f  ,
-        .Pot1CenterRat = 0.5f,
-        .Pot2CenterRat = 0.5f,
-        .I2tCurLevel  = 12.0f ,
-        .I2tCurTime   = 24.0f ,
-        .CurrentCommandDir = 1.0f ,
-        .CanId = 34
-    },   // PROJ_TYPE_TRAY_ROTATOR
-
-     // Tray rotation motor 42BLS80-2166-MBM-CD 42JX49G1022B
-     {.ProjIndex = 9 , // PROJ_TYPE_TRAY_SHIFTER
-      .ProjSpecificDataRevision = HwConfigRevision,
-          .FullAdcRangeCurrent = FULL_ADC_RANGE_CURRENT_NECK , .EncoderCountsFullRev = 8000 ,  .Rev2Pos = 0.0095484f ,  .HallAngleOffset = 0 , .nPolePairs=4, .InvertEncoder=0 ,
-          .MaxCurCmdDdt = 18000.0f , .CurrentFilterBWHz = 4500.0f ,
-          .KpCur = 3.3f , .KiCur = 13000 , .PhaseOverCurrent = 10 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 4.5f ,
-         .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 5 , .HallVal2 = 3 , .HallVal3 = 4 , .HallVal4 = 1 , .HallVal5 = 0 , .HallVal6 = 2  , .HallVal7 = HALL_BAD_VALUE,
-         .BrakeReleaseVolts = 0.0f,
-         .Pot1RatRad  = 3.1415926f  ,
-         .Pot2RatRad  = 3.1415926f  ,
-         .Pot1CenterRat = 0.5f,
-         .Pot2CenterRat = 0.5f,
-         .I2tCurLevel  = 4.5f ,
-         .I2tCurTime   = 24.0f ,
-         .CurrentCommandDir = 1.0f ,
-         .CanId = 36
-     } ,  // PROJ_TYPE_TRAY_SHIFTER
-
-     // Tape motor of tape arm 42BLS80-2166-MBM-CD 42JX49G1022B
-     {.ProjIndex = 10 , // PROJ_TYPE_TAPE_MOTOR
-      .ProjSpecificDataRevision = HwConfigRevision,
-          .FullAdcRangeCurrent = FULL_ADC_RANGE_CURRENT_NECK , .EncoderCountsFullRev = 4000 ,  .Rev2Pos = 0.00667 ,  .HallAngleOffset = 0 , .nPolePairs=4, .InvertEncoder=0 ,
-          .MaxCurCmdDdt = 18000.0f , .CurrentFilterBWHz = 7500.0f ,
-          .KpCur = 3.3f , .KiCur = 13000 , .PhaseOverCurrent = 25 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 10.0f ,
-         .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 1 , .HallVal2 = 3 , .HallVal3 = 2 , .HallVal4 = 5 , .HallVal5 = 0 , .HallVal6 = 4  , .HallVal7 = HALL_BAD_VALUE,
-         .BrakeReleaseVolts = 16.5f,
-         .Pot1RatRad  = 3.1415926f  ,
-         .Pot2RatRad  = 3.1415926f  ,
-         .Pot1CenterRat = 0.5f,
-         .Pot2CenterRat = 0.5f,
-         .I2tCurLevel  = 10.0f ,
-         .I2tCurTime   = 24.0f ,
-         .CurrentCommandDir = 1.0f ,
-         .CanId = 35
-     }
     };
 
     const unsigned short nProjSpecificData = sizeof(ProjSpecificData) / sizeof(struct CProjSpecificData) ;
@@ -449,13 +222,5 @@ struct CProjSpecificData
 
 
 
-#ifdef SLAVE_DRIVER
-#define FSI_FLUSH_START_TIME (CPU_CLK_MHZ*6)
-#define FSI_FLUSH_TIME (CPU_CLK_MHZ*2)
-#define FSI_TX_TIME (CPU_CLK_MHZ*18-FSI_FLUSH_TIME-FSI_FLUSH_START_TIME)
-
-// The FSI clock is 60M so this is 6M
-#define FSI_BAUD_DIVIDER 10
-#endif
 
 #endif // APPLICATION_HWCONFIG_H_
