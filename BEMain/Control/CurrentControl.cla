@@ -9,6 +9,7 @@
 #define CLA_VAR_OWNER_CLA
 
 #include "..\Application\WhoIsThisProject.h"
+#include "..\Application\ConstDef.h"
 #include <stdint.h>
 
 typedef float                                   float32_t;
@@ -242,254 +243,338 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
     long t ;
     long pa , pb  ;
 
+    HWREGH(GPIODATA_BASE + GPIO_O_GPDSET) = 128 ; // GPIO103
+    // Read currents
+    t = HWREG(ECAP3_BASE + ECAP_O_TSCTR);
     // Deal DAC pulses
     // These are the most time-critical
     // DACMux: (1) Phase 2 (2) Phase 3 (3) Phase 1 (4) DC
     // DAC1 goes from Phase 2 to Phase 3
     // DAC2 goes from Phase 1 to DC
+    // cycles 1:3 sets values to V1,V2 DACs
+    // cycles 2:4 sets values to V3,DC DACs
+    // In cycle 1, V1 and V2 summers are reset.
+    // In cycle 4, V3 and DC summers are reset
+    // In cycle 1, the V3 and DC summers are extrapolated
+    // Little approximate dynamics:
+    // Vout(k+1) = Vout(k) + T/RC( Vin - DAC)  : Analog integration
+    // Taking DAC(k) = a * Vout(k) we have
+    // Vout * ( z - ( 1-a *T/RC)) = T/RC Vin
+    // Obviously we must keep a < RC/T
+    // If we wish to extrapolate to a given time, Vin(now) = VinEst(k) + RC/T ( not adviseable, we want full cycle integration)
+
+    // The RC is 5K , 6.8nF getting 34usec, so with T = 25usec for cycle, 25/34 * a < 0.3 so approx a = 0.5 is the limit
+
 
 //    float DcCurUncalib ;
 //    float DcCur        ;
-    HWREGH(GPIODATA_BASE + GPIO_O_GPDSET) = 128 ; // GPIO103
+    if ( HWREG(EPWM6_BASE + EPWM_O_TBCTR) < (DAC_PWM_PERIOD_CLK*0.5f)  )
+    {
+        ClaState.DacPulseCntr = 0 ;
+    }
+    ClaState.DacPulseCntr += c.UnsignedLong1 ;
 
 
-    if ( ClaState.DacPulseCntr == 0 )
+    if ( ClaState.DacPulseCntr == c.UnsignedLong1 )
     {
         HWREGH(GPIODATA_BASE + GPIO_O_GPASET) = 512 ; // GPIO9
         HWREGH(GPIODATA_BASE + GPIO_O_GPCSET+1) = 16 ; // GPIO84
-        ClaState.Analogs.PhaseVoltUnCalib[1] = ADC_READ_VOLT2 ;
-        ClaState.Analogs.PhaseVoltUnCalib[0] = ADC_READ_VOLT1 ;
-        HWREGH(DACA_BASE + DAC_O_VALS) =
-                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[1] , 4090 ) , 5 ) ;
-        HWREGH(DACC_BASE + DAC_O_VALS) =
-                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[0] , 4090 ) , 5 ) ;
-        ClaState.DacPulseCntr = 1 ;
-    }
-    else
+        ClaState.Analogs.PhaseVoltUnCalibSum[1] = ClaState.Analogs.PhaseVoltUnCalib[1] ;
+        ClaState.Analogs.PhaseVoltUnCalibSum[0] = ClaState.Analogs.PhaseVoltUnCalib[0] ;
+        ClaState.Analogs.PhaseVoltUnCalib[1] = ADC_READ_VOLT2 - c.Num2048  ;
+        ClaState.Analogs.PhaseVoltUnCalib[0] = ADC_READ_VOLT1 - c.Num2048   ;
+        ClaState.Analogs.PhaseVoltUnCalibSum[1] += ClaState.Analogs.PhaseVoltUnCalib[1] ;
+        ClaState.Analogs.PhaseVoltUnCalibSum[0] += ClaState.Analogs.PhaseVoltUnCalib[0] ;
+        HWREGH(DACA_BASE + DAC_O_VALS) = (short unsigned) (c.Num2048 +
+                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[1] , 2000 ) , -2000 )) ;
+        HWREGH(DACC_BASE + DAC_O_VALS) =(short unsigned) (c.Num2048 +
+                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[0] , 2000 ) , -2000 )) ;
+
+        // Take current measurements
+        ClaState.AdcRaw.PhaseCurAdc[0] = ( ADC_READ_CUR1_H1 + ADC_READ_CUR1_H2 ) * 0.5f ;
+        ClaState.AdcRaw.PhaseCurAdc[1] = ( ADC_READ_CUR2_H1 + ADC_READ_CUR2_H2 ) * 0.5f  ;
+        ClaState.AdcRaw.PhaseCurAdc[2] = ( ADC_READ_CUR3_H1 + ADC_READ_CUR3_H2 ) * 0.5f  ;
+
+
+        ClaState.Analogs.PhaseCurUncalibA = ( ClaState.AdcRaw.PhaseCurAdc[0] - 2048.0f - ClaMailIn.IaOffset ) * ClaControlPars.Bit2Amp ;
+        ClaState.Analogs.PhaseCurUncalibB = ( ClaState.AdcRaw.PhaseCurAdc[1] - 2048.0f - ClaMailIn.IbOffset ) * ClaControlPars.Bit2Amp ;
+        ClaState.Analogs.PhaseCurUncalibC = ( ClaState.AdcRaw.PhaseCurAdc[2] - 2048.0f - ClaMailIn.IcOffset ) * ClaControlPars.Bit2Amp ;
+
+        ClaState.Analogs.PhaseCur[0] = ClaState.Analogs.PhaseCurUncalibA * ( 1.0f + Calib.ACurGainCorr ) ;
+        ClaState.Analogs.PhaseCur[1] = ClaState.Analogs.PhaseCurUncalibB * ( 1.0f + Calib.BCurGainCorr ) ;
+        ClaState.Analogs.PhaseCur[2] = ClaState.Analogs.PhaseCurUncalibC * ( 1.0f + Calib.CCurGainCorr ) ;
+
+        // Uncomment this to debug the CLA while connected to the debugger
+        if ( ClaState.DbgStop == 1.0f )
+        {
+            __mdebugstop();
+        }
+
+
+        // Evaluate overload. Do it here to avoid a cycle delay
+        maxcur  = __mmaxf32 ( __mmaxf32 ( fabsf(ClaState.Analogs.PhaseCur[0]),fabsf( ClaState.Analogs.PhaseCur[1])), fabsf(ClaState.Analogs.PhaseCur[2]) ) ;
+        if (maxcur > ClaControlPars.PhaseOverCurrent  )
+        {
+            ClaLogException( exp_phase_overcurrent );
+        }
+
+
+        // Get the trigonometric functions for work
+        ClaSinCosPu( ClaMailIn.ThetaElect ) ; // + 0.25f ) ;
+
+        // Filter the reference
+        ClaState.CurrentControl.CurrentCommand =  ClaState.CurrentControl.ExtCurrentCommand * ClaControlPars.CurrentCommandDir ;
+        if ( ClaMailIn.bNoCurrentPrefilter )
+        {
+            ClaState.CurrentControl.CurrentCommandSlopeLimited = ClaState.CurrentControl.CurrentCommand ;
+            ClaState.CurrentControl.CurrentCommandFiltered = ClaState.CurrentControl.CurrentCommand ;
+        }
+        else
+        {
+            maxDeltaCur = ClaControlPars.MaxCurCmdDdt * ClaMailIn.Ts ;
+            ClaState.CurrentControl.CurrentCommandSlopeLimited = ClaState.CurrentControl.CurrentCommandSlopeLimited +
+                    __mmaxf32 (__mminf32 (ClaState.CurrentControl.CurrentCommand - ClaState.CurrentControl.CurrentCommandSlopeLimited ,maxDeltaCur) , -maxDeltaCur) ;
+
+
+            ClaState.CurrentControl.CurrentCommandFiltered = ClaState.CurrentControl.CurrentCommandFiltered  +
+                    (ClaState.CurrentControl.CurrentCommandSlopeLimited  - ClaState.CurrentControl.CurrentCommandFiltered ) * ClaControlPars.CurrentRefFiltB +
+                    ( ClaState.CurrentControl.CurrentCmdFilterState0 - ClaState.CurrentControl.CurrentCmdFilterState1 ) * ClaControlPars.CurrentRefFiltA1 ;
+        }
+        ClaState.CurrentControl.CurrentCmdFilterState1 = ClaState.CurrentControl.CurrentCmdFilterState0  ;
+        ClaState.CurrentControl.CurrentCmdFilterState0 = ClaState.CurrentControl.CurrentCommandFiltered  ;
+
+        ClaState.CurrentControl.ExtCurrentCommandFiltered = ClaState.CurrentControl.CurrentCommandFiltered * ClaControlPars.CurrentCommandDir ;
+
+
+        ClaState.CurrentControl.Iq = c.TwoThirds *
+                (ClaState.Analogs.PhaseCur[0] * ClaState.c + ClaState.Analogs.PhaseCur[1] * ClaState.c120 + ClaState.Analogs.PhaseCur[2] * ClaState.c240) ;
+        ClaState.CurrentControl.Id = c.TwoThirds *
+                (ClaState.Analogs.PhaseCur[0] * ClaState.s + ClaState.Analogs.PhaseCur[1] * ClaState.s120 + ClaState.Analogs.PhaseCur[2] * ClaState.s240) ;
+
+        ClaState.CurrentControl.ExtIq = ClaState.CurrentControl.Iq * ClaControlPars.CurrentCommandDir ;
+        ClaState.CurrentControl.ExtIqFilt = ClaState.CurrentControl.ExtIqFilt + ClaControlPars.ExtCutCst * ( ClaState.CurrentControl.ExtIq - ClaState.CurrentControl.ExtIqFilt ) ;
+    #ifdef SIMULATION_MODE
+        RunLoadSim();
+    #endif
+
+        if ( ClaState.MotorOn)
+        {
+            ClaState.CurrentControl.Error_q = ClaState.CurrentControl.CurrentCommandFiltered - ClaState.CurrentControl.Iq ;
+            ClaState.CurrentControl.Error_d = - ClaState.CurrentControl.Id;
+
+            ClaState.CurrentControl.vpre_q = ClaState.Encoder1.MotSpeedHz * ClaControlPars.KeHz  + ClaState.CurrentControl.Int_q ;
+            ClaState.CurrentControl.vpre_d = ClaState.CurrentControl.Int_d ;
+
+            ClaState.vqd = ClaState.CurrentControl.vpre_q + ClaState.CurrentControl.Error_q * ClaControlPars.KpCur ;
+            ClaState.vdd = ClaState.CurrentControl.vpre_d + ClaState.CurrentControl.Error_d * ClaControlPars.KpCur ;
+
+            if ( ClaMailIn.IdMode )
+            {
+                ClaState.vqd = ClaMailIn.Tref ;
+                ClaState.vdd = ClaMailIn.Gref ;
+
+                ClaState.c = 1 ;
+                ClaState.s = 0 ;
+
+                ClaState.q2v1 = ClaState.c ;
+                ClaState.d2v1 = ClaState.s ;
+
+                ClaState.q2v2 = -0.5f * (c.sqrt3 * ClaState.s + ClaState.c) ;
+                ClaState.d2v2 =  0.5f * (c.sqrt3 * ClaState.c - ClaState.s) ;
+            }
+
+            // Vfac = Let (Vsat = alpha * Vbus) , then Vsat * TBPRD / Vbus = alpha * Tbprd
+            ClaState.vdr = __mminf32(__mmaxf32(ClaState.vdd,-ClaState.Vsat),ClaState.Vsat) ;
+            f1 =  ClaState.vqd * ClaState.vqd + ClaState.vdr * ClaState.vdr ;
+            if ( f1 > ClaState.Vsat * ClaState.Vsat )
+            {
+                ClaState.vqr = ClaState.vqd * ClaState.Vsat * __meisqrtf32(__mmaxf32(f1, 1.0f ));
+            }
+            else
+            {
+                ClaState.vqr = ClaState.vqd ;
+            }
+            ClaState.va = ClaState.PwmFac * ( ClaState.q2v1 * ClaState.vqr + ClaState.d2v1 * ClaState.vdr  ) ;
+            ClaState.vb = ClaState.PwmFac * ( ClaState.q2v2 * ClaState.vqr + ClaState.d2v2 * ClaState.vdr  ) ;
+            ClaState.vc = -ClaState.vb - ClaState.va ;
+
+    /*
+            f1 =  ClaState.vqd * ClaState.vqd + ClaState.vdd * ClaState.vdd ;
+            if ( f1 > ClaState.Vsat * ClaState.Vsat )
+            {
+                ClaState.SaturationFac4AWU = ClaState.Vsat * __meisqrtf32(__mmaxf32(f1, 1.0f ));
+            }
+            else
+            {
+                ClaState.SaturationFac4AWU = 1 ;
+            }
+
+            //ClaState.SaturationFac4AWU = ClaState.Vsat * __meisqrtf32(__mmaxf32( ClaState.vqd * ClaState.vqd + ClaState.vdd * ClaState.vdd , ClaState.Vsat ) );
+            ClaState.va = ClaState.PwmFac *ClaState.SaturationFac4AWU  * ( ClaState.q2v1 * ClaState.vqd + ClaState.d2v1 * ClaState.vdd  ) ;
+            ClaState.vb = ClaState.PwmFac *ClaState.SaturationFac4AWU  * ( ClaState.q2v2 * ClaState.vqd + ClaState.d2v2 * ClaState.vdd  ) ;
+            ClaState.vc = -ClaState.vb - ClaState.va ;
+    */
+        }
+        else
+        {
+            ClaState.CurrentControl.Error_q = 0 ;
+            ClaState.CurrentControl.Error_d = 0 ;
+            ClaState.CurrentControl.vpre_q = 0;
+            ClaState.CurrentControl.vpre_d = 0 ;
+            ClaState.vqd  = 0 ;
+            ClaState.vdd = 0 ;
+            ClaState.vqr = 0 ;
+            ClaState.vdr = 0 ;
+            ClaState.va = 0 ;
+            ClaState.vb = 0 ;
+            ClaState.vb = 0 ;
+        }
+
+        ClaState.vn =  ClaState.PwmOffset - 0.5f * (  __mmaxf32(__mmaxf32(ClaState.va,ClaState.vb),ClaState.vc) + __mminf32(__mminf32(ClaState.va,ClaState.vb),ClaState.vc)) ;
+        wa = ClaState.va + ClaState.vn ;
+        wb = ClaState.vb + ClaState.vn ;
+        wc = ClaState.vc + ClaState.vn ;
+        if ( wa <= 3 )
+        { //That is zero PWM
+            HWREGH(PWM_A_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
+            HWREGH(PWM_A_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
+        }
+        else
+        {
+            pb = (long) __mminf32 ( wa * 0.5f , ClaState.MaxWB) ;
+            pa = (long) __mminf32 ( wa + 0.5f - (float) pb , ClaState.MaxWA) ;
+            ClaMailOut.PwmA = pb + pa ;
+            HWREGH(PWM_A_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmFrame - pa ;
+            HWREGH(PWM_A_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmFrame - pb ;
+        }
+
+        if ( wb <= 3 )
+        { //That is zero PWM
+            HWREGH(PWM_B_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
+            HWREGH(PWM_B_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
+        }
+        else
+        {
+            pb = (long) __mminf32 ( wb * 0.5f , ClaState.MaxWB) ;
+            pa = (long) __mminf32 ( wb + 0.5f - (float) pb , ClaState.MaxWA) ;
+            ClaMailOut.PwmA = pb + pa ;
+            HWREGH(PWM_B_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmFrame - pa ;
+            HWREGH(PWM_B_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmFrame - pb ;
+        }
+
+        if ( wc <= 3 )
+        { //That is zero PWM
+            HWREGH(PWM_C_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
+            HWREGH(PWM_C_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
+        }
+        else
+        {
+            pb = (long) __mminf32 ( wc * 0.5f , ClaState.MaxWB) ;
+            pa = (long) __mminf32 ( wc + 0.5f - (float) pb , ClaState.MaxWA) ;
+            ClaMailOut.PwmA = pb + pa ;
+            HWREGH(PWM_C_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmFrame - pa ;
+            HWREGH(PWM_C_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmFrame - pb ;
+        }
+
+        dd = ( ClaState.va * ClaState.va + ClaState.vb * ClaState.vb + ClaState.vc * ClaState.vc  )  ;
+        ClaMailOut.vq_and_d  = dd * __meisqrtf32(__mmaxf32(dd,9.765625e-04f) ) * c.TwoThirds * ClaState.Analogs.Vdc * ClaState.InvPwmFrame  ;
+
+
+
+        delta = ClaState.vqr -  ClaState.vqd ;
+        er    = ClaState.CurrentControl.Error_q + delta * ClaControlPars.KAWUCur ;
+        ClaState.CurrentControl.Int_q =  ClaState.CurrentControl.Int_q + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
+
+        delta = ClaState.vdr -ClaState.vdd ;
+        er    = ClaState.CurrentControl.Error_d + delta * ClaControlPars.KAWUCur ;
+        ClaState.CurrentControl.Int_d =  ClaState.CurrentControl.Int_d + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
+    /*
+        delta = (ClaState.SaturationFac4AWU - 1.0) *  ClaState.vqd ;
+        er    = ClaState.CurrentControl.Error_q + delta * ClaControlPars.KAWUCur ;
+        ClaState.CurrentControl.Int_q =  ClaState.CurrentControl.Int_q + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
+
+        delta = (ClaState.SaturationFac4AWU - 1.0) *  ClaState.vdd ;
+        er    = ClaState.CurrentControl.Error_d + delta * ClaControlPars.KAWUCur ;
+        ClaState.CurrentControl.Int_d =  ClaState.CurrentControl.Int_d + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
+    */
+        ClaState.tTask = (HWREG(ECAP3_BASE + ECAP_O_TSCTR) - t) * (1.0f / CPU_CLK_MHZ ) ;
+     }
+    else if ( ClaState.DacPulseCntr == c.UnsignedLong2  )
     {
+        if ( ClaState.DbgStop == 2.0f )
+        {
+            __mdebugstop();
+        }
         HWREGH(GPIODATA_BASE + GPIO_O_GPACLEAR) = 512 ;
         HWREGH(GPIODATA_BASE + GPIO_O_GPCCLEAR+1) = 16 ;
-        ClaState.Analogs.PhaseVoltUnCalib[2] = ADC_READ_VOLT3 ;
-        ClaState.Analogs.DcCurUncalib = ADC_READ_VOLTDC ;
-        HWREGH(DACA_BASE + DAC_O_VALS) =
-                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[2] , 4090 ) , 5 ) ;
-        HWREGH(DACC_BASE + DAC_O_VALS) =
-                __mmaxf32 (__mminf32 (ClaControlPars.DcCurrentDacGain * ClaState.Analogs.DcCurUncalib , 4090 ) , 5 ) ;
-        ClaState.DacPulseCntr = 0 ;
+        ClaState.Analogs.PhaseVoltUnCalib[2] = ADC_READ_VOLT3  - c.Num2048  ;
+        ClaState.Analogs.DcCurUncalib = ADC_READ_VOLTDC  - c.Num2048  ;
+        HWREGH(DACA_BASE + DAC_O_VALS) =(short unsigned) (c.Num2048 +
+                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[2] , 2000 ) , -2000 )) ;
+        HWREGH(DACC_BASE + DAC_O_VALS) =(short unsigned) (c.Num2048 +
+                __mmaxf32 (__mminf32 (ClaControlPars.DcCurrentDacGain * ClaState.Analogs.DcCurUncalib , 2000 ) , -2000 )) ;
+
+
+        // Get the analog variables
+        ProcAnalogSamples();
+
+        // Check motor readiness
+        CheckMotorReady();
+
+        ClaCheckMotorOn() ;
+
+
+    //            ClaState.CurrentControl.CurrentCommandSlopeLimited * ClaControlPars.CurrentRefFiltB
+    //            - ClaState.CurrentControl.CurrentCmdFilterState1 * ClaControlPars.CurrentRefFiltA1
+    //            - ClaState.CurrentControl.CurrentCmdFilterState0 * ClaControlPars.CurrentRefFiltA0;
+
+    //    ClaState.CurrentControl.CurrentCmdFilterState1 = ClaState.CurrentControl.CurrentCmdFilterState0 ;
+    //    ClaState.CurrentControl.CurrentCmdFilterState0 = ClaState.CurrentControl.CurrentCommandFiltered ;
+
+
+        // Get the voltage to PWM ratios
+
+        ClaState.PwmFac = 2* ClaState.PwmFrame * __meinvf32 ( __mmaxf32( ClaState.Analogs.Vdc , 1.0f ) )  ;
+        ClaState.Vsat   = ClaState.Analogs.Vdc * ClaControlPars.VectorSatFac ;
+
     }
-
-
-    t = HWREG(ECAP3_BASE + ECAP_O_TSCTR);
-    ClaState.AdcRaw.PhaseCurAdc[0] = ( ADC_READ_CUR1_H1 + ADC_READ_CUR1_H2 ) * 0.5f ;
-    ClaState.AdcRaw.PhaseCurAdc[1] = ( ADC_READ_CUR2_H1 + ADC_READ_CUR2_H2 ) * 0.5f  ;
-    ClaState.AdcRaw.PhaseCurAdc[2] = ( ADC_READ_CUR3_H1 + ADC_READ_CUR3_H2 ) * 0.5f  ;
-
-
-    ClaState.Analogs.PhaseCurUncalibA = ( ClaState.AdcRaw.PhaseCurAdc[0] - 2048.0f - ClaMailIn.IaOffset ) * ClaControlPars.Bit2Amp ;
-    ClaState.Analogs.PhaseCurUncalibB = ( ClaState.AdcRaw.PhaseCurAdc[1] - 2048.0f - ClaMailIn.IbOffset ) * ClaControlPars.Bit2Amp ;
-    ClaState.Analogs.PhaseCurUncalibC = ( ClaState.AdcRaw.PhaseCurAdc[2] - 2048.0f - ClaMailIn.IcOffset ) * ClaControlPars.Bit2Amp ;
-
-    ClaState.Analogs.PhaseCur[0] = ClaState.Analogs.PhaseCurUncalibA * ( 1.0f + Calib.ACurGainCorr ) ;
-    ClaState.Analogs.PhaseCur[1] = ClaState.Analogs.PhaseCurUncalibB * ( 1.0f + Calib.BCurGainCorr ) ;
-    ClaState.Analogs.PhaseCur[2] = ClaState.Analogs.PhaseCurUncalibC * ( 1.0f + Calib.CCurGainCorr ) ;
-
-    // Uncomment this to debug the CLA while connected to the debugger
-    if ( ClaState.DbgStop == 1.0f )
+    else if ( ClaState.DacPulseCntr == c.UnsignedLong3  )
     {
-        __mdebugstop();
-    }
-
-    // Evaluate overload. Do it here to avoid a cycle delay
-    maxcur  = __mmaxf32 ( __mmaxf32 ( fabsf(ClaState.Analogs.PhaseCur[0]),fabsf( ClaState.Analogs.PhaseCur[1])), fabsf(ClaState.Analogs.PhaseCur[2]) ) ;
-    if (maxcur > ClaControlPars.PhaseOverCurrent  )
-    {
-        ClaLogException( exp_phase_overcurrent );
-    }
-
-
-    // Get the trigonometric functions for work
-    ClaSinCosPu( ClaMailIn.ThetaElect ) ; // + 0.25f ) ;
-
-    // Filter the reference
-    ClaState.CurrentControl.CurrentCommand =  ClaState.CurrentControl.ExtCurrentCommand * ClaControlPars.CurrentCommandDir ;
-    if ( ClaMailIn.bNoCurrentPrefilter )
-    {
-        ClaState.CurrentControl.CurrentCommandSlopeLimited = ClaState.CurrentControl.CurrentCommand ;
-        ClaState.CurrentControl.CurrentCommandFiltered = ClaState.CurrentControl.CurrentCommand ;
-    }
-    else
-    {
-        maxDeltaCur = ClaControlPars.MaxCurCmdDdt * ClaMailIn.Ts ;
-        ClaState.CurrentControl.CurrentCommandSlopeLimited = ClaState.CurrentControl.CurrentCommandSlopeLimited +
-                __mmaxf32 (__mminf32 (ClaState.CurrentControl.CurrentCommand - ClaState.CurrentControl.CurrentCommandSlopeLimited ,maxDeltaCur) , -maxDeltaCur) ;
-
-
-        ClaState.CurrentControl.CurrentCommandFiltered = ClaState.CurrentControl.CurrentCommandFiltered  +
-                (ClaState.CurrentControl.CurrentCommandSlopeLimited  - ClaState.CurrentControl.CurrentCommandFiltered ) * ClaControlPars.CurrentRefFiltB +
-                ( ClaState.CurrentControl.CurrentCmdFilterState0 - ClaState.CurrentControl.CurrentCmdFilterState1 ) * ClaControlPars.CurrentRefFiltA1 ;
-    }
-    ClaState.CurrentControl.CurrentCmdFilterState1 = ClaState.CurrentControl.CurrentCmdFilterState0  ;
-    ClaState.CurrentControl.CurrentCmdFilterState0 = ClaState.CurrentControl.CurrentCommandFiltered  ;
-
-    ClaState.CurrentControl.ExtCurrentCommandFiltered = ClaState.CurrentControl.CurrentCommandFiltered * ClaControlPars.CurrentCommandDir ;
-
-
-    ClaState.CurrentControl.Iq = c.TwoThirds *
-            (ClaState.Analogs.PhaseCur[0] * ClaState.c + ClaState.Analogs.PhaseCur[1] * ClaState.c120 + ClaState.Analogs.PhaseCur[2] * ClaState.c240) ;
-    ClaState.CurrentControl.Id = c.TwoThirds *
-            (ClaState.Analogs.PhaseCur[0] * ClaState.s + ClaState.Analogs.PhaseCur[1] * ClaState.s120 + ClaState.Analogs.PhaseCur[2] * ClaState.s240) ;
-
-    ClaState.CurrentControl.ExtIq = ClaState.CurrentControl.Iq * ClaControlPars.CurrentCommandDir ;
-    ClaState.CurrentControl.ExtIqFilt = ClaState.CurrentControl.ExtIqFilt + ClaControlPars.ExtCutCst * ( ClaState.CurrentControl.ExtIq - ClaState.CurrentControl.ExtIqFilt ) ;
-#ifdef SIMULATION_MODE
-    RunLoadSim();
-#endif
-
-    if ( ClaState.MotorOn)
-    {
-        ClaState.CurrentControl.Error_q = ClaState.CurrentControl.CurrentCommandFiltered - ClaState.CurrentControl.Iq ;
-        ClaState.CurrentControl.Error_d = - ClaState.CurrentControl.Id;
-
-        ClaState.CurrentControl.vpre_q = ClaState.Encoder1.MotSpeedHz * ClaControlPars.KeHz  + ClaState.CurrentControl.Int_q ;
-        ClaState.CurrentControl.vpre_d = ClaState.CurrentControl.Int_d ;
-
-        ClaState.vqd = ClaState.CurrentControl.vpre_q + ClaState.CurrentControl.Error_q * ClaControlPars.KpCur ;
-        ClaState.vdd = ClaState.CurrentControl.vpre_d + ClaState.CurrentControl.Error_d * ClaControlPars.KpCur ;
-
-        if ( ClaMailIn.IdMode )
+        if ( ClaState.DbgStop == 3.0f )
         {
-            ClaState.vqd = ClaMailIn.Tref ;
-            ClaState.vdd = ClaMailIn.Gref ;
-
-            ClaState.c = 1 ;
-            ClaState.s = 0 ;
-
-            ClaState.q2v1 = ClaState.c ;
-            ClaState.d2v1 = ClaState.s ;
-
-            ClaState.q2v2 = -0.5f * (c.sqrt3 * ClaState.s + ClaState.c) ;
-            ClaState.d2v2 =  0.5f * (c.sqrt3 * ClaState.c - ClaState.s) ;
+            __mdebugstop();
         }
-
-        // Vfac = Let (Vsat = alpha * Vbus) , then Vsat * TBPRD / Vbus = alpha * Tbprd
-        ClaState.vdr = __mminf32(__mmaxf32(ClaState.vdd,-ClaState.Vsat),ClaState.Vsat) ;
-        f1 =  ClaState.vqd * ClaState.vqd + ClaState.vdr * ClaState.vdr ;
-        if ( f1 > ClaState.Vsat * ClaState.Vsat )
-        {
-            ClaState.vqr = ClaState.vqd * ClaState.Vsat * __meisqrtf32(__mmaxf32(f1, 1.0f ));
-        }
-        else
-        {
-            ClaState.vqr = ClaState.vqd ;
-        }
-        ClaState.va = ClaState.PwmFac * ( ClaState.q2v1 * ClaState.vqr + ClaState.d2v1 * ClaState.vdr  ) ;
-        ClaState.vb = ClaState.PwmFac * ( ClaState.q2v2 * ClaState.vqr + ClaState.d2v2 * ClaState.vdr  ) ;
-        ClaState.vc = -ClaState.vb - ClaState.va ;
-
-/*
-        f1 =  ClaState.vqd * ClaState.vqd + ClaState.vdd * ClaState.vdd ;
-        if ( f1 > ClaState.Vsat * ClaState.Vsat )
-        {
-            ClaState.SaturationFac4AWU = ClaState.Vsat * __meisqrtf32(__mmaxf32(f1, 1.0f ));
-        }
-        else
-        {
-            ClaState.SaturationFac4AWU = 1 ;
-        }
-
-        //ClaState.SaturationFac4AWU = ClaState.Vsat * __meisqrtf32(__mmaxf32( ClaState.vqd * ClaState.vqd + ClaState.vdd * ClaState.vdd , ClaState.Vsat ) );
-        ClaState.va = ClaState.PwmFac *ClaState.SaturationFac4AWU  * ( ClaState.q2v1 * ClaState.vqd + ClaState.d2v1 * ClaState.vdd  ) ;
-        ClaState.vb = ClaState.PwmFac *ClaState.SaturationFac4AWU  * ( ClaState.q2v2 * ClaState.vqd + ClaState.d2v2 * ClaState.vdd  ) ;
-        ClaState.vc = -ClaState.vb - ClaState.va ;
-*/
+        HWREGH(GPIODATA_BASE + GPIO_O_GPASET) = 512 ; // GPIO9
+        HWREGH(GPIODATA_BASE + GPIO_O_GPCSET+1) = 16 ; // GPIO84
+        ClaState.Analogs.PhaseVoltUnCalib[1] = ADC_READ_VOLT2  - c.Num2048  ;
+        ClaState.Analogs.PhaseVoltUnCalib[0] = ADC_READ_VOLT1  - c.Num2048  ;
+        HWREGH(DACA_BASE + DAC_O_VALS) =(short unsigned) (c.Num2048 +
+                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[1] , 2000 ) , -2000 )) ;
+        HWREGH(DACC_BASE + DAC_O_VALS) =(short unsigned) (c.Num2048 +
+                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[0] , 2000 ) , -2000 )) ;
     }
-    else
+    else if ( ClaState.DacPulseCntr == c.UnsignedLong4  )
     {
-        ClaState.CurrentControl.Error_q = 0 ;
-        ClaState.CurrentControl.Error_d = 0 ;
-        ClaState.CurrentControl.vpre_q = 0;
-        ClaState.CurrentControl.vpre_d = 0 ;
-        ClaState.vqd  = 0 ;
-        ClaState.vdd = 0 ;
-        ClaState.vqr = 0 ;
-        ClaState.vdr = 0 ;
-        ClaState.va = 0 ;
-        ClaState.vb = 0 ;
-        ClaState.vb = 0 ;
+        if ( ClaState.DbgStop == 4.0f )
+        {
+            __mdebugstop();
+        }
+        ClaState.Analogs.PhaseVoltUnCalibSum[2] = ClaState.Analogs.PhaseVoltUnCalib[2] ;
+        ClaState.Analogs.DcCurUncalibSum = ClaState.Analogs.DcCurUncalibSum ;
+        HWREGH(GPIODATA_BASE + GPIO_O_GPACLEAR) = 512 ;
+        HWREGH(GPIODATA_BASE + GPIO_O_GPCCLEAR+1) = 16 ;
+        ClaState.Analogs.PhaseVoltUnCalib[2] = ADC_READ_VOLT3  - c.Num2048  ;
+        ClaState.Analogs.DcCurUncalib = ADC_READ_VOLTDC  - c.Num2048  ;
+        ClaState.Analogs.PhaseVoltUnCalibSum[2] += ClaState.Analogs.PhaseVoltUnCalib[2] ;
+        ClaState.Analogs.DcCurUncalibSum += ClaState.Analogs.DcCurUncalibSum ;
+        HWREGH(DACA_BASE + DAC_O_VALS) =(short unsigned) (c.Num2048 +
+                __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[2] , 2000 ) , -2000 )) ;
+        HWREGH(DACC_BASE + DAC_O_VALS) =(short unsigned) (c.Num2048 +
+                __mmaxf32 (__mminf32 (ClaControlPars.DcCurrentDacGain * ClaState.Analogs.DcCurUncalib , 2000 ) , -2000 )) ;
     }
-
-    ClaState.vn =  ClaState.PwmOffset - 0.5f * (  __mmaxf32(__mmaxf32(ClaState.va,ClaState.vb),ClaState.vc) + __mminf32(__mminf32(ClaState.va,ClaState.vb),ClaState.vc)) ;
-    wa = ClaState.va + ClaState.vn ;
-    wb = ClaState.vb + ClaState.vn ;
-    wc = ClaState.vc + ClaState.vn ;
-    if ( wa <= 3 )
-    { //That is zero PWM
-        HWREGH(PWM_A_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
-        HWREGH(PWM_A_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
-    }
-    else
-    {
-        pb = (long) __mminf32 ( wa * 0.5f , ClaState.MaxWB) ;
-        pa = (long) __mminf32 ( wa + 0.5f - (float) pb , ClaState.MaxWA) ;
-        ClaMailOut.PwmA = pb + pa ;
-        HWREGH(PWM_A_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmFrame - pa ;
-        HWREGH(PWM_A_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmFrame - pb ;
-    }
-
-    if ( wb <= 3 )
-    { //That is zero PWM
-        HWREGH(PWM_B_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
-        HWREGH(PWM_B_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
-    }
-    else
-    {
-        pb = (long) __mminf32 ( wb * 0.5f , ClaState.MaxWB) ;
-        pa = (long) __mminf32 ( wb + 0.5f - (float) pb , ClaState.MaxWA) ;
-        ClaMailOut.PwmA = pb + pa ;
-        HWREGH(PWM_B_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmFrame - pa ;
-        HWREGH(PWM_B_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmFrame - pb ;
-    }
-
-    if ( wc <= 3 )
-    { //That is zero PWM
-        HWREGH(PWM_C_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
-        HWREGH(PWM_C_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
-    }
-    else
-    {
-        pb = (long) __mminf32 ( wc * 0.5f , ClaState.MaxWB) ;
-        pa = (long) __mminf32 ( wc + 0.5f - (float) pb , ClaState.MaxWA) ;
-        ClaMailOut.PwmA = pb + pa ;
-        HWREGH(PWM_C_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmFrame - pa ;
-        HWREGH(PWM_C_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmFrame - pb ;
-    }
-
-    dd = ( ClaState.va * ClaState.va + ClaState.vb * ClaState.vb + ClaState.vc * ClaState.vc  )  ;
-    ClaMailOut.vq_and_d  = dd * __meisqrtf32(__mmaxf32(dd,9.765625e-04f) ) * c.TwoThirds * ClaState.Analogs.Vdc * ClaState.InvPwmFrame  ;
-
-
-
-    delta = ClaState.vqr -  ClaState.vqd ;
-    er    = ClaState.CurrentControl.Error_q + delta * ClaControlPars.KAWUCur ;
-    ClaState.CurrentControl.Int_q =  ClaState.CurrentControl.Int_q + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
-
-    delta = ClaState.vdr -ClaState.vdd ;
-    er    = ClaState.CurrentControl.Error_d + delta * ClaControlPars.KAWUCur ;
-    ClaState.CurrentControl.Int_d =  ClaState.CurrentControl.Int_d + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
-/*
-    delta = (ClaState.SaturationFac4AWU - 1.0) *  ClaState.vqd ;
-    er    = ClaState.CurrentControl.Error_q + delta * ClaControlPars.KAWUCur ;
-    ClaState.CurrentControl.Int_q =  ClaState.CurrentControl.Int_q + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
-
-    delta = (ClaState.SaturationFac4AWU - 1.0) *  ClaState.vdd ;
-    er    = ClaState.CurrentControl.Error_d + delta * ClaControlPars.KAWUCur ;
-    ClaState.CurrentControl.Int_d =  ClaState.CurrentControl.Int_d + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
-*/
-    ClaState.tTask = (HWREG(ECAP3_BASE + ECAP_O_TSCTR) - t) * 8.333333333333333e-03f ;
 
     HWREGH(GPIODATA_BASE + GPIO_O_GPDCLEAR) = 128 ; // GPIO103
 }
-
 /*-----------------------------------------------------------------------------
 //
 // Task 2 - Title Here
@@ -501,33 +586,6 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
  */
 __attribute__((interrupt))  void Cla1Task2 ( void )
 {
-    if ( ClaState.DbgStop == 2.0f )
-    {
-        __mdebugstop();
-    }
-
-
-    // Get the analog variables
-    ProcAnalogSamples();
-
-    // Check motor readiness
-    CheckMotorReady();
-
-    ClaCheckMotorOn() ;
-
-
-//            ClaState.CurrentControl.CurrentCommandSlopeLimited * ClaControlPars.CurrentRefFiltB
-//            - ClaState.CurrentControl.CurrentCmdFilterState1 * ClaControlPars.CurrentRefFiltA1
-//            - ClaState.CurrentControl.CurrentCmdFilterState0 * ClaControlPars.CurrentRefFiltA0;
-
-//    ClaState.CurrentControl.CurrentCmdFilterState1 = ClaState.CurrentControl.CurrentCmdFilterState0 ;
-//    ClaState.CurrentControl.CurrentCmdFilterState0 = ClaState.CurrentControl.CurrentCommandFiltered ;
-
-
-    // Get the voltage to PWM ratios
-
-    ClaState.PwmFac = 2* ClaState.PwmFrame * __meinvf32 ( __mmaxf32( ClaState.Analogs.Vdc , 1.0f ) )  ;
-    ClaState.Vsat   = ClaState.Analogs.Vdc * ClaControlPars.VectorSatFac ;
 
 }
 

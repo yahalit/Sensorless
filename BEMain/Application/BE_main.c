@@ -206,6 +206,7 @@ void InitAppData(void)
     InitTimeOuts();
 
     ClaState.Timing.TsInTicks = CUR_SAMPLE_TIME_CLOCKS  ;
+    ClaState.Timing.InvTsInTicks = (1.0f / CUR_SAMPLE_TIME_CLOCKS)   ;
     ClaState.Timing.InvMhz = 1.0f / (float) CPU_CLK_MHZ ;
 
 

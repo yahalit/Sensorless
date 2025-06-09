@@ -110,18 +110,20 @@ void InitPeripherals(void)
      * PWM 4 is DAC1 enable
      */
     SysCtl_setEPWMClockDivider(SYSCTL_EPWMCLK_DIV_1);
-    InitEPwm7AsMasterCounetr();    // Setup EPWM5 as master counter
+    InitEPwm7AsMasterCounetr();    // Setup EPWM7 as master counter, 1msec cycle
     //InitEPwm1();    // Setup EPWM1
 
+    // Brifge PWMs
     SetupPWM( PWM_A_BASE,CUR_SAMPLE_TIME_USEC);
     SetupPWM( PWM_B_BASE,CUR_SAMPLE_TIME_USEC);
     SetupPWM( PWM_C_BASE,CUR_SAMPLE_TIME_USEC);
 
-    setupPWM4DacEna(EPWM4_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
-    setupPWM4DacEna(EPWM5_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
+    // DAC PWM
+    setupPWMForDacEna(EPWM4_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
+    setupPWMForDacEna(EPWM5_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
 
-    // Just for ADC conversion
-    setupPWM4DacEna(EPWM6_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,CONTROL_PERIOD_NSEC) ;
+    // Just for main CPU interrupt
+    setupPWMForDacEna(EPWM6_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,CONTROL_PERIOD_NSEC) ;
 
     setupDAC(); // Setup the DACs
 

@@ -170,7 +170,7 @@ void setupPwmParams(void);
 void ClearTrip(void) ;
 void SetGateDriveEable(short in);
 void InitEPwm7AsMasterCounetr();
-void setupPWM4DacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long DisablePeriod_nsec,unsigned long pwmPeriod_nsec); \
+void setupPWMForDacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long DisablePeriod_nsec,unsigned long pwmPeriod_nsec); \
 
 // PT Driver
 void InitPVT(void);

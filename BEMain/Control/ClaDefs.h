@@ -25,6 +25,11 @@ struct CClaConst
     float TwoThirds ;
     float OneOverTwoPi ;
     float TwoPi ;
+    float Num2048  ;
+    long UnsignedLong1 ;
+    long UnsignedLong2 ;
+    long UnsignedLong3 ;
+    long UnsignedLong4 ;
 };
 
 struct CClaMailIn
@@ -177,8 +182,10 @@ struct CAnalogs
     float PhaseCurUncalibC ;
     float PhaseCur[3] ;
     float PhaseVoltUnCalib[3] ;
+    float PhaseVoltUnCalibSum[3] ;
     float PhaseVolts[3] ;
     float DcCurUncalib ;
+    float DcCurUncalibSum ;
     float DcCur        ;
     float Vdc ;
     float BusCurrent ;
@@ -249,6 +256,7 @@ struct CClaTiming
 {
     float InvMhz ;
     float TsInTicks ;
+    float InvTsInTicks ;
 };
 
 struct CClaState
@@ -291,7 +299,7 @@ struct CClaState
     float MotFail ;
     float ThetaPuInUse ; // The copy of the electrical angle used for actual calculation (the inmail value may not be time-synchronized to CLA)
     float PotRefFail ;
-    float DacPulseCntr ;
+    long DacPulseCntr ;
     long  SystemMode ;
     struct CAnalogs Analogs ;
     struct CAdcRaw AdcRaw ; //!< Raw value of ADC
@@ -333,7 +341,10 @@ const float SinTable[48] = {
 
 const struct CClaConst  c = { .piOver32 = 9.817477042468103e-02f , .Halfsqrt3 = 8.660254037844386e-01f  ,
                               .sqrt3 = 1.732050807568877f , .OneOver3GoodBehavior = 3.333333333333333e-01f ,
-                              .OneOverTwoPi = 1.591549430918953e-01f , .TwoPi = 6.283185307179586e+00f , .TwoThirds = 0.666666666666667f};
+                              .OneOverTwoPi = 1.591549430918953e-01f , .TwoPi = 6.283185307179586e+00f , .TwoThirds = 0.666666666666667f,
+                              .Num2048 = 2048.0f ,
+                              .UnsignedLong1 = 1 , .UnsignedLong2 = 2,.UnsignedLong3 = 3 , .UnsignedLong4 = 4
+};
 #endif
 
 

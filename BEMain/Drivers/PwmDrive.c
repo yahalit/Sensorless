@@ -232,7 +232,7 @@ void InitEPwm7AsMasterCounetr()
 }
 
 
-void setupPWM4DacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long DisablePeriod_nsec,unsigned long pwmPeriod_nsec)
+void setupPWMForDacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long DisablePeriod_nsec,unsigned long pwmPeriod_nsec)
 {
     HWREGH(base + EPWM_O_TBCTL) = 0xc00b ; // Stop, immediate period load
 
