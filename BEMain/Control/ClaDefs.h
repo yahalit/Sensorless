@@ -200,6 +200,7 @@ struct CAnalogs
 struct CAdcRaw
 {
     short PhaseCurAdc[3] ;
+    short PhaseCurAmcAdc[3] ;
     short unsigned Temperature ;
 };
 
@@ -300,7 +301,10 @@ struct CClaState
     float ThetaPuInUse ; // The copy of the electrical angle used for actual calculation (the inmail value may not be time-synchronized to CLA)
     float PotRefFail ;
     long DacPulseCntr ;
+    long unsigned InterruptCtr  ;
     long  SystemMode ;
+    float Pwm6LimitForZeroing ;
+    float Pwm6OnStart ;
     struct CAnalogs Analogs ;
     struct CAdcRaw AdcRaw ; //!< Raw value of ADC
     struct CClaCurrentControl CurrentControl;

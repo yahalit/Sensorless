@@ -165,6 +165,30 @@ void SetAdcMux(void)
     MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER5, ADC_SOC_EVENT,
                  ADC_CH_ADCIN4);
 
+    //EALLOW ;
+    //HWREG((ANALOGSUBSYS_BASE + ASYSCTL_O_AGPIOCTRLG) = 0x0fffffc0 ;
+
+
+    GPIO_setAnalogMode( 198 , GPIO_ANALOG_ENABLED) ; // C7
+    GPIO_setAnalogMode( 199 , GPIO_ANALOG_ENABLED) ; // C0
+    GPIO_setAnalogMode( 200 , GPIO_ANALOG_ENABLED) ; // C1
+    GPIO_setAnalogMode( 201 , GPIO_ANALOG_ENABLED) ; // C9
+    GPIO_setAnalogMode( 202 , GPIO_ANALOG_ENABLED) ; // C9
+    GPIO_setAnalogMode( 203 , GPIO_ANALOG_ENABLED) ; // C6
+    GPIO_setAnalogMode( 204 , GPIO_ANALOG_ENABLED) ; // C5
+    GPIO_setAnalogMode( 205 , GPIO_ANALOG_ENABLED) ; // C4
+    GPIO_setAnalogMode( 206 , GPIO_ANALOG_ENABLED) ; // C3
+
+    GPIO_setAnalogMode( 207 , GPIO_ANALOG_ENABLED) ; // B6
+    GPIO_setAnalogMode( 208 , GPIO_ANALOG_ENABLED) ; // B7
+    GPIO_setAnalogMode( 209 , GPIO_ANALOG_ENABLED) ; // A6
+    GPIO_setAnalogMode( 210 , GPIO_ANALOG_ENABLED) ; // A7
+    GPIO_setAnalogMode( 211 , GPIO_ANALOG_ENABLED) ; // A8
+    GPIO_setAnalogMode( 212 , GPIO_ANALOG_ENABLED) ; // A9
+    GPIO_setAnalogMode( 213 , GPIO_ANALOG_ENABLED) ; // A10
+    GPIO_setAnalogMode( 214 , GPIO_ANALOG_ENABLED) ; // A11
+    GPIO_setAnalogMode( 215 , GPIO_ANALOG_ENABLED) ; // B4
+    GPIO_setAnalogMode( 216 , GPIO_ANALOG_ENABLED) ; // B5
 }
 
 

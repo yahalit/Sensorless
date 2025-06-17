@@ -267,8 +267,9 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 
 
 //    float DcCurUncalib ;
-//    float DcCur        ;
-    if ( HWREG(EPWM6_BASE + EPWM_O_TBCTR) < (DAC_PWM_PERIOD_CLK*0.5f)  )
+//    float DcCur
+    ClaState.Pwm6OnStart = HWREGH(EPWM6_BASE + EPWM_O_TBCTR) ;
+    if ( ClaState.Pwm6OnStart <   ClaState.Pwm6LimitForZeroing )
     {
         ClaState.DacPulseCntr = 0 ;
     }
@@ -295,6 +296,10 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
         ClaState.AdcRaw.PhaseCurAdc[1] = ( ADC_READ_CUR2_H1 + ADC_READ_CUR2_H2 ) * 0.5f  ;
         ClaState.AdcRaw.PhaseCurAdc[2] = ( ADC_READ_CUR3_H1 + ADC_READ_CUR3_H2 ) * 0.5f  ;
 
+        // Take current measurements
+        ClaState.AdcRaw.PhaseCurAmcAdc[0] = ADC_READ_CUR1_A  ;
+        ClaState.AdcRaw.PhaseCurAmcAdc[1] = ADC_READ_CUR2_A  ;
+        ClaState.AdcRaw.PhaseCurAmcAdc[2] = ADC_READ_CUR2_A  ;
 
         ClaState.Analogs.PhaseCurUncalibA = ( ClaState.AdcRaw.PhaseCurAdc[0] - 2048.0f - ClaMailIn.IaOffset ) * ClaControlPars.Bit2Amp ;
         ClaState.Analogs.PhaseCurUncalibB = ( ClaState.AdcRaw.PhaseCurAdc[1] - 2048.0f - ClaMailIn.IbOffset ) * ClaControlPars.Bit2Amp ;
@@ -572,7 +577,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
         HWREGH(DACC_BASE + DAC_O_VALS) =(short unsigned) (c.Num2048 +
                 __mmaxf32 (__mminf32 (ClaControlPars.DcCurrentDacGain * ClaState.Analogs.DcCurUncalib , 2000 ) , -2000 )) ;
     }
-
+    ClaState.InterruptCtr += c.UnsignedLong1;
     HWREGH(GPIODATA_BASE + GPIO_O_GPDCLEAR) = 128 ; // GPIO103
 }
 /*-----------------------------------------------------------------------------
