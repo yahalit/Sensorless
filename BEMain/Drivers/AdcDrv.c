@@ -8,6 +8,64 @@
 
 
 
+void ADC_init(uint32_t base){
+    //
+    // ADC Initialization: Write ADC configurations and power up the ADC
+    //
+    // Set the analog voltage reference selection and ADC module's offset trims.
+    // This function sets the analog voltage reference to internal (with the reference voltage of 1.65V or 2.5V) or external for ADC
+    // which is same as ASysCtl APIs.
+    //
+    ADC_setVREF(base, ADC_REFERENCE_INTERNAL, ADC_REFERENCE_3_3V);
+    //ADC_setVREF(base, ADC_REFERENCE_EXTERNAL, ADC_REFERENCE_VREFHI);
+        //
+    // Configures the analog-to-digital converter module prescaler.
+    //
+    ADC_setPrescaler(base, ADC_CLK_DIV_4_0);
+    //
+    // Configures the analog-to-digital converter resolution and signal mode.
+    //
+    ADC_setMode(base, _ADC_RESOLUTION_12BIT, ADC_MODE_SINGLE_ENDED);
+    //
+    // Sets the timing of the end-of-conversion pulse
+    //
+    ADC_setInterruptPulseMode(base, ADC_PULSE_END_OF_CONV);
+    //
+    // Powers up the analog-to-digital converter core.
+    //
+    ADC_enableConverter(base);
+    //
+    // Delay for 1ms to allow ADC time to power up
+    //
+    DEVICE_DELAY_US(5000);
+    //
+    // Enable alternate timings for DMA trigger
+    //
+    ADC_enableAltDMATiming(base);
+    //
+    // SOC Configuration: Setup ADC EPWM channel and trigger settings
+    //
+    // Disables SOC burst mode.
+    //
+    ADC_disableBurstMode(base);
+    //
+    // Sets the priority mode of the SOCs.
+    //
+    ADC_setSOCPriority(base, ADC_PRI_ALL_HIPRI);
+    //
+    // ADC Interrupt 1 Configuration
+    //      Source  : ADC_INT_TRIGGER_EOC1
+    //      Interrupt Source: enabled
+    //      Continuous Mode : disabled
+    //
+    //
+    ADC_setInterruptSource(base, ADC_INT_NUMBER1, ADC_INT_TRIGGER_EOC4);
+    ADC_clearInterruptStatus(base, ADC_INT_NUMBER1);
+    ADC_enableContinuousMode(base, ADC_INT_NUMBER1);
+    ADC_disableInterrupt(base, ADC_INT_NUMBER1);
+}
+
+
 void SetAdcMux(void);
 //
 // ConfigureADC - Write ADC configurations and power up the ADC for both
@@ -15,7 +73,24 @@ void SetAdcMux(void);
 //
 void ConfigureADC(void)
 {
+    //
+    // Disables the temperature sensor output to the ADC.
+    //
+    ASysCtl_disableTemperatureSensor();
+    //
+    // Set the analog voltage reference selection to internal.
+    //
+    ASysCtl_setAnalogReferenceInternal( ASYSCTL_VREFHIA | ASYSCTL_VREFHIB | ASYSCTL_VREFHIC );
+    //
+    // Set the internal analog voltage reference selection to 1.65V.
+    //
+    ASysCtl_setAnalogReference1P65( ASYSCTL_VREFHIA | ASYSCTL_VREFHIB | ASYSCTL_VREFHIC );
 
+    ADC_init(ADCA_BASE) ;
+    ADC_init(ADCB_BASE) ;
+    ADC_init(ADCC_BASE) ;
+
+/*
     ADC_setVREF(ADCA_BASE, ADC_REFERENCE_INTERNAL, ADC_REFERENCE_3_3V);
     ADC_setVREF(ADCB_BASE, ADC_REFERENCE_INTERNAL, ADC_REFERENCE_3_3V);
     ADC_setVREF(ADCC_BASE, ADC_REFERENCE_INTERNAL, ADC_REFERENCE_3_3V);
@@ -56,6 +131,8 @@ void ConfigureADC(void)
     DELAY_US(1000);
 
     EDIS;
+*/
+
     SetAdcMux() ;
 }
 
@@ -167,6 +244,28 @@ void SetAdcMux(void)
 
     //EALLOW ;
     //HWREG((ANALOGSUBSYS_BASE + ASYSCTL_O_AGPIOCTRLG) = 0x0fffffc0 ;
+
+
+    // Analog PinMux for A0/DACA_OUT
+    GPIO_setPinConfig(GPIO_198_GPIO198);
+    GPIO_setPinConfig(GPIO_199_GPIO199);
+    GPIO_setPinConfig(GPIO_200_GPIO200);
+    GPIO_setPinConfig(GPIO_201_GPIO201);
+    GPIO_setPinConfig(GPIO_202_GPIO202);
+    GPIO_setPinConfig(GPIO_203_GPIO203);
+    GPIO_setPinConfig(GPIO_204_GPIO204);
+    GPIO_setPinConfig(GPIO_205_GPIO205);
+    GPIO_setPinConfig(GPIO_206_GPIO206);
+    GPIO_setPinConfig(GPIO_207_GPIO207);
+    GPIO_setPinConfig(GPIO_208_GPIO208);
+    GPIO_setPinConfig(GPIO_209_GPIO209);
+    GPIO_setPinConfig(GPIO_210_GPIO210);
+    GPIO_setPinConfig(GPIO_211_GPIO211);
+    GPIO_setPinConfig(GPIO_212_GPIO212);
+    GPIO_setPinConfig(GPIO_213_GPIO213);
+    GPIO_setPinConfig(GPIO_214_GPIO214);
+    GPIO_setPinConfig(GPIO_215_GPIO215);
+    GPIO_setPinConfig(GPIO_216_GPIO216);
 
 
     GPIO_setAnalogMode( 198 , GPIO_ANALOG_ENABLED) ; // C7
