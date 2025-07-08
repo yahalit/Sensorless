@@ -39,7 +39,7 @@ const short unsigned HallCount2Key[7] = { 1 , 3 , 2 , 6 , 4 , 5 , 1} ;
 
 short GetHallComm()
 {
-    short unsigned ChangeKey ;
+    short unsigned ChangeKey,  port  ;
     short hold = HallDecode.HallValue ;
     short unsigned excp  = HallDecode.HallException   ;
     short RetVal ;
@@ -52,12 +52,10 @@ short GetHallComm()
     union UMultiType u ;
 
 #ifndef SLAVE_DRIVER
-    union UMultiType u1,u2,u3 ;
+    //union UMultiType u1,u2,u3 ;
 
-    u1.us[0] = HWREGH( GPIODATA_BASE + GPIO_O_GPHDAT) ;
-    u2.us[0] = (HWREGH( GPIODATA_BASE + GPIO_O_GPADAT + 1 ) >> 12 ) & 1 ; // Read GPIO28 as bit .12
-    u3.us[0] = ( HWREGH( GPIODATA_BASE + GPIO_O_GPBDAT ) >> 1 ) & 1  ;// Read GPIO33 as bit .1
-    HallDecode.HallKey = (u3.us[0] << 2)  + ( u1.us[0] & 2 ) + u2.us[0]  ;
+    port = HWREGH( GPIODATA_BASE + GPIO_O_GPADAT + 1 ) ;
+    HallDecode.HallKey = ((port >> 5) & 5 )   + ( (port >> 3) & 2  ) ;
 #endif
 
 

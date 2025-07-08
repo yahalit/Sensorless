@@ -43,7 +43,7 @@ for cnt = 1:length(SigNamesBESensorLess) , SigNamesBESensorLess{cnt} = SigTableB
 ErrCodesBESensorLess = ParseErrorCodes( [BESensorLessRoot,'SelfTest\ErrorCodes.h']) ; 
 
 
-BaseSignalsBESensorLess = {'LongException','StoVolts','Vdc','UserPos','ThetaElect','Iq','UserSpeed'} ;
+BaseSignalsBESensorLess = {'LongException','Vdc','UserPos','ThetaElect','Iq','UserSpeed'} ;
 
 LoopClosureModes  = ParseEnum( [BESensorLessRoot,'Application\HwConfig.h'],'E_LoopClosureMode') ; 
 SysModes  = ParseEnum( [BESensorLessRoot,'Control\ClaDefs.h'],'E_SysMode') ; 
@@ -56,7 +56,7 @@ EnumsBESensorLess = struct('SysModes',SysModes,'LoopClosureModes',LoopClosureMod
     'CommutationModes',CommutationModes,'SigRefTypes',SigRefTypes) ; 
 % 'SysModes',SysModes,'LoopClosureModes',LoopClosureModes,'ReferenceModes',ReferenceModes) ; 
 
-AnalogsListBESensorLess = {'PhaseCur0','PhaseCur1','PhaseCur2','PhaseCurAdc0','PhaseCurAdc1','PhaseCurAdc2'} ; 
+AnalogsListBESensorLess = {'PhaseCur0','PhaseCur1','PhaseCur2'} ; 
 
 
 EntityTableBESensorLess = struct('Entity','Sensorless','CalibTable',{CalibTableBESensorLess},'ParTable',{ParTableBESensorLess},'SigTable',{SigTableBESensorLess},'CfgTable',CfgTableBESensorLess,...

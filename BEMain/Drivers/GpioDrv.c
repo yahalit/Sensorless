@@ -176,6 +176,26 @@ void setupGpioGpio(void)
     GPIO_setQualificationMode(NGP, GPIO_QUAL_ASYNC);
     GPIO_setControllerCore(NGP,GPIO_CORE_CPU1_CLA1) ;
 
+#undef NGP
+#define NGP 20 // Hall A
+    GPIO_setPinConfig(GPIO_20_GPIO20);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+
+#undef NGP
+#define NGP 21 // Hall B
+    GPIO_setPinConfig(GPIO_21_GPIO21);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+#undef NGP
+
+    #define NGP 23 // Hall C
+    GPIO_setPinConfig(GPIO_23_GPIO23);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
 
 #undef NGP
 #define NGP 57 // MUXA11
@@ -270,6 +290,7 @@ void setupGpioGpio(void)
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_PULLUP);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+    GPIO_setControllerCore(NGP,GPIO_CORE_CPU1_CLA1) ; // And give it to the CLA
 
 #undef NGP
 #define NGP 103 // CLA timing diagnostic

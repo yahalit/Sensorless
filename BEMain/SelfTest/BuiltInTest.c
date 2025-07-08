@@ -35,6 +35,7 @@ void IdleCbit(void)
         LogException(EXP_SAFE_FATAL,exp_overload ) ;
     }
 
+#ifdef ON_BOARD_TEMPSENSOR_LINEAR
     {
         SysState.AnalogProc.Temperature  = GetTemperatureFromAdc( ClaState.AdcRaw.Temperature * 8.0566e-04 ) ; //ADC_getTemperatureC(ClaState.AdcRaw.Temperature, ADC_REFERENCE_INTERNAL, 3.3f);
 
@@ -43,6 +44,7 @@ void IdleCbit(void)
             LogException(EXP_SAFE_FATAL,exp_overtemperature ) ;
         }
     }
+#endif
 
     // Manage exceptions thrown by the CLA
     if (  ClaMailOut.AbortCounter != SysState.Status.AbortCnt  )
@@ -195,17 +197,6 @@ void IdleCbit(void)
 
 
 
-    if ( ClaState.MotorOnRequest == 0 )
-    {
-        ClaMailIn.Pot1CalibP0 = Calib.Pot1CalibP0;
-        ClaMailIn.Pot1CalibP1 = Calib.Pot1CalibP1;
-        ClaMailIn.Pot1CalibP2 = Calib.Pot1CalibP2;
-        ClaMailIn.Pot1CalibP3 = Calib.Pot1CalibP3;
-        ClaMailIn.Pot2CalibP0 = Calib.Pot2CalibP0;
-        ClaMailIn.Pot2CalibP1 = Calib.Pot2CalibP1;
-        ClaMailIn.Pot2CalibP2 = Calib.Pot2CalibP2;
-        ClaMailIn.Pot2CalibP3 = Calib.Pot2CalibP3;
-    }
     // Gyro test
 #ifndef ON_BOARD_GYRO
     LocalBit.bit.GyroNotReady = 1 ;

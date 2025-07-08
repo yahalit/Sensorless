@@ -39,6 +39,9 @@ void ResetRefGens(void)
     SysState.Debug.TRef.State = 0 ;
 }
 
+
+//short unsigned junkk =0;
+
 void ReadEncPosition1( void);
 
 short unsigned PwmAtInt ;
@@ -49,6 +52,12 @@ __interrupt void AdcIsr(void)
     GpioDataRegs.GPASET.bit.GPIO18 = 1 ;
     //long unsigned port ;
     //short unsigned potcase ;
+
+//    junkk = (junkk + 1 ) & 4095 ;
+//    HWREGH(DACA_BASE + DAC_O_VALS) = junkk ;
+    //(short unsigned) (c.Num2048 +
+    //        __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[1] , 2000 ) , -2000 )) ;
+//    HWREGH(DACC_BASE + DAC_O_VALS) = ( junkk+ 1048 ) & 4095 ;
 
     // Acknowledge interrupt
     HWREGH(PIECTRL_BASE + PIE_O_ACK) = INTERRUPT_ACK_GROUP3 ;

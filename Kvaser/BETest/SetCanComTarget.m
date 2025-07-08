@@ -1,4 +1,4 @@
-function [TargetCanId,RecStruct,GetStateList,CalibTable] = SetCanComTarget(entity,Side,servo,proj,RecStruct,CanId) 
+function [CanId,RecStruct,GetStateList,CalibTable] = SetCanComTarget(entity,Side,servo,proj,RecStruct,CanId) 
 % function SetCanComTarget(entity,Side,servo,Project,RecStruct)
 % Set the default entity to communicate with
 % entity: an entity struct, or a string 'Servo' or 'Intfc' or 'Neck';
@@ -19,10 +19,6 @@ function [TargetCanId,RecStruct,GetStateList,CalibTable] = SetCanComTarget(entit
 CanId = 44 ; 
 
 % [NeckRoot,WheelRoot,IntfcRoot,NeckDir,WheelDir,IntfcDir] = GetProjDirInfo(); 
-if nargin < 6
-    CanId = [] ; 
-end 
-
 % AxisName = 'BESensorless' ; 
 
 baseEnt = 1 ; 
@@ -72,13 +68,8 @@ RecStruct.CfgXlsFile= entity.CfgXlsFile;
 RecStruct.CalibCfg = entity.CalibCfg ; 
 
 
-% Construct the SGetState  base signals 
-if ~isempty(CanId)
-    TargetCanId = CanId ; 
-end
-
-RecStruct.TargetCanId = TargetCanId ;
-RecStruct.TargetCanId2 = TargetCanId ;
+RecStruct.TargetCanId = CanId ;
+RecStruct.TargetCanId2 = CanId ;
 
 GetStateList = GetSignalIndex(entity.BaseSignals,[],RecStruct) ; 
 RecStruct.AnalogsList =  GetSignalIndex(entity.AnalogsList,[],RecStruct) ;

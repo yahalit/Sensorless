@@ -25,7 +25,8 @@ void RtUltraFastRecorder(void);
 #define INTER_RECORDER_SET_UNKNOWN_TRIGTYPE 0x79 // [Interpreter:Error] {Unknown recorder trigger type}
 #endif
 
-short RecorderStartFlag ;
+short RecorderStartFlag     ;
+long  RecorderOwnerMark     ;
 
 void ClearDebugVars(void)
 {
@@ -623,6 +624,9 @@ void InitRecorder(long FastIntsInC, float FastTsUsec , long unsigned SdoBufLenLo
 
 
     RecorderProg = Recorder ;
+
+    RecorderStartFlag  = 0    ;
+    RecorderOwnerMark  = 0    ;
 }
 
 
@@ -1067,6 +1071,7 @@ long unsigned  SetRecorder( struct CSdo * pSdo ,short unsigned nData)
         break ;
 
     case 100:
+        RecorderOwnerMark = ul  ;
         RecorderStartFlag = 0 ;
         RetVal = ActivateProgrammedRecorder() ;
         if ( RetVal ) return RetVal ;
@@ -1074,6 +1079,10 @@ long unsigned  SetRecorder( struct CSdo * pSdo ,short unsigned nData)
 
     case 101:
         RecorderStartFlag = 1  ;
+        break ;
+
+    case 110:
+        Snap.SnapCmd = 1 ;
         break ;
 
     }
@@ -1342,6 +1351,26 @@ long unsigned  GetRecorder( struct CSdo * pSdo ,short unsigned *nData)
 
         *nData = (unsigned short) (reclen * 4 ) ;
         break ;
+
+        // Get the snap
+    case 110:
+        if ( RecorderProg.RecorderListLen > N_RECS_MAX)
+        {
+            return General_parameter_incompatibility_reason;
+        }
+        for ( cnt = 0 ; cnt < RecorderProg.RecorderListLen ; cnt++ )
+        {
+            pSdo->SlaveBuf[cnt] = Snap.SnapBuffer[cnt].ul ;
+        }
+        pSdo->SlaveBuf[RecorderProg.RecorderListLen] = SysState.Timing.UsecTimer ;
+        *nData = (unsigned short) ( (RecorderProg.RecorderListLen + 1 ) * 4 ) ;
+        break ;
+
+    case 111: // Get the ownership flag
+        * ((long unsigned *) &pSdo->SlaveBuf[0] ) = RecorderOwnerMark  ;
+        *nData = 4 ;
+        break ;
+
     default:
         return Sub_index_does_not_exist;
     }
@@ -1493,14 +1522,6 @@ void SnapIt( short unsigned * pSnap )
         *pSnap++ = *pNext ;
     }
 }
-
-
-
-
-
-
-
-
 
 
 

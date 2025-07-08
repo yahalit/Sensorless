@@ -114,9 +114,9 @@ void InitPeripherals(void)
     //InitEPwm1();    // Setup EPWM1
 
     // Brifge PWMs
-    SetupPWM( PWM_A_BASE,CUR_SAMPLE_TIME_USEC);
-    SetupPWM( PWM_B_BASE,CUR_SAMPLE_TIME_USEC);
-    SetupPWM( PWM_C_BASE,CUR_SAMPLE_TIME_USEC);
+    SetupPWM_Phase(PWM_A_BASE,CUR_SAMPLE_TIME_USEC * 1000UL) ;
+    SetupPWM_Phase(PWM_B_BASE,CUR_SAMPLE_TIME_USEC * 1000UL) ;
+    SetupPWM_Phase(PWM_C_BASE,CUR_SAMPLE_TIME_USEC * 1000UL) ;
 
     // DAC PWM
     setupPWMForDacEna(EPWM4_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
@@ -127,6 +127,7 @@ void InitPeripherals(void)
 
     setupDAC(); // Setup the DACs
 
+    setupEcap(); // Setup ECAPs as timers
 
     SetupDMA();     // Setup DMA to be triggered on SPI-A
 
@@ -142,6 +143,19 @@ void InitPeripherals(void)
 
 }
 
+
+void setupEcap(void)
+{
+    // ECAP2 is just a free running counter
+    HWREGH(ECAP2_BASE + ECAP_O_ECCTL1) = 0x0 ; // Stop in emulation don't capture
+    HWREG (ECAP2_BASE + ECAP_O_TSCTR ) = 0 ;
+    HWREGH(ECAP2_BASE + ECAP_O_ECCTL2) = 0x10  ; // Just run
+
+
+    // ECAP 3 is just a free runner
+    HWREG(ECAP3_BASE + ECAP_O_TSCTR) = 0 ;
+    HWREGH(ECAP3_BASE + ECAP_O_ECCTL2) = (1<<4) ;
+}
 
 /*
  * Interrupts are 50usec

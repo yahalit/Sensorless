@@ -161,10 +161,12 @@ short WaitFlashActionComplete()
     Fapi_FlashStatusType  oFlashStatus;
 
     // Wait until the Flash program operation is over
-    while(Fapi_checkFsmForReady() == Fapi_Status_FsmBusy);
+    do
+    {
+        oFlashStatus = Fapi_checkFsmForReady() ;
 
-    oFlashStatus = Fapi_getFsmStatus();
-    return (oFlashStatus == Fapi_Status_Success) ? 0 : -12 ;
+    } while ( (oFlashStatus==Fapi_Status_AsyncBusy) || (oFlashStatus==Fapi_Status_FsmBusy) );
+    return (oFlashStatus <= Fapi_Status_AsyncComplete) ? 0 : -12 ;
 }
 
 
@@ -181,8 +183,9 @@ void GetBankProtectionMaskes(long unsigned FlashAddress , long unsigned buflen32
     long unsigned prot0to31;
     long unsigned prot32to127;
     long unsigned buflen = buflen32 >> 1 ;
-    RelStartAddress = (FlashAddress & 0x1ffff) >> 10  ;
-    RelEndAddress   = ((FlashAddress+buflen) & 0x1ffff) >> 10  ;
+#define FLASH_ABS_START 0x00080000
+    RelStartAddress = ((FlashAddress-FLASH_ABS_START) & 0x1ffff) >> 10  ;
+    RelEndAddress   = (((FlashAddress-FLASH_ABS_START)+buflen) & 0x1ffff) >> 10  ;
     prot0to31 = 0xffffffff ;
     prot32to127 = 0xffffffff ;
     // 1k sector
@@ -202,8 +205,16 @@ void GetBankProtectionMaskes(long unsigned FlashAddress , long unsigned buflen32
     // 8k sectors
     if ( RelEndAddress >= 32 )
     {
-        RelEndAddress >>= 5 ;
-        for ( cnt = 0 ; cnt < 32 ; cnt++ )
+        RelEndAddress = (RelEndAddress - 32) >> 3  ;
+        if ( RelStartAddress < 32 )
+        {
+            RelStartAddress = 0 ;
+        }
+        else
+        {
+            RelStartAddress = (RelStartAddress - 32) >> 3  ;
+        }
+        for ( cnt = 0 ; cnt < 12 ; cnt++ )
         {
             if ( cnt > RelEndAddress)
             {
@@ -211,7 +222,10 @@ void GetBankProtectionMaskes(long unsigned FlashAddress , long unsigned buflen32
                 *_prot32to127 = prot32to127 ;
                 return ;
             }
-            prot0to31 &= (~(1UL<<cnt));
+            if ( cnt >= RelStartAddress)
+            {
+                prot32to127 &= (~(1UL<<cnt));
+            }
         }
     }
     // Case we reached the end of bank
@@ -243,7 +257,7 @@ short GetFlashAccess(  long unsigned FlashAddress , long unsigned buflen32)
     long unsigned prot0to31 ;
     long unsigned prot32to127 ;
     Fapi_StatusType  oReturnCheck;
-    long unsigned buflen = buflen32 >> 1 ;
+    long unsigned buflen = (buflen32 << 1) ;
 
 
     // Test we can claim
@@ -291,13 +305,19 @@ short GetFlashAccess(  long unsigned FlashAddress , long unsigned buflen32)
     }
 
     // See if we own this bank
-    BankMux = (short unsigned) HWREG(DEVCFG_BASE + SYSCTL_O_BANKMUXSEL);
+    BankMux = ( (short unsigned) HWREG(DEVCFG_BASE + SYSCTL_O_BANKMUXSEL) >> (2*nBank) ) & 3 ;
 
-
-    if (  (( 1 <<  (short unsigned)nBank  ) & BankMux ) == 0 )
+#ifdef CPU1
+    if ( BankMux )
     {// Bank is not ours
         return -6 ;
     }
+#else
+    if (  3 !=  BankMux )
+    {// Bank is not ours
+        return -6 ;
+    }
+#endif
 
     // Check address alignment (128 bits)
     if ( FlashAddress & 0x3f)
@@ -311,11 +331,11 @@ short GetFlashAccess(  long unsigned FlashAddress , long unsigned buflen32)
     }
 
 
-    // Initialize the API for this bank
+    // Initialize the API for this bank (by TI DOC : always use Fapi_FlashBank0 regardless of actual bank)
     // Initialize the Flash banks and FMC for erase and program operations.
     // Fapi_setActiveFlashBank() function sets the Flash banks and FMC for
     // further Flash operations to be performed on the banks.
-    oReturnCheck = Fapi_setActiveFlashBank( (Fapi_FlashBankType) nBank );
+    oReturnCheck = Fapi_setActiveFlashBank( Fapi_FlashBank0 );
     if(oReturnCheck != Fapi_Status_Success)
     {
         return -8  ;
@@ -388,8 +408,11 @@ short WriteToFlashBody( long unsigned FlashAddress , long unsigned * Write_Buffe
 {
     Fapi_StatusType  oReturnCheck;
     Fapi_FlashStatusWordType poFlashStatusWord ;
-    long unsigned buflen = buflen32 >> 1 ;
+    long unsigned buflen = (buflen32 << 1) ;
+    long unsigned prot0to31;
+    long unsigned prot32to127;
     short stat ;
+    short cnt ;
     stat = GetFlashAccess(FlashAddress, buflen) ;
     if ( stat )
     {
@@ -404,15 +427,30 @@ short WriteToFlashBody( long unsigned FlashAddress , long unsigned * Write_Buffe
     }
 
     // Program the EEPROM Bank
-    oReturnCheck = Fapi_issueProgrammingCommand((uint32*) FlashAddress,
-                                                (uint16*)Write_Buffer, buflen , 0, 0,
-                                                Fapi_AutoEccGeneration);
-    if(oReturnCheck != Fapi_Status_Success)
+    // We program for 128 bit = 8 word chunks
+    GetBankProtectionMaskes(FlashAddress , buflen , &prot0to31 , &prot32to127);
+    for  (  cnt = 0 ; cnt < (buflen>>3) ; cnt++ )
     {
-        return -10 ;
+
+        // Clears status of previous Flash operation
+        //ClearFSMState();
+        Fapi_setupBankSectorEnable(FLASH_WRAPPER_PROGRAM_BASE+FLASH_O_CMDWEPROTA, prot0to31);
+        Fapi_setupBankSectorEnable(FLASH_WRAPPER_PROGRAM_BASE+FLASH_O_CMDWEPROTB, prot32to127);
+
+        oReturnCheck = Fapi_issueProgrammingCommand((uint32*) (FlashAddress+ (cnt << 3 )),
+                                                    (uint16*)Write_Buffer + (cnt << 3 ), 8  , 0, 0,
+                                                    Fapi_AutoEccGeneration);
+         if(oReturnCheck != Fapi_Status_Success)
+        {
+            return -10 ;
+        }
+        // Wait for completion and check for any programming errors
+        stat = WaitFlashActionComplete() ;
+        if ( stat )
+        {
+            return stat ;
+        }
     }
-    // Wait for completion and check for any programming errors
-    stat = WaitFlashActionComplete() ;
 
     oReturnCheck = Fapi_doVerify((uint32*) FlashAddress,buflen32,Write_Buffer,&poFlashStatusWord ) ;
 

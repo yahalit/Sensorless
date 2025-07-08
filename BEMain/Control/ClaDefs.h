@@ -26,6 +26,15 @@ struct CClaConst
     float OneOverTwoPi ;
     float TwoPi ;
     float Num2048  ;
+    float Num2732 ;
+    float Num3072  ;
+    float Num4096  ;
+    float Num1p65 ;
+    float Vres2Vphase ;
+    float Adc2Volt ;
+    float Volt2Adc ;
+    float Amc2Amp  ;
+    float Hall2Amp  ;
     long UnsignedLong1 ;
     long UnsignedLong2 ;
     long UnsignedLong3 ;
@@ -39,6 +48,9 @@ struct CClaMailIn
     float IaOffset ;
     float IbOffset ;
     float IcOffset ;
+    float IaOffsetAmc ;
+    float IbOffsetAmc ;
+    float IcOffsetAmc ;
     float SimKe   ;
     float SimR    ;
     float SimVdc  ;
@@ -56,14 +68,8 @@ struct CClaMailIn
     float CurPrefiltB ;
     float bNoCurrentPrefilter ; // Non zero to inhibit current prefilter
     float StoTholdScale ; // Scaes the threshold voltage of STO
-    float Pot1CalibP0 ;
-    float Pot1CalibP1 ;
-    float Pot1CalibP2 ;
-    float Pot1CalibP3 ;
-    float Pot2CalibP0 ;
-    float Pot2CalibP1 ;
-    float Pot2CalibP2 ;
-    float Pot2CalibP3 ;
+    float ExperimentCurrentThold ;
+    float ExperimentMode ;
 #ifndef SIMULATION_MODE
     float vOpenLoopTestA ;
     float vOpenLoopTestB ;
@@ -93,8 +99,6 @@ struct CClaControlPars
     float Rev2Pos  ; // !< Scale revolutions to position units
     float Pos2Rev  ; // !< Scale position units to revolutions
     float InvEncoderCountsFullRev ; // !< Inverse Encoder Resolution count/rev
-    float Bit2Amp  ; // !< Scale current sampled bits to amperes
-    float Amp2Bit  ; // !< Inv Scale current sampled bits to amperes
     float Vdc2Bit2Volt ; // !< Scale ADC to bus voltage
     float Adc2BusAmps ; // !< Scale ADC to bus Amperes
     float MaxCurCmdDdt ; //  !< Maximum permissible rate for current command
@@ -134,6 +138,9 @@ struct CClaControlPars
 #pragma DATA_SECTION(ClaState, "cla_shared");
 #pragma DATA_SECTION(ClaControlPars, "cla_shared");
 #pragma DATA_SECTION(Calib, "cla_shared");
+
+#pragma DATA_SECTION(ClaRecs, "Cla1ToDmaMsgRAM");
+
 
 #else
 #define EXTERN_CLA extern
@@ -177,30 +184,22 @@ EXTERN_CLA struct CCalib Calib ;
 
 struct CAnalogs
 {
-    float PhaseCurUncalibA ;
-    float PhaseCurUncalibB ;
-    float PhaseCurUncalibC ;
+    float PhaseCurAmc[3] ;
     float PhaseCur[3] ;
     float PhaseVoltUnCalib[3] ;
     float PhaseVoltUnCalibSum[3] ;
-    float PhaseVolts[3] ;
+    float PhaseVoltMeas[3] ;
+    float DcUnCalibSum ;
     float DcCurUncalib ;
     float DcCurUncalibSum ;
     float DcCur        ;
     float Vdc ;
-    float BusCurrent ;
-    float StoVolts   ;
-    float ID   ;
-    float PotentiometerRef ;
-    float Pot1 ;
-    float Pot2 ;
-    float BrakeVolts ;
+    float BusCurrentAMC ;
 };
 
 struct CAdcRaw
 {
-    short PhaseCurAdc[3] ;
-    short PhaseCurAmcAdc[3] ;
+    short unsigned PhaseCurAdc[3] ;
     short unsigned Temperature ;
 };
 
@@ -300,6 +299,8 @@ struct CClaState
     float MotFail ;
     float ThetaPuInUse ; // The copy of the electrical angle used for actual calculation (the inmail value may not be time-synchronized to CLA)
     float PotRefFail ;
+    float DacValU[3] ;
+    float DacValDc  ;
     long DacPulseCntr ;
     long unsigned InterruptCtr  ;
     long  SystemMode ;
@@ -311,10 +312,12 @@ struct CClaState
     struct CEncoder Encoder1 ;
     struct CClaTiming Timing ;
     long unsigned TzFlag ;
+    long unsigned DacValDebug ;
+    float ExperimentCtr;
+    float ExperimentCtrMax;
+    float ExperimentDir ;
 };
-EXTERN_CLA struct CClaState ClaState ;
-
-
+EXTERN_CLA volatile struct CClaState ClaState ;
 
 
 
@@ -346,8 +349,10 @@ const float SinTable[48] = {
 const struct CClaConst  c = { .piOver32 = 9.817477042468103e-02f , .Halfsqrt3 = 8.660254037844386e-01f  ,
                               .sqrt3 = 1.732050807568877f , .OneOver3GoodBehavior = 3.333333333333333e-01f ,
                               .OneOverTwoPi = 1.591549430918953e-01f , .TwoPi = 6.283185307179586e+00f , .TwoThirds = 0.666666666666667f,
-                              .Num2048 = 2048.0f ,
-                              .UnsignedLong1 = 1 , .UnsignedLong2 = 2,.UnsignedLong3 = 3 , .UnsignedLong4 = 4
+                              .Num2048 = 2048.0f  , .Num2732 = 2732.0f , .Num3072 = 3072.0f , .Num4096 = 4096.0f , .Num1p65 = 1.65f ,
+                              .UnsignedLong1 = 1 , .UnsignedLong2 = 2,.UnsignedLong3 = 3 , .UnsignedLong4 = 4 ,
+                              .Adc2Volt = 8.056640625000000e-04f, .Volt2Adc = 1.241212121212121e+03f , .Vres2Vphase = 1.04f,
+                              .Amc2Amp  =  0.024485798237023f ,.Hall2Amp =  0.006112469437653f
 };
 #endif
 

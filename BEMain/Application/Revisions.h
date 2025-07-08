@@ -75,4 +75,33 @@ union UCalibProg
     short  unsigned us[64] ;
 };
 
+
+struct CIdentity
+{
+    long  PassWord ; // A password replica
+    long  HardwareRevision ; // Hardware revision (bytes)
+    long  ProductionDate   ; // (YYYY-2000 ) , MM , DD Each a byte
+    long  RevisionDate   ; // (YYYY-2000 ) , MM , DD Each a byte
+    long  HardwareType        ; // Hardware Project identifier
+    long  SerialNumber  ;
+    long  ProductionBatchCode  ;
+    long  IdentitySpare[7] ;
+    long  IdentityRevision ;
+    long  cs ; // !< Long checksum
+};
+
+struct CIdentityProg
+{
+    struct CIdentity Identity ;
+    unsigned long PassWord ;
+};
+
+union UIdentity
+{
+    struct CIdentityProg C  ;
+    long   unsigned Buf[16] ;
+    short  unsigned us[32] ;
+};
+
+
 #endif

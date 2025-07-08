@@ -3,7 +3,7 @@
    {& ControlPars.MaxSpeedCmd,4, 1.0e-3f,1.0e6f,100.0f} ,// !< Maximum permissible speed command
    {& ControlPars.SpeedCtlDelay,5, 0.0f,1.0f,0.1f} ,// !< Delay to account for when preparing speed control command
    {& ControlPars.MaxCurCmd,9, 1.0f,1.0e6f,20.0f} ,// !< Maximum permissible current command
-   {& ClaControlPars.VoltageDacGain,11, 1.0e-3f,1.0e6f,10000.0f} ,//  !< DAC gain for integrating phase voltage
+   {& ClaControlPars.VoltageDacGain,11, 1.0e-3f,1.0e6f,0.66667f} ,//  !< DAC gain for integrating phase voltage
    {& ClaControlPars.DcCurrentDacGain,12, 1.0e-3f,1.0e6f,1.0f} ,//  !< DAC gain for integrating DC supply current
    {& ClaControlPars.MaxCurCmdDdt,14, 1.0f,1.0e6f,1.0f} ,//  !< Maximum permissible rate for current command
    {& ClaControlPars.KeHz,15, 0.0000f,1.0e6f,0.0f} ,// !< Speed to required motor voltage
@@ -11,8 +11,8 @@
    {& ClaControlPars.KiCur,17, 1.0e-6f,3.0e4f,6000.0f} ,// !< Ki for current control
    {& ClaControlPars.VectorSatFac,18, 0.1f,1.0f,0.63f} ,// !< Vector saturation factor
    {& ClaControlPars.KAWUCur,19, 0.0000001f,1.0e6f,0.88f} ,// !< Anti windup for current control
-   {& ClaControlPars.VDcMax,20, 0.0000001f,1.0e6f,52.0f} ,// !< Maximum for VDC
-   {& ClaControlPars.VDcMin,21, 0.0000001f,1.0e6f,27.0f} ,// !< Minimum for VDC
+   {& ClaControlPars.VDcMax,20, 0.0000001f,1.0e6f,680.0f} ,// !< Maximum for VDC
+   {& ClaControlPars.VDcMin,21, 0.0000001f,1.0e6f,17.0f} ,// !< Minimum for VDC
    {& ControlPars.I2tCurLevel,22, 0.0000001f,1.0e6f,20.0f} ,//// !< Level for I2C current protection
    {& ControlPars.I2tCurTime,23, 0.0000001f,1.0e6f,24.0f} ,// // !< Time in Current level for I2C current protection
    {& ControlPars.SpeedFilterBWHz,24, 1.0f,1.0e6f,500.0f} ,//  !< Speed filter BW in Hz

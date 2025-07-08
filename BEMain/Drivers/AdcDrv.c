@@ -206,11 +206,11 @@ void SetAdcMux(void)
     MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER2, ADC_SOC_EVENT,
                  ADC_CH_ADCIN0);
 
-    // ok Again Phase A Hall current
+    // Again Phase A Hall current
     MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER3, ADC_SOC_EVENT,
                  ADC_CH_ADCIN6);
 
-    // ok AMC current ,DC link
+    // Hall current ,DC link
     MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER4, ADC_SOC_EVENT,
                  ADC_CH_ADCIN7);
 
@@ -218,23 +218,23 @@ void SetAdcMux(void)
 // ADCC
 ////////////////////
 
-    // ok Phase B AMC current
+    // Phase B Hall current
     MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER0, ADC_SOC_EVENT,
+                 ADC_CH_ADCIN6);
+
+    // ok Phase B AMC current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER1, ADC_SOC_EVENT,
                  ADC_CH_ADCIN7);
 
     // ok Phase B voltage
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER1, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER2, ADC_SOC_EVENT,
                  ADC_CH_ADCIN0);
 
-    // ok Phase B Hall current
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER2, ADC_SOC_EVENT,
+    // Again Phase B Hall current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER3, ADC_SOC_EVENT,
                  ADC_CH_ADCIN6);
 
-    // Again Phase B AMC current
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER3, ADC_SOC_EVENT,
-                 ADC_CH_ADCIN7);
-
-    // ok Hall current , DC link
+    // AMC current , DC link
     MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER4, ADC_SOC_EVENT,
                  ADC_CH_ADCIN1);
 
@@ -302,8 +302,8 @@ void SetAdcMux(void)
 void setupDAC(void)
 {
     EALLOW ;
-    HWREGH(DACA_BASE + DAC_O_CTL) = (3<<4) + (1<<2) + 3 ; // Load by PWM sync (PWM4) , MODE = DACREFSEL = 1
-    HWREGH(DACC_BASE + DAC_O_CTL) = (4<<4) + (1<<2) + 3 ; // Load by PWM sync (PWM4) , MODE = DACREFSEL = 1
+    HWREGH(DACA_BASE + DAC_O_CTL) = (0<<2) + 3 ; // Load immediate
+    HWREGH(DACC_BASE + DAC_O_CTL) = (0<<2) + 3 ; // Load immediate
     HWREGH(DACA_BASE + DAC_O_OUTEN)= 1 ;
     HWREGH(DACC_BASE + DAC_O_OUTEN)= 1 ;
     //DAC_tuneOffsetTrim

@@ -61,6 +61,7 @@
 #define VARS_OWNER
 #define CLA_VAR_OWNER
 #define CONFIG_OWNER
+#define INTFC_OWNER
 
 #include "StructDef.h"
 
@@ -136,11 +137,13 @@ void InitAppData(void)
     ClearMemRpt((short unsigned *) &ClaState,sizeof( ClaState) );
     ClearMemRpt((short unsigned *) &ClaMailIn,sizeof( ClaMailIn) );
 
+    // Test identity
+    ApplyIdentity(pUIdentity);
 
 
-    Correlations.fPtrs[0] = &ClaState.Encoder1.UserPos ;
-    Correlations.fPtrs[1] = &ClaState.CurrentControl.ExtCurrentCommand ;
-    Correlations.fPtrs[2] = &ClaState.CurrentControl.ExtIq ;
+    Correlations.fPtrs[0] = (float*) &ClaState.Encoder1.UserPos ;
+    Correlations.fPtrs[1] = (float*) &ClaState.CurrentControl.ExtCurrentCommand ;
+    Correlations.fPtrs[2] = (float*) &ClaState.CurrentControl.ExtIq ;
     Correlations.nCyclesInTake = 1 ;
     Correlations.nSamplesForFullTake = 10 ;
     Correlations.nWaitTakes = 1 ;
@@ -159,6 +162,8 @@ void InitAppData(void)
     ResetConfigPars() ;
 
     // Load the parameters
+
+
     for ( cnt = 0 ; cnt < (signed short)N_ParTable; cnt++ )
     {
         pPar = (struct CFloatParRecord  *) &ParTable[cnt];
@@ -170,6 +175,9 @@ void InitAppData(void)
     }
 
     ProjId = 105 ; // Ilegal
+
+    SetDefaultConfiguration() ;
+
     InitControlParams();
 
     //InitLinService();
@@ -226,6 +234,8 @@ void InitAppData(void)
     InitHallModule() ;
 
     InitPosPrefilter() ;
+
+
 
 }
 
@@ -625,6 +635,56 @@ short CheckAlign ( short unsigned * ptr , short unsigned pw )
 }
 
 
+
+#pragma FUNCTION_OPTIONS ( ApplyIdentity, "--opt_level=0" );
+short ApplyIdentity(const union UIdentity * pId )
+{
+#ifdef ON_BOARD_IDENTITY
+    short unsigned cnt  ;
+    long unsigned cs  ;
+#endif
+    //struct CFloatConfigParRecord * pCfg ;
+
+    // Set defaults: don't use user configuration
+    ClearMemRpt((short unsigned *) &DBaseConf,sizeof( DBaseConf) );
+
+    if (pId->C.Identity.PassWord  != 0x12345678)
+    {
+        return -1 ; // Bad pass
+    }
+
+#ifdef ON_BOARD_IDENTITY
+    // Test checksum for Identity. If failed, nothing to do
+    cs = 0;
+    for ( cnt = 0 ; cnt < sizeof(struct CIdentity)/2 ; cnt++  )
+    {
+        cs += pId->Buf[cnt] ;
+    }
+    if ( cs )
+    {
+        return -2 ; // Bad cs
+    }
+
+
+    // Test validity of identity revision
+    if ( pId->C.Identity.IdentityRevision !=  IdentityParametersRevision )
+    {
+        return -4 ;
+    }
+
+    // Test matching of the hardware type
+    if ( pId->C.Identity.HardwareType != THISCARD )
+    {
+        return -9 ;
+    }
+#endif
+    DBaseConf.IsValidIdentity = 1 ;
+
+    // Either Project ID or parameters set must be defined
+    DBaseConf.IsValidDatabase = 1 ;
+    //if ( pId->Identity.UserCfgPars.)
+    return 0 ;
+}
 
 
 

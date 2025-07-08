@@ -64,9 +64,9 @@
 #define VLOOP_SAMPLE_TIME_USEC 3.125
 
 
-#define CALIB_SECT_LENGTH (1UL<<12)
+#define CALIB_SECT_LENGTH (1UL<<10)
 #define PARAMS_SECT_LENGTH (1UL<<12)
-#define IDENTITY_SECT_LENGTH (1UL<<12)
+#define IDENTITY_SECT_LENGTH (1UL<<10)
 
 #define PiHalf 1.570796326794897f
 #define Pi     3.141592653589793f
@@ -153,7 +153,7 @@
 #define IsBadFloat(x) ((( *((short unsigned *)&x + 1 ) & 0x7f80 ) == 0x7f80 ) ? 1 : 0 )
 
 // Depends in number of transmitters!
-#define MCAN_TX_MASK_OTHER  0b1110000
+// #define MCAN_TX_MASK_OTHER  0b1110000
 
 
 

@@ -80,7 +80,9 @@ void TrackVoltages()
 }
 
 
-
+/*
+ * Function active only during initialization. Afterwards ir will not work as IO is assigned to CLA
+ */
 void SetGateDriveEnable(short unsigned set  )
 {
     if ( set == 1 )

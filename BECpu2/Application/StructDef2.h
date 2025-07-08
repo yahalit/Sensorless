@@ -18,7 +18,7 @@
 #include "..\SelfTest\ErrorCode.h"
 
 #include "ConstDef.h"
-
+#include "..\..\BEMain\Application\S2MM2S.h"
 
 #ifdef CORE2_VARS_OWNER
 #define EXTERN_TAG

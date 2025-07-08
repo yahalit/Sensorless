@@ -260,7 +260,7 @@ void MotorOnSeq(void)
 {
     float CurCmd , CurMax , target;
     long unsigned lstat ;
-    short unsigned refmode , ClosureMode ;
+    short unsigned refmode , ClosureMode, expmode ;
 
     // Run reference generators
     CurMax = ControlPars.MaxCurCmd * SysState.Mot.CurrentLimitFactor;
@@ -295,8 +295,18 @@ void MotorOnSeq(void)
             {
                 CurCmd = 0 ; // Just for variables to be defined
                 ClaMailIn.ThetaElect = 0 ;
-                ClaMailIn.v_dbg_amp     = SysState.Timing.PwmFrame * 0.01333f * SysState.Debug.TRef.Out ;
-                ClaMailIn.v_dbg_angle   = __fracf32 (__fracf32 ( SysState.Debug.GRef.Out ) + 1 )  ;
+                expmode = (short unsigned)ClaMailIn.ExperimentMode ;
+                switch (expmode)
+                {
+                case 0:
+                    ClaMailIn.v_dbg_amp     = SysState.Timing.PwmFrame * 0.01333f * SysState.Debug.TRef.Out ;
+                    ClaMailIn.v_dbg_angle   = __fracf32 (__fracf32 ( SysState.Debug.GRef.Out ) + 1 )  ;
+                    break;
+                default:
+                    ClaMailIn.v_dbg_amp     = SysState.Timing.PwmFrame * __fmax( __fmin( SysState.Debug.CurExp.VoltageLevelPU,0.5f),0.0f)   ;
+                    ClaMailIn.v_dbg_angle   = __fracf32 (__fracf32 ( SysState.Debug.CurExp.VoltageAnglePU) + 1 )  ;
+                    //ClaMailIn.ExperimentCurrentThold  = __fmax( __fmin( SysState.Debug.CurExp.MaxCurrentLevel,25.0f),0.0f)   ;
+                }
             }
         }
     }
@@ -583,6 +593,8 @@ void MotorHoldSeq(void)
 }
 
 
+#define CURR_OFFSET_VANDAL
+
 void MotorOffSeq(void)
 {
 //    SysState.SpeedControl
@@ -608,11 +620,11 @@ void MotorOffSeq(void)
     if ( fabsf( ClaState.Encoder1.UserSpeed ) < 1e-3 )
     { // Filter the offset
         SysState.AnalogProc.FiltCurAdcOffset[0] = SysState.AnalogProc.FiltCurAdcOffset[0] +
-                ControlPars.CurrentOffsetGain * ( ClaState.AdcRaw.PhaseCurAdc[0] - 2048  - SysState.AnalogProc.FiltCurAdcOffset[0] ) ;
+                ControlPars.CurrentOffsetGain * ( ClaState.AdcRaw.PhaseCurAdc[0] - 4096  - SysState.AnalogProc.FiltCurAdcOffset[0] ) ;
         SysState.AnalogProc.FiltCurAdcOffset[1] = SysState.AnalogProc.FiltCurAdcOffset[1] +
-                ControlPars.CurrentOffsetGain * ( ClaState.AdcRaw.PhaseCurAdc[1] - 2048  - SysState.AnalogProc.FiltCurAdcOffset[1] ) ;
+                ControlPars.CurrentOffsetGain * ( ClaState.AdcRaw.PhaseCurAdc[1] - 4096  - SysState.AnalogProc.FiltCurAdcOffset[1] ) ;
         SysState.AnalogProc.FiltCurAdcOffset[2] = SysState.AnalogProc.FiltCurAdcOffset[2] +
-                ControlPars.CurrentOffsetGain * ( ClaState.AdcRaw.PhaseCurAdc[2] - 2048  - SysState.AnalogProc.FiltCurAdcOffset[2] ) ;
+                ControlPars.CurrentOffsetGain * ( ClaState.AdcRaw.PhaseCurAdc[2] - 4096  - SysState.AnalogProc.FiltCurAdcOffset[2] ) ;
 
 
     // Test stability to set as offsets
@@ -633,9 +645,15 @@ void MotorOffSeq(void)
             }
             else
             {
+#ifdef CURR_OFFSET_VANDAL
+                ClaMailIn.IaOffset = 0 ;
+                ClaMailIn.IbOffset = 0;
+                ClaMailIn.IcOffset = 0 ;
+#else
                 ClaMailIn.IaOffset = SysState.AnalogProc.FiltCurAdcOffset[0] ;
                 ClaMailIn.IbOffset = SysState.AnalogProc.FiltCurAdcOffset[1] ;
                 ClaMailIn.IcOffset = SysState.AnalogProc.FiltCurAdcOffset[2] ;
+#endif
                 SysState.AnalogProc.bOffsetCalculated = 1 ;
                 SysState.Mot.OffsetMeasureCntr = 10000 ;
             }
@@ -667,11 +685,7 @@ void MotorOffSeq(void)
  */
 void SafeSetMotorOff()
 {
-    if ( (ClaState.MotorOnRequest == 0 ) || (SysState.Mot.InAutoBrakeEngage) || SysState.Mot.BrakeControlOverride )
-    {
-        SetMotorOff(E_OffForFinal) ;
-        return ;
-    }
+   SetMotorOff(E_OffForFinal) ;
 }
 
 /*
@@ -729,7 +743,10 @@ short SetMotorOn( short OnCondition)
 
     SysState.Mot.InAutoBrakeEngage = 0 ;
 
-
+    if ( DBaseConf.IsValidDatabase == 0 )
+    {
+        return ERR_IDENTITY_MISSING ;
+    }
 
     if ( SysState.SeriousError )
     {
@@ -833,6 +850,10 @@ short SetMotorOn( short OnCondition)
     // Set timer for a minimum of 3 seconds lifetime
     SetSysTimerTargetSec ( TIMER_AUTO_MIN_MOTORON , 3.0 , &SysTimerStr ) ;
 
+    // Prepare voltage experiment
+    ClaMailIn.ExperimentMode = 0.0f ;
+    ClaState.ExperimentDir = 1.0 ;
+
     //Set the PWM to on
     SetGateDriveEable(1) ;
 
@@ -918,6 +939,10 @@ long unsigned SetLoopClosureMode( short us )
         return 0  ;
     }
     */
+    if ( us == SysState.Mot.LoopClosureMode)
+    {
+       return 0 ;
+    }
 
     if ( SysState.Mot.LoopClosureMode == E_LC_Voltage_Mode )
     {
@@ -1325,8 +1350,8 @@ short InitControlParams(void)
             ( ControlPars.SpeedKp + ControlPars.SpeedKi * SysState.Timing.Ts ) ;
 
     ClaControlPars.OneOverPP = 1.0f / __fmax( ClaControlPars.nPolePairs, 1.0f) ;
-    ClaControlPars.Bit2Amp = ControlPars.FullAdcRangeCurrent * (1.0f/2048.0f) ;
-    ClaControlPars.Amp2Bit = 1.0f /__fmax( ClaControlPars.Bit2Amp, 1.e-7f) ;
+    //ClaControlPars.Bit2Amp = ControlPars.FullAdcRangeCurrent * (1.0f/2048.0f) ;
+    //ClaControlPars.Amp2Bit = 1.0f /__fmax( ClaControlPars.Bit2Amp, 1.e-7f) ;
 
     ClaControlPars.Pos2Rev = 1.0f / __fmax( ClaControlPars.Rev2Pos , 1e-8f) ; // !< Scale position units to revolutions
 

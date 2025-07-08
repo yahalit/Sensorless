@@ -154,7 +154,7 @@ void ReadEncPosition1( void)
         }
         ClaState.Encoder1.SpeedTime = CountTime ;
     }
-    ProcessEncoderData(&ClaState.Encoder1, pos );
+    // ProcessEncoderData(&ClaState.Encoder1, pos );
 }
 #endif
 /*

@@ -1,6 +1,9 @@
 #include "Structdef.h"
 #include <math.h>
 
+long unsigned  setSingleCfgPar( short unsigned si, long unsigned  buf);
+
+
 long unsigned  SetConfigPar( struct CSdo * pSdo ,short unsigned nData);
 long unsigned  GetConfigPar( struct CSdo * pSdo ,short unsigned *nData);
 
@@ -69,6 +72,10 @@ long unsigned  GetFwCmd(    struct CSdo * pSdo ,short unsigned *nData);
 long unsigned  SetBHControlWord( struct CSdo * pSdo ,short unsigned nData);
 
 
+long unsigned  SetIdentityCmd( struct CSdo * pSdo ,short unsigned nData);
+long unsigned  GetIdentityCmd( struct CSdo * pSdo ,short unsigned *nData);
+
+
 const struct CObjDictionaryItem ObjDictionaryItem [] =
 {
 { 0x1400 , 2 , SetPdo1RxParam , NoSuchGetObject },
@@ -88,6 +95,7 @@ const struct CObjDictionaryItem ObjDictionaryItem [] =
 { 0x2225  , 2 , SetFloatData , GetFloatData },
 { 0x2301 , 4 , SetFwCmd , GetFwCmd },
 { 0x2302 , 4 , SetCalibCmd , GetCalibCmd },
+{ 0x2303 , 4 , SetIdentityCmd , GetIdentityCmd },
 { 0x2304 , 4 , SetParamCmd , GetParamCmd },
 { 0x2400 , 0 , SetMotionPar , GetMotionPar },
 { 0x5007 , 2 , SetSyncArrivalTime , NoSuchGetObject },
@@ -497,11 +505,7 @@ long unsigned  SetConfigPar( struct CSdo * pSdo ,short unsigned nData)
 {
     short unsigned si ;
     long unsigned stat ;
-    struct CFloatConfigParRecord *pPar ;
 
-    float cdone ;
-
-    cdone = SysState.ConfigDone ;
 
     si = ( pSdo->SubIndex & 0xff ) ;
 
@@ -512,6 +516,54 @@ long unsigned  SetConfigPar( struct CSdo * pSdo ,short unsigned nData)
     {
         return Sub_index_does_not_exist ;
     }
+
+    stat = setSingleCfgPar(si,pSdo->SlaveBuf[0]) ;
+    return stat ;
+}
+
+
+long unsigned SetDefaultConfiguration()
+{
+    short unsigned si ;
+    long unsigned stat ;
+    struct CFloatConfigParRecord *pPar ;
+    union
+    {
+        unsigned long ul ;
+        long  l ;
+        float f ;
+    } u ;
+    for ( si = 1 ; si < nConfigPars; si++ )
+    {
+        pPar = ( struct CFloatConfigParRecord * ) &ConfigTable[si] ;
+        if ( pPar->Flags & CFG_FLOAT )
+        {
+            u.f = ConfigTable[si].defaultVal ;
+        }
+        else
+        {
+            u.l = (long)  ConfigTable[si].defaultVal ;
+        }
+
+        stat = setSingleCfgPar(   si , u.ul  );
+        if ( stat )
+        {
+            return stat ;
+        }
+    }
+    u.f = 1.0f ;
+    stat = setSingleCfgPar(   0 , u.ul  );
+    return stat ;
+}
+
+long unsigned  setSingleCfgPar( short unsigned si , long unsigned buf )
+{
+    struct CFloatConfigParRecord *pPar ;
+    long unsigned stat ;
+
+    float cdone ;
+
+    cdone = SysState.ConfigDone ;
 
     pPar = ( struct CFloatConfigParRecord * ) &ConfigTable[si] ;
 
@@ -527,7 +579,7 @@ long unsigned  SetConfigPar( struct CSdo * pSdo ,short unsigned nData)
         }
     }
 
-    stat = TestCfgPar(pPar, pSdo->SlaveBuf[0]) ;
+    stat = TestCfgPar(pPar, buf) ;
     if ( stat )
     {
         return stat ;
@@ -829,7 +881,7 @@ const float * pIdRslt[] =  {
 &Correlations.SumT  , // 33
 &Correlations.Sum1  , // 34
 &SysState.Timing.Ts ,  // 35
-&ClaState.Analogs.Vdc} ; // 36
+(float*) &ClaState.Analogs.Vdc} ; // 36
 
 
 #define nIdData (sizeof(pIdRslt) / sizeof(float*))
@@ -877,6 +929,7 @@ const struct CShortDataItem ShortDataItem[]={
                                {& SysState.EncoderMatchTest.bTestEncoderMatch , 0, 1, 0 } , // 4
                                {(short*) &SysState.MCanSupport.NodeStopped , 0 ,1,0 } ,  //5
                                { &SysState.Homing.State, 0 ,5,1 } ,  //6
+                               { (short*)&SysState.WTF, 0 ,5,0 } ,  //7
                                {(short*)  &SysState.Debug.bDisablePotEncoderMatchTest,0,1,0} , // 8
                                {(short*)  &SysState.SteerCorrection.bSteeringComprensation ,0, 1 , 0}   // 9
 };
@@ -1035,7 +1088,7 @@ const float * pAtpRslt[] =  {
                              &SysState.AnalogProc.FiltCurAdcOffset[1] , // 1
                              &SysState.AnalogProc.FiltCurAdcOffset[2] , // 2
                              & SysState.AnalogProc.Temperature , // 3
-                             & ClaState.Analogs.BrakeVolts , // 4
+                             & BigFatZero , // 4
                              & ClaControlPars.CurrentCommandDir // 5
                              };
 
@@ -1076,13 +1129,19 @@ short bcnt ;
 long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
 {
     short unsigned si  ,us   , YesNo ;
-    short stat ;
+    short stat , fok  ;
     long unsigned ul ;
     float f ;
     (void) nData ;
     us =* ((short unsigned *) pSdo->SlaveBuf);
     ul =* ((long unsigned *) pSdo->SlaveBuf);
     f =* ((float *) pSdo->SlaveBuf);
+    fok = 1 ;
+    if ( isnan( f) )
+    {
+        f = 0 ;
+        fok = 0 ;
+    }
 
     YesNo = (us) ? 1 : 0 ;
     si = pSdo->SubIndex ;
@@ -1125,8 +1184,9 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
             SetClaAllSw() ;
             ClaMailIn.v_dbg_angle = 0 ;
             ClaMailIn.v_dbg_amp   = 0 ;
-            CLA_setTriggerSource(CLA_TASK_3, CLA_TRIGGER_ADCB1); // Kill normal tasks
+            CLA_setTriggerSource(CLA_TASK_1, CLA_TRIGGER_SOFTWARE);
             CLA_setTriggerSource(CLA_TASK_2, CLA_TRIGGER_SOFTWARE);
+            CLA_setTriggerSource(CLA_TASK_3, CLA_TRIGGER_ADCA1); // Kill normal tasks
             CLA_enableTasks(CLA1_BASE, (CLA_TASKFLAG_3 | CLA_TASKFLAG_8));
             SysState.Mot.LoopClosureMode = E_LC_Voltage_Mode ;
             break ;
@@ -1155,10 +1215,18 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
         }
         break ;
     case 5:
+        if ( fok == 0)
+        {
+            return General_parameter_incompatibility_reason ;
+        }
         ClaMailIn.v_dbg_angle = f ;
         break ;
 
     case 6:
+        if ( fok == 0)
+        {
+            return General_parameter_incompatibility_reason ;
+        }
         ClaMailIn.v_dbg_amp   = f ;
         break ;
 
@@ -1241,6 +1309,14 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
         }
         break ;
 
+    case 19:
+        SetSystemMode(E_SysMotionModeManual) ;
+        SysState.Mot.KillingException = 0 ;
+        SysState.Mot.LastException = 0 ;
+        SysState.Status.LongException = 0;
+
+        break ;
+
 
     case 20:
         SysState.Mot.ExtBrakeReleaseRequest = YesNo ;
@@ -1272,6 +1348,10 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
         break ;
 
     case 24:
+        if ( fok == 0)
+        {
+            return General_parameter_incompatibility_reason ;
+        }
         if ( f < ControlPars.MinPositionCmd || f > ControlPars.MaxPositionCmd)
         {
             return length_of_service_parameter_does_not_match ;
@@ -1291,6 +1371,10 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
         }
         break;
     case 26:
+        if ( fok == 0)
+        {
+            return General_parameter_incompatibility_reason ;
+        }
         HomingHere(f) ;
         break ;
 
@@ -1298,6 +1382,68 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
     case 27:
         SetGateDriveEnable(us);
         break;
+
+
+    case 28:
+        if ( ClaState.MotorOn)
+        {
+            ClaState.MotorOnRequest = 0 ;
+            while(ClaState.MotorOn) ;
+        }
+        ClaMailIn.ExperimentMode = 1.0f ;
+        ClaState.ExperimentDir = 1.0 ;
+        ClaState.MotorOnRequest = 1 ;
+        break ;
+
+    case 29:
+        if ( ClaState.MotorOn)
+        {
+            ClaState.MotorOnRequest = 0 ;
+            while(ClaState.MotorOn) ;
+        }
+        ClaMailIn.ExperimentMode = 2.0f ;
+        ClaState.ExperimentCtrMax = (float) us;
+        ClaState.ExperimentCtr = 0  ;
+        ClaState.ExperimentDir = 1.0 ;
+        ClaState.MotorOnRequest = 1 ;
+        break ;
+
+    case 30:
+        if ( ClaState.MotorOn)
+        {
+            ClaState.MotorOnRequest = 0 ;
+            while(ClaState.MotorOn) ;
+        }
+        ClaMailIn.ExperimentMode = 3.0f ;
+        ClaState.ExperimentDir = 1.0 ;
+        ClaState.MotorOnRequest = 1 ;
+        break ;
+
+    case 35:
+        if ( fok == 0)
+        {
+            return General_parameter_incompatibility_reason ;
+        }
+        SysState.Debug.CurExp.MaxCurrentLevel = f ;
+        ClaMailIn.ExperimentCurrentThold  = __fmax( __fmin( SysState.Debug.CurExp.MaxCurrentLevel,25.0f),0.0f)   ;
+        break ;
+
+    case 36:
+        if ( fok == 0)
+        {
+            return General_parameter_incompatibility_reason ;
+        }
+        SysState.Debug.CurExp.VoltageLevelPU = f ;
+        break ;
+
+    case 37:
+        if ( fok == 0)
+        {
+            return General_parameter_incompatibility_reason ;
+        }
+        SysState.Debug.CurExp.VoltageAnglePU = f ;
+        break ;
+
 
     case 200:
         SysState.Debug.GRef.Type = us ;
@@ -1795,7 +1941,7 @@ long unsigned  SetCalibCmd( struct CSdo * pSdo ,short unsigned nData)
 
     case 252:
     //case 32:// Clear sector of calibration
-        stat = SafeEraseFlash(Sector_AppCalib_start, CALIB_SECT_LENGTH )  ;
+        stat = SafeEraseFlash(Sector_AppCalib_start, CALIB_SECT_LENGTH>>1 )  ;
         if ( stat )
         {
             return GetManufacturerSpecificCode(ERR_COULD_NOT_ERASE_OLD_CALIB) ; ;
@@ -1833,7 +1979,7 @@ long unsigned  SetCalibCmd( struct CSdo * pSdo ,short unsigned nData)
             CalibProg.C.Calib.cs -= *uPtr++  ;
         }
 
-        stat = SafeEraseFlash(Sector_AppCalib_start,CALIB_SECT_LENGTH)  ;
+        stat = SafeEraseFlash(Sector_AppCalib_start,CALIB_SECT_LENGTH>>1)  ;
 
 
         if ( stat )
@@ -1875,6 +2021,175 @@ long unsigned  SetCalibCmd( struct CSdo * pSdo ,short unsigned nData)
 short IsBufferUsedForProgramming(void)
 {
     return SysState.IsInParamProgramming ;
+}
+
+
+/**
+ * \brief Object 0x2303 Set Identity
+ */
+long unsigned  SetIdentityCmd( struct CSdo * pSdo ,short unsigned nData)
+{
+    short unsigned si , cnt  ;
+    short stat ;
+    unsigned long ul ;
+    unsigned long * uPtr;
+
+    si = pSdo->SubIndex ;
+    ul =* ((unsigned long *) pSdo->SlaveBuf);
+
+    // Reject if motor is on
+    if ( ClaState.MotorOnRequest)
+    {
+        return GetManufacturerSpecificCode(ERR_ONLY_FOR_MOTOROFF) ;
+
+    }
+
+    if ( si == 1 )
+    {
+        IdentityProg.C.PassWord = ul ;
+    }
+    if ( (( IdentityProg.C.PassWord !=  0x12345678  ) && (si > 252) ) || nData != 4 )
+    {
+        return General_parameter_incompatibility_reason ;
+    }
+    if ( si == 1 )
+    {
+        ClearMemRpt( (short unsigned *) &IdentityProg.C.Identity , sizeof(IdentityProg.C.Identity ) );
+        stat = SafePrepFlash();
+        if ( stat )
+        {
+            return General_parameter_incompatibility_reason ;
+        }
+        return 0 ;
+    }
+
+
+    switch ( si )
+    {
+    case 2:
+        IdentityProg.C.Identity.HardwareRevision = ul ;
+        break ;
+    case 3:
+        IdentityProg.C.Identity.ProductionDate = ul ;
+        break ;
+    case 4:
+        IdentityProg.C.Identity.RevisionDate = ul ;
+        break ;
+    case 5:
+        IdentityProg.C.Identity.HardwareType = ul ;
+        break ;
+    case 6:
+        IdentityProg.C.Identity.SerialNumber = ul ;
+        break ;
+    case 7:
+        IdentityProg.C.Identity.ProductionBatchCode = ul  ;
+        break ;
+    case 252: // Clear sectors of identity
+        if ( ul == 12345  )
+        {
+            stat = SafeEraseFlash(Sector_AppIdentity_start, sizeof(IdentityProg)>>1 ) ;
+        }
+        else
+        {
+            return General_parameter_incompatibility_reason ;
+        }
+        if ( stat )
+        {
+           return GetManufacturerSpecificCode(ERR_COULD_NOT_ERASE_OLD_IDENTITY) ; ;
+        }
+        break ;
+    case 253:
+        IdentityProg.C.Identity.PassWord = 0x12345678  ;
+        IdentityProg.C.Identity.IdentityRevision =  IdentityParametersRevision ;
+        IdentityProg.C.Identity.cs = 0 ;
+        uPtr = (unsigned long *) & IdentityProg.C.Identity ;
+        for ( cnt = 0 ; cnt < ((sizeof(IdentityProg.C.Identity)>>1)-1) ; cnt++ )
+        {
+            IdentityProg.C.Identity.cs -= *uPtr++  ;
+        }
+         stat = SafeEraseFlash(Sector_AppIdentity_start, sizeof(IdentityProg)>>1) ;
+
+        if ( stat )
+        {
+            return GetManufacturerSpecificCode(ERR_COULD_NOT_ERASE_OLD_IDENTITY) ; ;
+        }
+
+        stat = SafeProgramFlash((short unsigned * ) & IdentityProg.C.Identity ,Sector_AppIdentity_start  , 64 ) ;
+
+        if ( stat )
+        {
+            return GetManufacturerSpecificCode(ERR_COULD_NOT_BURN_IDENTITY) ;
+        }
+        ApplyIdentity(pUIdentity) ; // ,pUNVParams);
+        //InitControlParams() ;
+
+
+        break ;
+    default:
+        return Sub_index_does_not_exist ;
+    }
+    return 0 ;
+}
+
+
+long unsigned  GetIdentityCmd( struct CSdo * pSdo ,short unsigned *nData)
+{
+    short unsigned si ;
+    long unsigned ul ;
+
+    si = pSdo->SubIndex ;
+    if ( si == 0 )
+    {
+        ul = 16 ;
+    }
+    else
+    {
+        switch (si )
+        {
+        case 2:
+            ul =  pUIdentity->C.Identity.HardwareRevision ;
+            break ;
+        case 3:
+            ul =  pUIdentity->C.Identity.ProductionDate ;
+            break ;
+        case 4:
+            ul =  pUIdentity->C.Identity.RevisionDate ;
+            break ;
+        case 5:
+            ul =  pUIdentity->C.Identity.HardwareType ;
+            break ;
+        case 6:
+            ul =  pUIdentity->C.Identity.SerialNumber ;
+            break ;
+        case 7:
+            ul =  pUIdentity->C.Identity.ProductionBatchCode ;
+            break ;
+
+        case 32:
+            ul = ProjId ;
+            break  ;
+
+        case 251:
+            ul = DBaseConf.IsValidIdentity ;
+            break ;
+        case 252:
+            ul = DBaseConf.IsValidDatabase ;
+            break ;
+        case 253:
+            ul = pUIdentity->C.Identity.cs ;
+            break ;
+        case 254:
+            ul = IdentityParametersRevision ;
+            break ;
+        default:
+            return Sub_index_does_not_exist ;
+        }
+    }
+
+
+    * nData = 4 ;
+    * ((long *) &pSdo->SlaveBuf[0] ) = ul ;
+    return 0 ;
 }
 
 /**
@@ -1977,7 +2292,7 @@ long unsigned  SetParamCmd( struct CSdo * pSdo ,short unsigned nData)
     //case 32:// Clear sector of parameters
         if ( ul == 12345  )
         {
-            stat = SafeEraseFlash(Sector_AppParams_start,PARAMS_SECT_LENGTH) ;
+            stat = SafeEraseFlash(Sector_AppParams_start,PARAMS_SECT_LENGTH>>1) ;
         }
         else
         {
@@ -2297,7 +2612,7 @@ long unsigned  SetFwCmd(    struct CSdo * pSdo ,short unsigned nData)
         {
              return General_parameter_incompatibility_reason ;
         }
-        stat = SafeEraseFlash(Sector_AppVerify_start,IDENTITY_SECT_LENGTH);
+        stat = SafeEraseFlash(Sector_AppVerify_start,IDENTITY_SECT_LENGTH>>1);
 
         if ( stat )
         {

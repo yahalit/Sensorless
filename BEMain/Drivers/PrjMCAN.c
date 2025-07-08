@@ -781,7 +781,7 @@ short SetMsg2HW(struct CCanMsg  *pMsg )
 
     mask = BlockInts() ;
     // Invert the pending state so we have the clear mailboxes
-    u2.ul = ~HWREG(MCAN0_BASE + MCAN_TXBRP) ;
+    u2.ul = ~HWREG(MCAN0_BASE + MCAN_TXBRP) ; // Free units
 
     u2.us[0] &= (SysState.MCanSupport.TxNumElements-1)  ; // Look only at implemented boxes
     if (  u2.us[0] == 0 )
@@ -932,11 +932,11 @@ void RTDealBlockUpload(void)
         long unsigned ul ;
         short unsigned us[2] ;
     }u2 ;
-    u2.ul = ~HWREG(MCAN0_BASE + MCAN_TXBRP) ;
+    u2.ul =  HWREG(MCAN0_BASE + MCAN_TXBRP) ;// Each "1" stands for in-use transmitter
 
-    u2.us[0] &= MCAN_TX_MASK_OTHER ; // (SysState.MCanSupport.TxNumElements-1)  ; // Look only at implemented boxes
-    if (  u2.us[0] == 0 )
-    {// All clogged, go home
+    u2.us[0] &= (SysState.MCanSupport.TxNumElements-1)  ; // Look only at implemented boxes
+    if (  u2.us[0] )
+    {// Can transmit block data only if all other transmitters are free
         return  ;
     }
 #else

@@ -29,21 +29,24 @@ enum E_LoopClosureMode
     #define PROJ_TYPE 0x9700UL
     #define BootCanId  38
 
+    //#define ON_BOARD_TEMPSENSOR_LINEAR
     //#define ON_BOARD_POT
-    #define ON_BOARD_BRAKE
+    //#define ON_BOARD_BRAKE
     //#define ON_BOARD_GYRO
+    //#define ON_BOARD_IDENTITY
+
     #define ON_BOARD_ENCODER
     #define ON_BOARD_HALL
     #define ON_BOARD_CAN
     #define PWM_SYNCSEL 7 // 1msec
     #define PWM_CPU_PACER EPWM6_BASE
     #define PWM_SCD_BASE EPWM4_BASE
-    #define PWM_A_BASE EPWM1_BASE
-    #define PWM_A_LUTBASE EPWM1MINDBLUT_BASE
+    #define PWM_A_BASE EPWM8_BASE
+    //#define PWM_A_LUTBASE EPWM8MINDBLUT_BASE
     #define PWM_B_BASE EPWM2_BASE
-    #define PWM_B_LUTBASE EPWM2MINDBLUT_BASE
-    #define PWM_C_BASE EPWM8_BASE
-    #define PWM_C_LUTBASE EPWM8MINDBLUT_BASE
+    //#define PWM_B_LUTBASE EPWM2MINDBLUT_BASE
+    #define PWM_C_BASE EPWM1_BASE
+    //#define PWM_C_LUTBASE EPWM1MINDBLUT_BASE
 
     //#define PWM_PACER_BASE EPWM1_BASE
     //#define CUR_SAMP_PACER_MULT 1
@@ -67,10 +70,15 @@ enum E_LoopClosureMode
 #define ADC_READ_CUR3_A  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT1))
 
 
-#define ADC_READ_VOLT1  (4096-HWREGH(ADCBRESULT_BASE+ADC_O_RESULT0))
-#define ADC_READ_VOLT2  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT0))
-#define ADC_READ_VOLT3  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT2))
-#define ADC_READ_VOLTDC (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT4))
+#define ADC_READ_VOLT1  HWREGH(ADCBRESULT_BASE+ADC_O_RESULT2)
+#define ADC_READ_VOLT2  HWREGH(ADCCRESULT_BASE+ADC_O_RESULT2)
+#define ADC_READ_VOLT3  HWREGH(ADCARESULT_BASE+ADC_O_RESULT2)
+#define ADC_READ_VOLTDC HWREGH(ADCARESULT_BASE+ADC_O_RESULT4)
+
+#define ADC_READ_CURDC_AMC  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT4))
+#define ADC_READ_CURDC_HALL  (4096-HWREGH(ADCBRESULT_BASE+ADC_O_RESULT4))
+
+#define ADC_READ_TEMPERATURE  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT5))
 
 
 #define CMPSS_VBUS_BASE   CMPSS2_BASE
@@ -81,8 +89,7 @@ enum E_LoopClosureMode
 #define ISC_CMPHP_MUX 2
 #define ISC_CMPLP_MUX 2
 
-#define VDC_2_BIT_VOLTS_R1 0.02498f
-#define VDC_2_BIT_VOLTS_R2 0.0185302f
+#define VDC_2_BIT_VOLTS_R2 0.4202f
 
 
 #define ASYSCTL_CMPHPMUX_SELECT_VB ASYSCTL_CMPHPMUX_SELECT_2
@@ -201,8 +208,8 @@ struct CProjSpecificData
       {.ProjIndex = 1 ,// PROJ_TYPE_BESENSORLESS
        .ProjSpecificDataRevision = HwConfigRevision,
           .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = WHEEL_REV2POS  , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
-          .KpCur = 3.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
-          .MaxCurCmdDdt = 9000.0f , .CurrentFilterBWHz = 8000.0f ,
+          .KpCur = 4.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
+          .MaxCurCmdDdt = 100.0f , .CurrentFilterBWHz = 3000.0f ,
          .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
          .BrakeReleaseVolts = 23.0f,
          .Pot1RatRad  = 3.1415926f  ,

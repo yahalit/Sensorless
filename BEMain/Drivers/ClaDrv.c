@@ -40,12 +40,12 @@ void CLA_configClaMemory(void)
     while(MemCfgRegs.MSGxINITDONE.bit.INITDONE_CPUTOCLA1 != 1){};
 
     //
-    // CLA Program will reside in RAMLS01 and data in RAMLS23
+    // CLA Program will reside in RAMLS02 and data in RAMLS3
     //
     MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS0 = 1U;
     MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS1 = 1U;
-    MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS2 = 0U;
-    MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS2 = 0U;
+    MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS2 = 1U;
+    MemCfgRegs.LSxCLAPGM.bit.CLAPGM_LS3 = 0U;
 
     //
     // Select CLA as the master of RAMLS0, RAMSL1, RAMLS2

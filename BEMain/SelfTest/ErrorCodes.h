@@ -1,6 +1,7 @@
 #ifndef SELFTEST_ERRORCODES_H_
 #define SELFTEST_ERRORCODES_H_
 
+#define exp_experimet_termin 0x8ff // [Drive:Fatal] {Experimet terminated}
 #define exp_bad_hall_value 0x900 // [Commutation:Fatal] {Bad Hall reading }
 #define exp_hall_ilegal_delta 0x901 // [Commutation:Fatal] {Hall reading jump}
 #define exp_over_voltage 0x902 // [Drive:Fatal] {DC voltage too high}

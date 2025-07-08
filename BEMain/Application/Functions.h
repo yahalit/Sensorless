@@ -132,6 +132,7 @@ short  SetMotionCommandLimits(void) ;
 void SetupDMA(void);
 void setupDAC(void) ;
 void InitEPwm1(void);
+short ApplyIdentity(const union UIdentity * pId );
 
 // ObjectDict
 short unsigned GetOdSize( void ) ;
@@ -142,7 +143,7 @@ void ResetConfigPars(void) ;
 short TestCfgProgramming(void);
 short IsBufferUsedForProgramming(void);
 long unsigned TestCfgPar( const struct CFloatConfigParRecord *pPar , long rawvalue );
-
+long unsigned SetDefaultConfiguration() ;
 
 
 // LowLevel.c
@@ -170,7 +171,8 @@ void setupPwmParams(void);
 void ClearTrip(void) ;
 void SetGateDriveEable(short in);
 void InitEPwm7AsMasterCounetr();
-void setupPWMForDacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long DisablePeriod_nsec,unsigned long pwmPeriod_nsec); \
+void setupPWMForDacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long DisablePeriod_nsec,unsigned long pwmPeriod_nsec);
+void SetupPWM_Phase(uint32_t base,unsigned long pwmPeriod_nsec);
 
 // PT Driver
 void InitPVT(void);

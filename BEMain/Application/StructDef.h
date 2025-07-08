@@ -38,6 +38,7 @@
 #include "Revisions.h"
 #include "..\Control\TrapezeProfiler.h"
 #include "..\Drivers\EEPROM_Config.h"
+#include "S2MM2S.h"
 
 
 // Byte  0:1 Control word. Thats: .0: motor on, 1: Fault reset, :2..4: Loop type : 5..7: Reference type
@@ -371,9 +372,9 @@ struct CMotion
      long unsigned MotionConvergeCnt ;
      float MotionConvergeTime ; // !< The time position error should be continuously within window to declare convergence
      float CurrentLimitFactor ;
+     long  unsigned KillingException ;
      short unsigned DisablePeriodicService ;
-     short unsigned LastException ;
-     short unsigned KillingException ;
+     long unsigned  LastException ;
      short unsigned MotorFault  ;
      short unsigned NoCalib ;
      short unsigned GyroNotReady ;
@@ -421,6 +422,13 @@ struct CHallCatch
     long EncoderOnCatch ;
 };
 
+struct CCurExp
+{
+    float VoltageLevelPU  ;
+    float MaxCurrentLevel ;
+    float VoltageAnglePU  ;
+};
+
 struct CDebug
 {
     struct CRefGenState GRef ;
@@ -433,6 +441,7 @@ struct CDebug
     short unsigned  bBypassPosFilter ;
     short IgnoreHostCW ; // 1 to ignore PDO1 control words from host
     short unsigned bDisablePotEncoderMatchTest ; // Disable testing the encoder agains the potentiometer
+    struct CCurExp CurExp ;
 };
 
 
@@ -589,6 +598,7 @@ struct CSysState
     short unsigned IntfcDisableWheelAutoStop ;
     short unsigned SwState   ;
     short unsigned InterruptRoutineBusy ;
+    short unsigned WTF   ;
     long  unsigned ControlWord       ; // Last sample of control word
     //struct CGyro Gyro ;
 };
@@ -686,6 +696,10 @@ struct CControlPars
 };
 EXTERN_TAG struct CControlPars ControlPars ;
 
+
+EXTERN_TAG union UIdentity IdentityProg;
+
+
 EXTERN_TAG union UCalibProg CalibProg;
 
 EXTERN_TAG long unsigned FlashCalib ;
@@ -744,6 +758,17 @@ EXTERN_TAG struct CSdo SlaveSdo ;
 EXTERN_TAG short unsigned CanId ;
 EXTERN_TAG short unsigned HallTable[8];
 EXTERN_TAG short unsigned ProjId ;
+
+struct CDBaseConf
+{
+    short unsigned IsUserConfiguration ;
+    short unsigned IsUserHwConfig      ;
+    short unsigned IsUserProjId        ;
+    short unsigned IsValidIdentity     ;
+    short unsigned IsValidDatabase     ;
+};
+
+EXTERN_TAG struct CDBaseConf DBaseConf     ;
 
 
 union UVars
@@ -840,11 +865,21 @@ struct CFloatParRecord
 EXTERN_TAG float FloatParRevision        ;
 
 
+
 #define GetOffsetC(x,y)  offsetof(struct CCalib, x)
 #define GetOffsetCC(x,y,z) offsetof(struct CCalib, x[y])
 
 
 #ifdef VARS_OWNER
+
+const union UIdentity FakeIdentity = {.C =
+    {.PassWord = 0x12345678 ,
+         .Identity = {.PassWord = 0x12345678, .HardwareRevision=1 , .ProductionDate = (2025UL<<16)+1*256+1 ,
+                       .RevisionDate = (2025UL<<16)+1*256+1 , .SerialNumber = 1 , .HardwareType = BESENSORLESSCARD , .ProductionBatchCode = 0 , .IdentityRevision = 1 , .cs = 0x98765432},
+    },
+}  ;
+
+
 const struct CFloatParRecord ParTable [] =
 {
 #include "ParRecords.h"
@@ -902,6 +937,8 @@ const short unsigned crc_ccitt_table[256] = {
     0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab, 0xa022, 0x92b9, 0x8330,
     0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
 };
+const union UIdentity * const pUIdentity = &FakeIdentity ;
+
 #else
 extern const struct CFloatParRecord ParTable[] ;
 extern const short unsigned N_ParTable ;
@@ -910,7 +947,10 @@ extern const struct CCalibRecord CalibPtrTable [] ;
 extern const struct CFloatConfigParRecord ConfigTable[] ;
 extern const short unsigned nConfigPars ;
 extern const short unsigned crc_ccitt_table[] ;
+extern const union UIdentity FakeIdentity ;
+extern const union UIdentity * const pUIdentity  ;
 #endif
+
 
 
     struct CRecorderSig
@@ -927,7 +967,6 @@ extern const short unsigned crc_ccitt_table[] ;
     };
     const short unsigned NREC_SIG = sizeof(RecorderSigRaw) / sizeof(struct CRecorderSig);
     #endif
-
 
 
 #include "Functions.h"
