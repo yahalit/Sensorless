@@ -855,7 +855,7 @@ short SetMotorOn( short OnCondition)
     ClaState.ExperimentDir = 1.0 ;
 
     //Set the PWM to on
-    SetGateDriveEable(1) ;
+    SetGateDriveEnable(1) ;
 
     mask = BlockInts() ;
     SysState.Mot.MotorFault = 0 ; // Clear fault BIT and request motor on
@@ -1355,7 +1355,7 @@ short InitControlParams(void)
 
     ClaControlPars.Pos2Rev = 1.0f / __fmax( ClaControlPars.Rev2Pos , 1e-8f) ; // !< Scale position units to revolutions
 
-    ClaMailIn.SimdT = SysState.Timing.Ts ;
+    //ClaMailIn.SimdT = SysState.Timing.Ts ;
 
     ControlPars.I2tPoleS = 1.0f - __iexp2( SysState.Timing.Ts * 256 * Log2OfE / __fmax( 0.0001f , ControlPars.I2tCurTime ) );
     ClaControlPars.SpeedFilterCst = 1.0f - __iexp2( SysState.Timing.Ts * Log2OfE * Pi2 * ControlPars.SpeedFilterBWHz  );

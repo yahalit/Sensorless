@@ -39,7 +39,9 @@ enum E_LoopClosureMode
     #define ON_BOARD_HALL
     #define ON_BOARD_CAN
     #define PWM_SYNCSEL 7 // 1msec
+    #define PWM_FASTSYNCSEL 9
     #define PWM_CPU_PACER EPWM6_BASE
+    #define PWM_LMEAS_PACER EPWM9_BASE
     #define PWM_SCD_BASE EPWM4_BASE
     #define PWM_A_BASE EPWM8_BASE
     //#define PWM_A_LUTBASE EPWM8MINDBLUT_BASE

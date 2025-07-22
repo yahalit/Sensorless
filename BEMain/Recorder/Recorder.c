@@ -16,6 +16,10 @@
 
 
 #include "..\Application\StructDef.h"
+
+    extern long unsigned GetSamplingTime( short unsigned ind);
+    extern float fGetSamplingTime( short unsigned ind);
+
 void RtUltraFastRecorder(void);
 
 #ifndef INTER_RECORDER_SET_ERR
@@ -27,6 +31,89 @@ void RtUltraFastRecorder(void);
 
 short RecorderStartFlag     ;
 long  RecorderOwnerMark     ;
+
+
+short unsigned FindSignalInRecorderList(long unsigned *ptr)
+{
+    short unsigned cnt ;
+    for ( cnt = 0 ; cnt < NREC_SIG ; cnt++)
+    {
+        if ( RecorderSigRaw[cnt].ptr == ptr )
+        {
+            return cnt ;
+        }
+    }
+    return 0 ;
+}
+
+
+long PrepRecorder( short unsigned n , const long unsigned * ptr[], float RecTime , const long unsigned *trigger,
+                   short unsigned TriggerType , short unsigned MaxRecLength , float PreTrigPercent , float tHold , float TsBase)
+{
+    short unsigned cnt , listIndex , trigIndex ;
+    long  maxlen , desired_length ;
+    //float TsBase ;
+    RecorderProg.RecorderListLen = n ;
+    for ( cnt = 0 ; cnt < n ; cnt++)
+    {
+        RecorderProg.RecorderList[cnt]  = (long unsigned *) ptr[cnt] ;
+        listIndex = FindSignalInRecorderList((long unsigned *) ptr[cnt]) ;
+        if ( listIndex == 0 )
+        {
+            return -1 ;
+        }
+        RecorderProg.RecorderListIndex[cnt] = listIndex ;
+        RecorderProg.RecorderFlags[cnt] = RecorderSigRaw[listIndex].flags ;
+    }
+    trigIndex = FindSignalInRecorderList((long unsigned *) trigger) ;
+    if ( trigIndex == 0 )
+    {
+        return -2 ;
+    }
+
+    RecorderProg.TriggerType     =  TriggerType ; // Immediate
+    RecorderProg.TriggerFlags = RecorderSigRaw[trigIndex].flags;
+    RecorderProg.TriggerPtr = RecorderSigRaw[trigIndex].ptr;
+
+    maxlen = REC_BUF_LEN / RecorderProg.RecorderListLen - 1 ;
+    if ( MaxRecLength < maxlen )
+    {
+         maxlen = MaxRecLength;
+    }
+    //TsBase  = __fmax( fGetSamplingTime(0), 1.e-6) ;
+    desired_length = (long unsigned) (RecTime / TsBase)  ;
+    if ( desired_length < 3)
+    {
+        return -3 ;
+    }
+    if ( desired_length <= maxlen )
+    {
+        RecorderProg.RecLength       =  desired_length ;
+        RecorderProg.RecorderGap     =  1 ;
+    }
+    else
+    {
+        RecorderProg.RecorderGap = ceilf ( RecTime / maxlen / TsBase) ;
+        RecorderProg.RecLength = (RecLen) (RecTime / (TsBase*RecorderProg.RecorderGap ) ) ;
+    }
+    if ( TriggerType == 0 )
+    {
+        RecorderProg.PreTrigCnt = 1 ;
+    }
+    else
+    {
+        RecorderProg.PreTrigCnt = (RecLen) __fmax(__fmin(PreTrigPercent * 0.01f ,1.0f),0.0f) * RecorderProg.RecLength  ;
+        if ( RecorderProg.PreTrigCnt == 0 ) RecorderProg.PreTrigCnt = 1 ;
+    }
+    RecorderProg.TimeBasis       = 1 ;
+
+    Recorder.TriggerFloatVal = tHold ;
+    Recorder.TriggerLongVal = (long)tHold ;
+
+
+    return (long) ActivateProgrammedRecorder()     ;
+}
+
 
 void ClearDebugVars(void)
 {
@@ -730,6 +817,7 @@ long  unsigned   ActivateProgrammedRecorder(void)
 
     // Halt any contamination of recorder buffer by DMA
     StopDmaRecorder() ;
+    Recorder.TimerBasedTs = 1 ;
 
 
     if ( RecorderProg.RecorderListLen == 0 )
@@ -875,7 +963,12 @@ long  unsigned   ActivateProgrammedRecorder(void)
         SetSuperSpeedGap(RecorderProg.RecorderGap) ;
         StartDmaRecorder() ;
     }
+
+    RecorderProg.TimerBasedTsCntr = 0 ;
+    RecorderProg.TimerBasedTs     = 1 ;
+
     sr = BlockInts() ;
+    RecorderStartFlag = 0 ;
     Recorder = RecorderProg ;
     Recorder.RecLength = uss1 ;
     Recorder.PreTrigCnt = uss2 ;
@@ -996,19 +1089,13 @@ long unsigned  SetRecorder( struct CSdo * pSdo ,short unsigned nData)
         RecorderProg.PreTrigCnt = ul ;
 #endif
         break;
-    case 6: //0 for every interrupt, 1 sync to proc, 3 superspeed
-        if ( us == 3 )
+    case 6: //0 for every interrupt, 1 sync to proc, 2 = timer based , 3 superspeed
+        RecorderProg.uf.UltraFastActive = ( us & 2) ? 1 : 0  ;
+        RecorderProg.TimeBasis = ( us & 1) ? 1 : 0  ;
+        RecorderProg.TimerBasedTs = ( us & 4) ? 1 : 0  ;
+        if ( us > 4 )
         {
-            RecorderProg.uf.UltraFastActive = 1 ;
-        }
-        else
-        {
-            if ( us > 1 )
-            {
-                return General_parameter_incompatibility_reason ;
-            }
-            RecorderProg.uf.UltraFastActive = 0 ;
-            RecorderProg.TimeBasis = us ;
+            return General_parameter_incompatibility_reason ;
         }
         break;
 
@@ -1178,12 +1265,10 @@ long unsigned  GetRecorder( struct CSdo * pSdo ,short unsigned *nData)
 
     short unsigned si , cnt , ind  , flags ;
 
-
+    float RecTs ;
     long unsigned  reclen, recnext;
     struct CCmdMode mode ;
 
-    extern long unsigned GetSamplingTime( short unsigned ind);
-    extern float fGetSamplingTime( short unsigned ind);
 
     si = pSdo->SubIndex ;
 
@@ -1275,6 +1360,34 @@ long unsigned  GetRecorder( struct CSdo * pSdo ,short unsigned *nData)
     case 66:
         * ((float *) pSdo->SlaveBuf ) = fGetSamplingTime(3)  ;
         *nData = 4 ;
+        break ;
+    case 67:
+        if ( Recorder.uf.UltraFastActive)
+        {
+            return General_parameter_incompatibility_reason ; // Not supported yet
+        }
+        else
+        {
+            if ( Recorder.TimerBasedTs && ( Recorder.TimerBasedTsCntr > 1 ) )
+            {
+                RecTs =  ((Recorder.TimerBasedTsTend - Recorder.TimerBasedTsTstart) * INV_CPU_CLK_HZ ) / (Recorder.TimerBasedTsCntr-1) ;
+                // Round to 100nsec
+                RecTs =  (long)( RecTs * 1e7f + 0.5f ) * 1e-7f ;
+            }
+            else
+            {
+                if ( Recorder.TimeBasis )
+                {
+                    RecTs = (float) GetSamplingTime(1) * 1e-6f * Recorder.RecorderGap ;
+                }
+                else
+                {
+                    RecTs = (float) GetSamplingTime(0) * 1e-6f * Recorder.RecorderGap ;
+                }
+            }
+
+            * ((float *) pSdo->SlaveBuf ) =  RecTs  ;
+        }
         break ;
 
     case 90: // Actual recorder sample time in usec
@@ -1381,17 +1494,50 @@ long unsigned  GetRecorder( struct CSdo * pSdo ,short unsigned *nData)
 
 #pragma FUNCTION_OPTIONS ( RtRecorder, "--opt_level=3" );
 
-
-void RtRecorder(void)
+void  SampleRecordedSignals(void)
 {
-    short unsigned cnt ;
-    short unsigned ** pList ;
-    short unsigned * pNext ;
     union
     {
         short unsigned us[2] ;
         long unsigned ul ;
     }u;
+    short unsigned ** pList ;
+    short unsigned * pNext ;
+    long tEcap ;
+    short unsigned cnt ;
+    Recorder.GapCntr += 1 ;
+    if ( Recorder.GapCntr >= Recorder.RecorderGap)
+    {
+        Recorder.GapCntr = 0 ;
+        tEcap = (long) HWREG (ECAP3_BASE + ECAP_O_TSCTR );
+        if (  Recorder.TimerBasedTsCntr == 0 )
+        {
+            Recorder.TimerBasedTsTstart = tEcap ;
+        }
+        Recorder.TimerBasedTsCntr += 1 ;
+        Recorder.TimerBasedTsTend  = tEcap ;
+
+        pList = (short unsigned **) &Recorder.RecorderList[0];
+        for ( cnt = 0 ; cnt < Recorder.RecorderListLen ; cnt++ )
+        {
+            pNext   = *pList++ ;
+            u.us[0] = *pNext++ ;
+            u.us[1] = *pNext ;
+            Recorder.pBuffer[Recorder.PutCntr++] = u.ul ;
+        }
+        if ( Recorder.PutCntr >= Recorder.TotalRecLength)
+        {
+            Recorder.PutCntr = 0 ;
+        }
+        if ( Recorder.PutCntr == Recorder.EndRec )
+        {
+            Recorder.Stopped = 1 ;
+        }
+    }
+}
+
+void RtRecorder(void)
+{
 
     if ( Recorder.Stopped    )
     {
@@ -1441,27 +1587,10 @@ void RtRecorder(void)
             }
         }
     } // end if ( Recorder.TriggerActive == 0 )
-    Recorder.GapCntr += 1 ;
-    if ( Recorder.GapCntr >= Recorder.RecorderGap)
-    {
-        Recorder.GapCntr = 0 ;
-        pList = (short unsigned **) &Recorder.RecorderList[0];
-        for ( cnt = 0 ; cnt < Recorder.RecorderListLen ; cnt++ )
-        {
-            pNext   = *pList++ ;
-            u.us[0] = *pNext++ ;
-            u.us[1] = *pNext ;
-            Recorder.pBuffer[Recorder.PutCntr++] = u.ul ;
-        }
-        if ( Recorder.PutCntr >= Recorder.TotalRecLength)
-        {
-            Recorder.PutCntr = 0 ;
-        }
-        if ( Recorder.PutCntr == Recorder.EndRec )
-        {
-            Recorder.Stopped = 1 ;
-        }
-    }
+
+    // Recorder records anyway regardless whether triggered
+    SampleRecordedSignals() ;
+
 }
 
 

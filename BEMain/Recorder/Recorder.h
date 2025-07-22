@@ -10,6 +10,7 @@
 
 
 void RtRecorder(void);
+void  SampleRecordedSignals(void);
 void InitRecorder(long FastIntsInC, float FastTsUsec, long unsigned SdoBufLenLongs);
 
 short EmptyRecorderTrigger(void);
@@ -111,7 +112,10 @@ struct CRecorder
     short unsigned Active ; // !< 1 if recorder had been ever put to action
     short unsigned TriggerIndex ; // !< Index of signal to trigger by
     short BufferReady ;
-    short Algn ;
+    short TimerBasedTs  ;
+    long  TimerBasedTsCntr   ;
+    long  TimerBasedTsTstart ;
+    long  TimerBasedTsTend   ;
     long FastIntsInC; // !< Fast interrupts in C loop
     float FastTsUsec;  // !< Fast interrupt TS
     long unsigned SdoBufLenLongs; // !< Largest available SDO buffer , in 32bit units

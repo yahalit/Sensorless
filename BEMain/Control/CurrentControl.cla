@@ -747,12 +747,12 @@ __attribute__((interrupt))  void Cla1Task3 ( void )
 //
 // Task 4 - Title Here
 //
-// Description: Description/steps here.
-//
+// Make inductance identification pulse sequence non moving.
+// The CLA is triggered by ADC completion. It samples, then trigger new conversion
+// then interrupt the CPU
 //-----------------------------------------------------------------------------
 __attribute__((interrupt))  void Cla1Task4 ( void )
 {
-
 }
 
 //-----------------------------------------------------------------------------

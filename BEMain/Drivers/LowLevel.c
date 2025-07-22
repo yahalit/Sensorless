@@ -54,6 +54,40 @@ void SetClaAllSw(void)
 }
 
 
+
+inline
+void SetupTimers()
+{
+    //CPUTimer_setPreScaler(CPUTIMER0_BASE, 0);
+    CPUTimer_stopTimer(CPUTIMER0_BASE) ;
+    CPUTimer_stopTimer(CPUTIMER1_BASE) ;
+
+    CPUTimer_setPeriod(CPUTIMER0_BASE, 0xffffffff);
+    CPUTimer_setPeriod(CPUTIMER1_BASE, 0xffffffff);
+
+    HWREG(CPUTIMER0_BASE + CPUTIMER_O_TIM) = 0xffffffff ;
+    HWREG(CPUTIMER1_BASE + CPUTIMER_O_TIM) = 0xffffffff ;
+
+    HWREGH(CPUTIMER0_BASE + CPUTIMER_O_TPR) = 0;
+    HWREGH(CPUTIMER1_BASE + CPUTIMER_O_TPR) = CPU_CLK_MHZ-1;
+
+    CPUTimer_setEmulationMode(CPUTIMER0_BASE,CPUTIMER_EMULATIONMODE_STOPAFTERNEXTDECREMENT);
+    CPUTimer_setEmulationMode(CPUTIMER1_BASE,CPUTIMER_EMULATIONMODE_STOPAFTERNEXTDECREMENT);
+
+    CPUTimer_startTimer(CPUTIMER0_BASE) ;
+    CPUTimer_startTimer(CPUTIMER1_BASE) ;
+
+    //myCPUTIMER2 initialization
+    CPUTimer_setEmulationMode(CPUTIMER2_BASE, CPUTIMER_EMULATIONMODE_STOPAFTERNEXTDECREMENT);
+    CPUTimer_setPreScaler(CPUTIMER2_BASE, CPU_CLK_MHZ-1);
+    CPUTimer_setPeriod(CPUTIMER2_BASE, 4294967295U);
+    CPUTimer_disableInterrupt(CPUTIMER2_BASE);
+    CPUTimer_resumeTimer(CPUTIMER2_BASE);
+
+    return;
+}
+
+
 void InitPeripherals(void)
 {
 
@@ -79,6 +113,7 @@ void InitPeripherals(void)
     //
     InitPieVectTable();
 
+    SetupTimers();
 
     ConfigureADC() ;
 
@@ -110,7 +145,8 @@ void InitPeripherals(void)
      * PWM 4 is DAC1 enable
      */
     SysCtl_setEPWMClockDivider(SYSCTL_EPWMCLK_DIV_1);
-    InitEPwm7AsMasterCounetr();    // Setup EPWM7 as master counter, 1msec cycle
+    InitEPwm7AsMasterCounter();    // Setup EPWM7 as master counter, 1msec cycle
+    InitEPwm9AsFastCounter();    // Setup EPWM9 as fast sampling counter, 4usec
     //InitEPwm1();    // Setup EPWM1
 
     // Brifge PWMs
@@ -168,14 +204,26 @@ void setupEcap(void)
  *
  */
 __interrupt void AdcIsr(void);
+__interrupt void AdcIsrLMeas(void);
 void SetupIsr(void)
 {
 
+    SetGateDriveEnable(0) ;
+    GPIO_setControllerCore(99,GPIO_CORE_CPU1_CLA1) ; // And give it to the CLA
 
     // setup the Event Trigger Selection Register (ETSEL)
     //EPWM_setInterruptSource(PWM_SCD_BASE, EPWM_INT_TBCTR_PERIOD);
     DINT ;
+
+    // Select PWM source
+    Interrupt_disable(INT_EPWM6); // Sets IER
+    Interrupt_disable(INT_ADCA1); // Sets IER
+    SetPwmSyncSource(PWM_SYNCSEL );
+    SetAdcMux(ADC_SOC_EVENT) ;
+
     EALLOW ;
+
+
     // Channel 4 EOC will trigger interrupt
     HWREGH(ADCA_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 4 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
     // Channel 5 EOC will trigger interrupt
@@ -184,6 +232,7 @@ void SetupIsr(void)
     Interrupt_register(INT_EPWM6, &AdcIsr);
 
     EPWM_disableInterrupt(PWM_CPU_PACER);
+    EPWM_disableInterrupt(PWM_LMEAS_PACER);
     EALLOW ;
     HWREGH(PWM_CPU_PACER + EPWM_O_ETPS) = 1 ; // Each event
     HWREGH(PWM_CPU_PACER + EPWM_O_ETSEL) = 0xc ; // CMPA on increment, interrupt enabled
@@ -195,6 +244,7 @@ void SetupIsr(void)
     HWREGH(PWM_SCD_BASE+EPWM_O_CMPC) = HWREGH(PWM_SCD_BASE+EPWM_O_TBPRD)  - 1 - ADC_BEFORE_PWM0_nsec / CPU_CLK_NSEC ;
 
     EPWM_setADCTriggerSource(PWM_SCD_BASE,EPWM_SOC_A, EPWM_SOC_TBCTR_U_CMPC);
+
     EPWM_enableADCTrigger(PWM_SCD_BASE, EPWM_SOC_A);
     EPWM_setInterruptEventCount(PWM_SCD_BASE, 1);
     EPWM_setADCTriggerEventPrescale(PWM_SCD_BASE, EPWM_SOC_A,1);
@@ -207,6 +257,66 @@ void SetupIsr(void)
     CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_8); // Initialize CLA counters
 
     CLA_setTriggerSource(CLA_TASK_1, CLA_TRIGGER_ADCA1); // Thats immediately upon getting current samples
+    //CLA_setTriggerSource(CLA_TASK_2, CLA_TRIGGER_ADCC1); // And that is later after all ADC is complete
+
+    // enable the ePWM module time base clock sync signal
+    SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_TBCLKSYNC);
+}
+
+
+void SetupIsrLMeas(void)
+{
+
+    SetGateDriveEnable(0) ;
+    GPIO_setControllerCore(99,GPIO_CORE_CPU1) ; // And give it to the CLA
+    SetGateDriveEnable(0) ;
+
+    // setup the Event Trigger Selection Register (ETSEL)
+    //EPWM_setInterruptSource(PWM_SCD_BASE, EPWM_INT_TBCTR_PERIOD);
+    DINT ;
+    Interrupt_disable(INT_EPWM6); // Sets IER
+    Interrupt_disable(INT_ADCA1); // Sets IER
+
+    // Kill CLA auto activity
+    CLA_setTriggerSource(CLA_TASK_1, CLA_TRIGGER_SOFTWARE); // Thats immediately upon getting current samples
+    KillMotor();
+
+    // Select PWM source
+    SetPwmSyncSource(PWM_FASTSYNCSEL );
+    SetAdcMux(ADC_SOC_LMEAS_EVENT) ;
+    //ADC_enableContinuousMode(ADCA_BASE,ADC_INT_NUMBER1) ;
+
+    EALLOW ;
+    // Channel 4 EOC will trigger interrupt
+    HWREGH(ADCA_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 4 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+    // Channel 5 EOC will trigger interrupt
+    HWREGH(ADCC_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 5 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+
+    Interrupt_register(INT_ADCA1, &AdcIsrLMeas);
+
+    EPWM_disableInterrupt(PWM_CPU_PACER);
+    EPWM_disableInterrupt(PWM_LMEAS_PACER);
+    EALLOW ;
+    //HWREGH(PWM_LMEAS_PACER + EPWM_O_ETPS) = 1 ; // Each event
+    //HWREGH(PWM_LMEAS_PACER + EPWM_O_ETSEL) = 0xc ; // CMPA on increment, interrupt enabled
+    Interrupt_enable(INT_ADCA1); // Sets IER
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
+    HWREGH(PWM_LMEAS_PACER + EPWM_O_CMPA+1) = 1000 / CPU_CLK_NSEC ; // Stam
+
+    // write the PWM data value  for ADC trigger
+    HWREGH(PWM_LMEAS_PACER+EPWM_O_CMPC) = HWREGH(PWM_LMEAS_PACER+EPWM_O_TBPRD)  - 1 - 1000 / CPU_CLK_NSEC ;
+
+    EPWM_setADCTriggerSource(PWM_LMEAS_PACER,EPWM_SOC_A, EPWM_SOC_TBCTR_U_CMPC);
+    EPWM_enableADCTrigger(PWM_LMEAS_PACER, EPWM_SOC_A);
+    EPWM_setInterruptEventCount(PWM_LMEAS_PACER, 1);
+    EPWM_setADCTriggerEventPrescale(PWM_LMEAS_PACER, EPWM_SOC_A,1);
+
+    // setup the Event Trigger Clear Register (ETCLR)
+    EPWM_clearEventTriggerInterruptFlag(PWM_LMEAS_PACER);
+    EPWM_clearADCTriggerFlag(PWM_LMEAS_PACER, EPWM_SOC_A);
+
+    //CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_7); // Initialize current filter
+    //CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_8); // Initialize CLA counters
     //CLA_setTriggerSource(CLA_TASK_2, CLA_TRIGGER_ADCC1); // And that is later after all ADC is complete
 
     // enable the ePWM module time base clock sync signal

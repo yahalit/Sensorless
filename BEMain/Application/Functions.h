@@ -8,6 +8,9 @@
 #ifndef APPLICATION_FUNCTIONS_H_
 #define APPLICATION_FUNCTIONS_H_
 
+// AdcDrv
+void SetAdcMux(ADC_Trigger trigger) ;
+
 // AsmUtil
 void CopyMemRpt( short unsigned * dst , short unsigned * src , short unsigned n ) ;
 void ClearMemRpt( short unsigned * dst , short unsigned n ) ;
@@ -28,6 +31,7 @@ void setupGpioCAN(void);
 // LowLevel
 void InitPeripherals(void) ;
 void SetupIsr(void);
+void SetupIsrLMeas(void);
 void PauseInts(void);
 void UnpauseInts(void);
 float GetTemperatureFromAdc(float volts);
@@ -92,6 +96,10 @@ void StopDmaRecorder(void) ;
 void StopDmaUpdate(void);
 short unsigned GetDMALastValid(void);
 short unsigned GetRecorderTotalLength(void )  ;
+
+//EPWM
+void StopPwmsAndSync(void) ;
+
 
 // FlashDrv
 short   SetupFlash(short unsigned cpu , unsigned long u32HclkFrequencyMHz  );
@@ -169,11 +177,13 @@ void SetupPWM(uint32_t base,unsigned short pwmPeriod_usec );
 void SetupPwmPacer(uint32_t base,unsigned short pwmPeriod_usec );
 void setupPwmParams(void);
 void ClearTrip(void) ;
+void PwmEnable() ;
 void SetGateDriveEable(short in);
-void InitEPwm7AsMasterCounetr();
+void InitEPwm7AsMasterCounter();
+void InitEPwm9AsFastCounter() ;
 void setupPWMForDacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long DisablePeriod_nsec,unsigned long pwmPeriod_nsec);
 void SetupPWM_Phase(uint32_t base,unsigned long pwmPeriod_nsec);
-
+void SetPwmSyncSource( short unsigned idx );
 // PT Driver
 void InitPVT(void);
 short StayInPlaceDriver();
@@ -186,6 +196,9 @@ short PTRunTimeDriver(void);
 short unsigned GetRecorderStat(void) ;
 float *  GetFSignalPtr( short si );
 void SnapIt( short unsigned * pSnap ) ;
+long PrepRecorder( short unsigned n , const long unsigned * ptr[], float RecTime , const long unsigned *trigger,
+                   short unsigned TriggerType , short unsigned MaxRecLength , float PreTrigPercent , float tHold , float TsBase);
+
 
 // SelfTest
 void IdleCbit(void);

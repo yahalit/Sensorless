@@ -100,6 +100,7 @@ struct CTiming
     float TsTraj  ; // Sampling time for trajectory calculations
     float OneOverTsTraj  ; // 1/Sampling time for trajectory calculations
     long  unsigned ClocksOfInt ;
+    long  unsigned LmeasClocksOfInt ;
     long unsigned UsecTimer ;
     long unsigned IntCntr ;
     short unsigned TsInTicks ;
@@ -558,6 +559,29 @@ struct CSteerCorrection
 
 
 
+struct CLMeas
+{
+    short unsigned State    ;
+    short unsigned SubState    ;
+    short Fault   ;
+    volatile float *pCurIn  ;
+    volatile float *pCurOut ;
+    float CurIn   ;
+    float CurOut  ;
+    float CurMean ;
+    float Vdc ;
+    float TholdLow  ;
+    float TholdHigh ;
+    float TholdZero ;
+    float RecTime ;
+    short unsigned *pPwmFrc[3] ;
+    short unsigned *pPTripForce ;
+    float Tout ;
+    long unsigned TState[16];
+    long unsigned ExtState  ;
+};
+
+
 struct CSysState
 {
     struct CStatus Status ;
@@ -600,7 +624,7 @@ struct CSysState
     short unsigned InterruptRoutineBusy ;
     short unsigned WTF   ;
     long  unsigned ControlWord       ; // Last sample of control word
-    //struct CGyro Gyro ;
+    struct CLMeas CLMeas ;
 };
 
 EXTERN_TAG struct CSysState SysState ;
@@ -864,7 +888,7 @@ struct CFloatParRecord
 
 EXTERN_TAG float FloatParRevision        ;
 
-
+extern short RecorderStartFlag     ;
 
 #define GetOffsetC(x,y)  offsetof(struct CCalib, x)
 #define GetOffsetCC(x,y,z) offsetof(struct CCalib, x[y])

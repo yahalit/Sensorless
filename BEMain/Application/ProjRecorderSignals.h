@@ -30,6 +30,7 @@
         { 2 , (long unsigned *) & ClaState.Analogs.PhaseVoltUnCalibSum[1]}, //:PhaseVoltUnCalibSum1 [Analogs] {ADC Motor voltage raw sample B}
         { 2 , (long unsigned *) & ClaState.Analogs.PhaseVoltUnCalibSum[2]}, //:PhaseVoltUnCalibSum2 [Analogs] {ADC Motor voltage raw sample C}
         { 2 , (long unsigned *) & ClaState.Analogs.DcCurUncalibSum}, //:DcCurUncalibSum [Analogs] {ADC DC current raw sample C}
+        { 0 , (long unsigned *) & SysState.CLMeas.ExtState} , //:ExtLmeasState [LMeasure] {Extended process state}
         { 2 , (long unsigned *) & ClaState.DacValU[0]}, //:DacValU0 [Analogs] {DacValU0}
         { 2 , (long unsigned *) & ClaState.DacValU[1]}, //:DacValU1 [Analogs] {DacValU1}
         { 2 , (long unsigned *) & ClaState.DacValU[2]}, //:DacValU2 [Analogs] {DacValU2}
@@ -47,6 +48,7 @@
         { 2 , (long unsigned *) & ClaState.CurrentControl.CurrentCmdFilterState1 }, //:CurrentCmdFilterState1 [Current] {Reference filter state 1 to current control}
         { 2 , (long unsigned *) & ClaState.CurrentControl.ExtCurrentCommandFiltered }, //:CurrentCommandFiltered [Current] {Reference to current control - final filtered}
         { 2 , (long unsigned *) & ClaState.CurrentControl.CurrentCommandFiltered }, //:InternalCurrentCommandFiltered [Current] {Reference to current control - final filtered}
+        { 0 , (long unsigned *) & SysState.Timing.LmeasClocksOfInt }, //:LmeasClocksOfInt [LMeasure] {Max number of clocks in an interrupt}
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVload  [ClaRecsCopy] {FastVload }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVout  [ClaRecsCopy] {FastVout }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastIsense  [ClaRecsCopy] {FastIsense }

@@ -49,12 +49,6 @@
    {& ControlPars.SpeedConvergeWindow ,101, 0.0001f,15.0f,0.05f}, // Required maximal error for consecutive MotionConvergeTime to declare motion convergence
    {& ControlPars.PositionConvergeWindow,102, 0.0000001f,1.0e6f,0.1f} , // !< Required maximal position error for consecutive MotionConvergeTime to declare motion convergence
    {& ClaMailIn.StoTholdScale,239, -1.5f,1.5f,1.0f} ,// !< Simulation voltage DC bus
-   {& ClaMailIn.SimVdc,240, 1.0f,100.0f,38.0f} ,// !< Simulation voltage DC bus
-   {& ClaMailIn.SimR,241, 1.0e-3f,100.0f,0.0850f} ,// !< Simulation motor Resistance
-   {& ClaMailIn.SimBOverJdT,242, 1e-8f,1.0f,0.000025f} ,// !< Simulation B * dt / J
-   {& ClaMailIn.SimKtOverJdT,243, 1.0e-5f,100.0f,0.007071f} ,// !< Simulation Kt * dt / J
-   {& ClaMailIn.SimKe,245, 0.00001f,100.0f,0.1225f} ,// !< Ke of simulated motor
-   {& ClaMailIn.SimDtOverL,246, 0.000001f,100.0f,0.1500f} ,// !< 1/L * dt of simulated motor
    {& ClaControlPars.ExtCutCst,247, 0.000001f,0.99999999f,0.001666f} ,// !< Filter constant for torque report , about 30msec
    {& ControlPars.KGyroMerge,248, 0.00000f,0.99999999f,0.00125f} ,// !< Filter constant for gyro merge
    {& ControlPars.PosErrorExtRelGain,249, 0.00000f,9999.9999f,0.45f} , // Relative gain change when external pos error is applied

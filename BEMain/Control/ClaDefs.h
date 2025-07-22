@@ -51,13 +51,6 @@ struct CClaMailIn
     float IaOffsetAmc ;
     float IbOffsetAmc ;
     float IcOffsetAmc ;
-    float SimKe   ;
-    float SimR    ;
-    float SimVdc  ;
-    float SimDtOverL ;
-    float SimKtOverJdT ;
-    float SimBOverJdT ;
-    float SimdT ;
     float v_dbg_angle;
     float v_dbg_amp;
     float Ts ;
@@ -75,6 +68,8 @@ struct CClaMailIn
     float vOpenLoopTestB ;
     float vOpenLoopTestC ;
 #endif
+    short PhaseIndexIn   ;
+    short PhaseIndexOut  ;
 };
 
 
@@ -282,7 +277,7 @@ struct CClaState
     float PwmOffset ;
     float PwmMin ;
     float PwmMinB ;
-    float PwmMax ;
+    float PwmMax ;// A value above the frame so the PWM will not switch and be identically zero
     float PwmFrame ;
     float InvPwmFrame ;
     float PwmFrame2 ; // Entire PWM frame
@@ -352,11 +347,9 @@ const struct CClaConst  c = { .piOver32 = 9.817477042468103e-02f , .Halfsqrt3 = 
                               .Num2048 = 2048.0f  , .Num2732 = 2732.0f , .Num3072 = 3072.0f , .Num4096 = 4096.0f , .Num1p65 = 1.65f ,
                               .UnsignedLong1 = 1 , .UnsignedLong2 = 2,.UnsignedLong3 = 3 , .UnsignedLong4 = 4 ,
                               .Adc2Volt = 8.056640625000000e-04f, .Volt2Adc = 1.241212121212121e+03f , .Vres2Vphase = 1.04f,
-                              .Amc2Amp  =  0.024485798237023f ,.Hall2Amp =  0.006112469437653f
+                              .Amc2Amp  =  0.024485798237023f ,.Hall2Amp =  ADC_Hall2Amp
 };
 #endif
-
-
 
 
 interrupt void Cla1Task1 ( void );

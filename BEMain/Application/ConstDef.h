@@ -27,6 +27,9 @@
 #define PROJ_TYPE_ERROR 0xff
 
 
+#define ADC_Hall2Amp 0.006112469437653f
+#define LMeasTsampUsec 5
+
 
 #define CPU_CLK_MHZ      200
 #define CPU_CLK_NSEC     (1000/CPU_CLK_MHZ)
@@ -155,7 +158,8 @@
 // Depends in number of transmitters!
 // #define MCAN_TX_MASK_OTHER  0b1110000
 
-
+#define ADC_SOC_EVENT ADC_TRIGGER_EPWM4_SOCA
+#define ADC_SOC_LMEAS_EVENT ADC_TRIGGER_EPWM9_SOCA
 
 enum E_CLA_TASK_MODES
 {
@@ -268,6 +272,26 @@ enum E_MotorOffType
     E_OffForFinal  = 0 ,
     E_OffForAutoEngage = 1
 };
+
+
+enum E_LMeasState
+{
+    ELM_Nothing   = 0 ,
+    ELM_Init_cond = 1 ,
+    ELM_FirstRise = 2 ,
+    ELM_FirstFall = 3 ,
+    ELM_FirstPause = 4 ,
+    ELM_FirstFallFull = 5 ,
+    ELM_NegPause = 6 ,
+    ELM_SecondRise = 7 ,
+    ELM_SecondPause = 8 ,
+    ELM_SecondRiseFull = 9 ,
+    ELM_FinalReduction = 10 ,
+    ELM_WaitEnd = 11 ,
+    ELM_Done = 12 ,
+    ELM_Fault = 15
+};
+
 
 #define DMA_USE_LEN REC_BUF_LEN
 #define CLA_DMA_TRANSFER_SIZE_LONGS 8

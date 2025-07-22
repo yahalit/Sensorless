@@ -205,3 +205,253 @@ __interrupt void AdcIsr(void)
 }
 
 
+const short LMeasVolt[] = { 0, 0 , 1 , -1 , 0 , -1 , 0 , 1 , 0 , 1 , -1, 0 , 0 , 0 , 0 ,0,0,0} ;
+
+void AdvanceCLMeasState()
+{
+    SysState.CLMeas.TState[SysState.CLMeas.State] =  SysState.Timing.UsecTimer ;
+    SysState.CLMeas.State  += 1  ;
+}
+
+void StopLmeasRecorder()
+{
+    if ( Recorder.Stopped == 0 )
+    {
+        Recorder.Stopped = 1 ;
+        Recorder.EndRec  = Recorder.PutCntr ;
+        Recorder.TotalRecLength = Recorder.EndRec ;
+        Recorder.RecLength = Recorder.TotalRecLength /Recorder.RecorderListLen ;
+    }
+}
+
+
+
+void SetCLMeasFault( short flt )
+{
+    if ( SysState.CLMeas.Fault == 0 )
+    {
+        SysState.CLMeas.Fault = flt  ;
+    }
+    ClaState.MotorOn = 0 ;
+    KillMotor() ;
+    SysState.CLMeas.State = ELM_Fault   ;
+    StopLmeasRecorder() ;
+    SetGateDriveEnable(0) ;
+}
+
+
+struct CC
+{
+        float Hall2Amp ;
+        float Num4096  ;
+        float Num2048  ;
+};
+const struct CC c1 = {.Hall2Amp = ADC_Hall2Amp, .Num4096 = 4096.0f, .Num2048 = 2048.0f } ;
+
+
+#pragma FUNCTION_OPTIONS ( AdcIsrLMeas, "--opt_level=3" );
+__interrupt void AdcIsrLMeas(void)
+{
+
+    short PwmState ;
+    long unsigned dt ;
+    SysState.EcapOnInt = HWREG (ECAP3_BASE + ECAP_O_TSCTR );
+    GpioDataRegs.GPASET.bit.GPIO18 = 1 ;
+    //long unsigned port ;
+    //short unsigned potcase ;
+
+//    junkk = (junkk + 1 ) & 4095 ;
+//    HWREGH(DACA_BASE + DAC_O_VALS) = junkk ;
+    //(short unsigned) (c.Num2048 +
+    //        __mmaxf32 (__mminf32 (ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[1] , 2000 ) , -2000 )) ;
+//    HWREGH(DACC_BASE + DAC_O_VALS) = ( junkk+ 1048 ) & 4095 ;
+
+    // Acknowledge interrupt
+    if ( SysState.CLMeas.State >= ELM_Done )
+    {
+        return ; // Do not acknowledge interrupt, so interrupt service will stop
+    }
+
+    HWREGH(PIECTRL_BASE + PIE_O_ACK) = INTERRUPT_ACK_GROUP1 ;
+    //HWREGH(PWM_CPU_PACER+EPWM_O_ETCLR) = 0xd ;
+    // Take time
+    //PwmAtInt = HWREGH(PWM_CPU_PACER+EPWM_O_TBCTR) ;
+    SysState.Timing.UsecTimer = ~HWREG( CPUTIMER1_BASE+CPUTIMER_O_TIM) ; // - ( long) (PwmAtInt * INV_CPU_CLK_MHZ) ;
+
+
+    // Read currents and voltages
+    ClaState.AdcRaw.PhaseCurAdc[0] = ADC_READ_CUR1_H1 + ADC_READ_CUR1_H2 ;
+    ClaState.AdcRaw.PhaseCurAdc[1] = ADC_READ_CUR2_H1 + ADC_READ_CUR2_H2 ;
+    ClaState.AdcRaw.PhaseCurAdc[2] = ADC_READ_CUR3_H1 + ADC_READ_CUR3_H2 ;
+
+    ClaState.Analogs.PhaseCur[0] = ( ClaState.AdcRaw.PhaseCurAdc[0]  - c1.Num4096 - ClaMailIn.IaOffset ) * c1.Hall2Amp * ( 1.0f + Calib.ACurGainCorr ) ;
+    ClaState.Analogs.PhaseCur[1] = ( ClaState.AdcRaw.PhaseCurAdc[1]  - c1.Num4096 - ClaMailIn.IbOffset ) * c1.Hall2Amp * ( 1.0f + Calib.BCurGainCorr ) ;
+    ClaState.Analogs.PhaseCur[2] = ( ClaState.AdcRaw.PhaseCurAdc[2]  - c1.Num4096 - ClaMailIn.IcOffset ) * c1.Hall2Amp * ( 1.0f + Calib.CCurGainCorr ) ;
+
+    ClaState.Analogs.Vdc = (( c1.Num2048 - ADC_READ_VOLTDC - Calib.VdcOffset) * ClaControlPars.Vdc2Bit2Volt) * ( 1 + Calib.VdcGain ) ;
+
+    EALLOW ;
+    * SysState.CLMeas.pPwmFrc[2] = 0x5  ; // Force low
+    * SysState.CLMeas.pPTripForce = 0x4 ; // Kill branch 2
+    SysState.CLMeas.CurIn   = *SysState.CLMeas.pCurIn ;
+    SysState.CLMeas.CurOut  = *SysState.CLMeas.pCurOut;
+    SysState.CLMeas.CurMean = ( SysState.CLMeas.CurIn - SysState.CLMeas.CurOut) * 0.5f ;
+    SysState.CLMeas.Vdc     =  ClaState.Analogs.Vdc ;
+
+    if ( SysState.CLMeas.State == ELM_Nothing )
+    {
+        SysState.CLMeas.SubState = 0 ;
+        Recorder.BufferReady = 1 ;
+        Recorder.TriggerActive = 1 ;
+
+        Recorder.Ready4Trigger = 1 ;
+        Recorder.Active = 1 ;
+
+        Recorder.StartRec = 0 ;
+        Recorder.EndRec   = 0  ;
+
+        RecorderStartFlag = 1 ;
+        SysState.CLMeas.State = ELM_Init_cond ;
+        SysState.CLMeas.TState[0] = SysState.Timing.UsecTimer ;
+    }
+
+    SysState.CLMeas.ExtState = ( SysState.CLMeas.State & 0xf ) + (SysState.Timing.UsecTimer << 4 );
+
+
+    // Test thresholds and state transitions
+    switch ( SysState.CLMeas.State)
+    {
+
+    case ELM_Init_cond:
+        SysState.CLMeas.SubState += 1 ;
+        if ( SysState.CLMeas.SubState >= Recorder.RecorderGap * 16 )
+        {
+            AdvanceCLMeasState() ;
+        }
+        break ;
+    case ELM_FirstRise:
+
+        //if ( SysState.CLMeas.CurMean > SysState.CLMeas.TholdLow )
+        //{
+        //    SysState.CLMeas.bRecNow = 1  ;
+        //}
+        if ( SysState.CLMeas.CurMean > SysState.CLMeas.TholdHigh )
+        {
+            //SysState.CLMeas.bRecNow = 0  ;
+            AdvanceCLMeasState() ;
+        }
+        break ;
+
+    case ELM_FirstFall:
+        //if ( -SysState.CLMeas.CurMean > SysState.CLMeas.TholdLow )
+        //{
+        //    SysState.CLMeas.bRecNow = 1  ;
+        //}
+        if ( SysState.CLMeas.CurMean < SysState.CLMeas.TholdZero )
+        {
+//            SysState.CLMeas.bRecNow = 0  ;
+            AdvanceCLMeasState() ;
+        }
+        break;
+    case ELM_FirstPause:
+        dt = SysState.Timing.UsecTimer - SysState.CLMeas.TState[ELM_FirstFall] ;
+        if ( dt >= ( (SysState.CLMeas.TState[2] - SysState.CLMeas.TState[0] ) >> 2 ) )
+        {
+            AdvanceCLMeasState() ;
+        }
+        break ;
+    case ELM_FirstFallFull:
+        if ( -SysState.CLMeas.CurMean > SysState.CLMeas.TholdHigh )
+        {
+            //SysState.CLMeas.bRecNow = 0  ;
+            AdvanceCLMeasState() ;
+        }
+        break ;
+    case ELM_NegPause:
+        dt = SysState.Timing.UsecTimer - SysState.CLMeas.TState[ELM_FirstFallFull] ;
+        if ( dt >= (( (SysState.CLMeas.TState[4] - SysState.CLMeas.TState[0] ) * 2 ) / 7 ) )
+        {
+            AdvanceCLMeasState() ;
+        }
+        break ;
+    case ELM_SecondRise:
+        if ( SysState.CLMeas.CurMean > -SysState.CLMeas.TholdZero )
+        {
+            //SysState.CLMeas.bRecNow = 0  ;
+            AdvanceCLMeasState() ;
+        }
+        break ;
+    case ELM_SecondPause:
+        dt = SysState.Timing.UsecTimer - SysState.CLMeas.TState[ELM_SecondRise] ;
+        if ( dt >= ( (SysState.CLMeas.TState[6] - SysState.CLMeas.TState[0])  / 11  ))
+        {
+            AdvanceCLMeasState() ;
+        }
+        break ;
+    case ELM_SecondRiseFull:
+        if ( SysState.CLMeas.CurMean > SysState.CLMeas.TholdHigh )
+        {
+            AdvanceCLMeasState() ;
+        }
+        break ;
+
+    case ELM_FinalReduction:
+        if ( SysState.CLMeas.CurMean < SysState.CLMeas.TholdZero )
+        {
+            ClaState.MotorOn = 0 ;
+            KillMotor() ;
+            SetGateDriveEnable(0) ;
+            AdvanceCLMeasState() ;
+        }
+        break;
+    case ELM_WaitEnd:
+        dt = SysState.Timing.UsecTimer - SysState.CLMeas.TState[ELM_FinalReduction] ;
+        if ( dt >= ( SysState.CLMeas.TState[ELM_FinalReduction] - SysState.CLMeas.TState[ELM_SecondRiseFull]  ))
+        {
+            StopLmeasRecorder() ;
+            AdvanceCLMeasState() ;
+        }
+        break;
+    default: // ELM_Done , ELM_Fault
+        ClaState.MotorOn = 0 ;
+        KillMotor() ;
+        break ;
+    }
+
+
+    PwmState = LMeasVolt[SysState.CLMeas.State] ;
+    switch ( PwmState)
+    {
+    case 1:
+        * SysState.CLMeas.pPwmFrc[0] = 0x6 ; // Force low
+        * SysState.CLMeas.pPwmFrc[1] = 0x5 ; // Force High
+        break ;
+    case -1:
+        * SysState.CLMeas.pPwmFrc[0] = 0x5 ; // Force High
+        * SysState.CLMeas.pPwmFrc[1] = 0x6 ; // Force low
+        break ;
+    default:
+        * SysState.CLMeas.pPwmFrc[0] = 0x5 ; // Force low
+        * SysState.CLMeas.pPwmFrc[1] = 0x5 ; // Force low
+        break ;
+    }
+
+    // Detect over current
+    if  (__fmax( __fmax( fabsf(ClaState.Analogs.PhaseCur[0]),fabsf(ClaState.Analogs.PhaseCur[1])),fabsf(ClaState.Analogs.PhaseCur[2]) ) > SysState.CLMeas.TholdHigh * 1.5f )
+    {
+        SetCLMeasFault(-1) ;
+    }
+
+    // Timeout - stop all
+    if ( ((long)SysState.Timing.UsecTimer - (long)SysState.CLMeas.TState[0])*1e-6f  >   SysState.CLMeas.Tout)
+    {
+        SetCLMeasFault(-2) ;
+    }
+
+    if ( Recorder.Stopped == 0 )
+    {
+        SampleRecordedSignals();
+    }
+    SysState.Timing.LmeasClocksOfInt =  __lmax( HWREG (ECAP3_BASE + ECAP_O_TSCTR ) - SysState.EcapOnInt , SysState.Timing.LmeasClocksOfInt) ;
+    GpioDataRegs.GPACLEAR.bit.GPIO18 = 1 ;
+}

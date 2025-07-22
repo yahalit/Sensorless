@@ -299,8 +299,6 @@ void setupGpioGpio(void)
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_ASYNC);
     GPIO_setControllerCore(NGP,GPIO_CORE_CPU1_CLA1) ;
-
-
 }
 
 void setupGpio(void)

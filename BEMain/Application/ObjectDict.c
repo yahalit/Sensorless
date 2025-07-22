@@ -119,6 +119,13 @@ const short unsigned SizeofObjDict =  sizeof(ObjDictionaryItem)/sizeof(struct CO
 #endif
 
 
+const long unsigned * LMeasRecPtr[] = {(long unsigned *) &ClaState.Analogs.Vdc,
+                                       (long unsigned *) &ClaState.Analogs.PhaseCur[0],
+                                       (long unsigned *) &ClaState.Analogs.PhaseCur[1],
+                                       (long unsigned *) &ClaState.Analogs.PhaseCur[2],
+                                       (long unsigned *) &SysState.CLMeas.ExtState } ;
+const short unsigned nLMeasRecPtr = ( sizeof(LMeasRecPtr) / sizeof(long unsigned *) ) ;
+
 float fGetSamplingTime( short unsigned ind)
 {
     switch ( ind )
@@ -931,7 +938,8 @@ const struct CShortDataItem ShortDataItem[]={
                                { &SysState.Homing.State, 0 ,5,1 } ,  //6
                                { (short*)&SysState.WTF, 0 ,5,0 } ,  //7
                                {(short*)  &SysState.Debug.bDisablePotEncoderMatchTest,0,1,0} , // 8
-                               {(short*)  &SysState.SteerCorrection.bSteeringComprensation ,0, 1 , 0}   // 9
+                               {(short*)  &SysState.SteerCorrection.bSteeringComprensation ,0, 1 , 0},   // 9
+                               {(short*)  &SysState.CLMeas.Fault ,0, 1 , 0}   // 10
 };
 
 
@@ -1032,7 +1040,12 @@ const float  * pFloatData[] =  {
                              &SysState.SteerCorrection.WheelAddZ , //25
                              &SysState.SteerCorrection.SteeringColumnDistRatio ,// 26
                              &ControlPars.PdoCurrentReportScale , // 27
-                             &ClaControlPars.ExtCutCst // 28
+                             &ClaControlPars.ExtCutCst ,  // 28
+                             & SysState.CLMeas.TholdLow , // 29
+                             & SysState.CLMeas.TholdHigh , // 30
+                             & SysState.CLMeas.TholdZero , // 31
+                             & SysState.CLMeas.RecTime, // 32
+                             & SysState.CLMeas.Tout  // 33
                              };
 
 
@@ -1068,7 +1081,8 @@ long unsigned  SetFloatData( struct CSdo * pSdo ,short unsigned nData)
 
     f = * ((float*)pSdo->SlaveBuf) ;
 
-    if ( si < nFloatData)
+
+    if ( si < nFloatData && !isnan(f) )
     {
         pf = (float *) pFloatData[si];
         *pf = f ;
@@ -1131,6 +1145,7 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
     short unsigned si  ,us   , YesNo ;
     short stat , fok  ;
     long unsigned ul ;
+    long lstat ;
     float f ;
     (void) nData ;
     us =* ((short unsigned *) pSdo->SlaveBuf);
@@ -1442,6 +1457,98 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
             return General_parameter_incompatibility_reason ;
         }
         SysState.Debug.CurExp.VoltageAnglePU = f ;
+        break ;
+
+    case 38: // Make motionless identification experiment
+        if ( us >= 6 )
+        {
+            return General_parameter_incompatibility_reason ;
+        }
+
+        switch ( us)
+        {
+        case 0:
+            SysState.CLMeas.pCurIn  = &ClaState.Analogs.PhaseCur[0] ;
+            SysState.CLMeas.pCurOut = &ClaState.Analogs.PhaseCur[1] ;
+            SysState.CLMeas.pPTripForce = (unsigned short *) (PWM_C_BASE + EPWM_O_TZFRC) ;
+            SysState.CLMeas.pPwmFrc[0]     = (unsigned short *) (PWM_A_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[1]     = (unsigned short *) (PWM_B_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[2]     = (unsigned short *) (PWM_C_BASE + EPWM_O_AQCSFRC) ;
+            break ;
+        case 1:
+            SysState.CLMeas.pCurIn  = &ClaState.Analogs.PhaseCur[1] ;
+            SysState.CLMeas.pCurOut = &ClaState.Analogs.PhaseCur[2] ;
+            SysState.CLMeas.pPTripForce = (unsigned short *) (PWM_A_BASE + EPWM_O_TZFRC) ;
+            SysState.CLMeas.pPwmFrc[0]     = (unsigned short *) (PWM_B_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[1]     = (unsigned short *) (PWM_C_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[2]     = (unsigned short *) (PWM_A_BASE + EPWM_O_AQCSFRC) ;
+            break ;
+        case 2:
+            SysState.CLMeas.pCurIn  = &ClaState.Analogs.PhaseCur[2] ;
+            SysState.CLMeas.pCurOut = &ClaState.Analogs.PhaseCur[0] ;
+            SysState.CLMeas.pPTripForce = (unsigned short *) (PWM_B_BASE + EPWM_O_TZFRC) ;
+            SysState.CLMeas.pPwmFrc[0]     = (unsigned short *) (PWM_C_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[1]     = (unsigned short *) (PWM_A_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[2]     = (unsigned short *) (PWM_B_BASE + EPWM_O_AQCSFRC) ;
+            break ;
+        case 4:
+            SysState.CLMeas.pCurIn  = &ClaState.Analogs.PhaseCur[1] ;
+            SysState.CLMeas.pCurOut = &ClaState.Analogs.PhaseCur[0] ;
+            SysState.CLMeas.pPTripForce = (unsigned short *) (PWM_C_BASE + EPWM_O_TZFRC) ;
+            SysState.CLMeas.pPwmFrc[0]     = (unsigned short *) (PWM_B_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[1]     = (unsigned short *) (PWM_A_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[2]     = (unsigned short *) (PWM_C_BASE + EPWM_O_AQCSFRC) ;
+            break ;
+        case 5:
+            SysState.CLMeas.pCurIn  = &ClaState.Analogs.PhaseCur[2] ;
+            SysState.CLMeas.pCurOut = &ClaState.Analogs.PhaseCur[1] ;
+            SysState.CLMeas.pPTripForce = (unsigned short *) (PWM_A_BASE + EPWM_O_TZFRC) ;
+            SysState.CLMeas.pPwmFrc[0]     = (unsigned short *) (PWM_C_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[1]     = (unsigned short *) (PWM_B_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[2]     = (unsigned short *) (PWM_A_BASE + EPWM_O_AQCSFRC) ;
+            break ;
+        case 6:
+            SysState.CLMeas.pCurIn  = &ClaState.Analogs.PhaseCur[0] ;
+            SysState.CLMeas.pCurOut = &ClaState.Analogs.PhaseCur[2] ;
+            SysState.CLMeas.pPTripForce = (unsigned short *) (PWM_B_BASE + EPWM_O_TZFRC) ;
+            SysState.CLMeas.pPwmFrc[0]     = (unsigned short *) (PWM_A_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[1]     = (unsigned short *) (PWM_C_BASE + EPWM_O_AQCSFRC) ;
+            SysState.CLMeas.pPwmFrc[2]     = (unsigned short *) (PWM_B_BASE + EPWM_O_AQCSFRC) ;
+            break ;
+        }
+
+
+        if ( SysState.CLMeas.TholdZero < 0 || SysState.CLMeas.TholdLow <= SysState.CLMeas.TholdZero ||
+                SysState.CLMeas.TholdHigh <= SysState.CLMeas.TholdLow || SysState.CLMeas.RecTime < 1e-4f || SysState.CLMeas.Tout <= SysState.CLMeas.RecTime )
+        {
+            return General_parameter_incompatibility_reason ;
+        }
+
+
+        DINT ;
+        SetupIsrLMeas() ;
+        SysState.CLMeas.ExtState = 0  ;
+        SysState.CLMeas.State = 0  ;
+        SysState.CLMeas.Fault = 0  ;
+        lstat = PrepRecorder( nLMeasRecPtr , LMeasRecPtr, SysState.CLMeas.RecTime  , (const long unsigned *) &SysState.CLMeas.ExtState ,
+                           4 , 2000 , 1 , 1 , LMeasTsampUsec * 1e-6f  ) ;
+
+        if ( lstat )
+        {
+            return (long unsigned ) lstat ;
+        }
+        ClearTrip() ;
+        // Clear exceptions
+        SysState.Mot.KillingException = 0 ;
+        SysState.Mot.LastException = 0    ;
+        PwmEnable() ;
+        SetGateDriveEnable(1) ;
+        ClaState.MotorOn = 1 ;
+        ClaState.MotorOnRequest = 1 ;
+        ClaState.MotorOnRequestOld = 1 ;
+        ClaMailOut.AbortReason = 0 ;
+        SysState.Timing.LmeasClocksOfInt = 0 ;
+        EINT ;
         break ;
 
 

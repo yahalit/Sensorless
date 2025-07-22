@@ -217,6 +217,15 @@ void IdleCbit(void)
 
     SysState.CBit2.all = LocalBit2.all ;
 
+    // If an L measurement experiment is done , restore
+    if ( SysState.CLMeas.State >= ELM_Done )
+    {
+        KillMotor() ;
+        SetupIsr();
+        SysState.CLMeas.State = ELM_Nothing ;
+        EINT;  // Enable Global interrupt INTM
+    }
+
     // Time out external control when activation is absent
     if ( SysState.Mot.LoopClosureMode == E_LC_EXTDual_Pos_Mode)
     {

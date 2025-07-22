@@ -66,7 +66,7 @@ void ADC_init(uint32_t base){
 }
 
 
-void SetAdcMux(void);
+void SetAdcMux(ADC_Trigger trigger);
 //
 // ConfigureADC - Write ADC configurations and power up the ADC for both
 //                ADC A and ADC B
@@ -133,7 +133,7 @@ void ConfigureADC(void)
     EDIS;
 */
 
-    SetAdcMux() ;
+    SetAdcMux(ADC_SOC_EVENT) ;
 }
 
 
@@ -166,52 +166,52 @@ void MyADC_setupSOC(uint32_t base, ADC_SOCNumber socNumber, ADC_Trigger trigger,
 }
 
 
-#define ADC_SOC_EVENT ADC_TRIGGER_EPWM4_SOCA
-void SetAdcMux(void)
+
+void SetAdcMux(ADC_Trigger trigger)
 {
     // Each sample will take about 280nsec, so interrupt will be 1.4usec after sampling starts
     // Next CLA interrupt will be at about 1.7u
 // ADCA
 ////////////////////
     // ok Phase C Hall current
-    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER0, trigger,
                  ADC_CH_ADCIN15);
 
     // ok Phase C AMC current
-    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER1, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER1, trigger,
                  ADC_CH_ADCIN10);
 
     // ok Phase C voltage
-    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER2, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER2, trigger,
                  ADC_CH_ADCIN5);
 
     // ok again Phase C Hall current
-    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER3, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER3, trigger,
                  ADC_CH_ADCIN15);
 
     // ok DC link voltage
-    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER4, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER4, trigger,
                  ADC_CH_ADCIN4);
 
 // ADCB
 ////////////////////
     // ok Phase A Hall current
-    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER0, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER0, trigger,
                  ADC_CH_ADCIN6);
 
     // ok Phase A AMC current
-    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER1, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER1, trigger,
                  ADC_CH_ADCIN4);
     // ok Phase A voltage
-    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER2, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER2, trigger,
                  ADC_CH_ADCIN0);
 
     // Again Phase A Hall current
-    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER3, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER3, trigger,
                  ADC_CH_ADCIN6);
 
     // Hall current ,DC link
-    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER4, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER4, trigger,
                  ADC_CH_ADCIN7);
 
 
@@ -219,27 +219,27 @@ void SetAdcMux(void)
 ////////////////////
 
     // Phase B Hall current
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER0, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER0, trigger,
                  ADC_CH_ADCIN6);
 
     // ok Phase B AMC current
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER1, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER1, trigger,
                  ADC_CH_ADCIN7);
 
     // ok Phase B voltage
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER2, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER2, trigger,
                  ADC_CH_ADCIN0);
 
     // Again Phase B Hall current
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER3, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER3, trigger,
                  ADC_CH_ADCIN6);
 
     // AMC current , DC link
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER4, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER4, trigger,
                  ADC_CH_ADCIN1);
 
     // ok NTC temperature
-    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER5, ADC_SOC_EVENT,
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER5, trigger,
                  ADC_CH_ADCIN4);
 
     //EALLOW ;

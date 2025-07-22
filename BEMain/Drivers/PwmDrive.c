@@ -45,6 +45,33 @@ void ClearTrip(void)
 }
 
 
+void PwmEnable()
+{
+// Release PWM A for standard work
+EALLOW ;
+
+// See that there will be no comparison, thus no switching to ON at all
+    HWREGH(PWM_A_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
+    HWREGH(PWM_A_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
+    HWREGH(PWM_B_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
+    HWREGH(PWM_B_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
+    HWREGH(PWM_C_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
+    HWREGH(PWM_C_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
+
+
+    HWREGH(PWM_A_BASE + EPWM_O_AQCSFRC) = 0x4 ;
+    HWREGH(PWM_B_BASE + EPWM_O_AQCSFRC) = 0x4 ;
+    HWREGH(PWM_C_BASE + EPWM_O_AQCSFRC) = 0x4 ;
+
+    // Normal dead band control - complementary
+    HWREGH(PWM_A_BASE + EPWM_O_DBCTL ) = 0xb ;
+    HWREGH(PWM_B_BASE + EPWM_O_DBCTL ) = 0xb ;
+    HWREGH(PWM_C_BASE + EPWM_O_DBCTL ) = 0xb ;
+
+    GpioDataRegs.GPDSET.all = (1<<3); //SetGateDrvEnable
+}
+
+
 #pragma FUNCTION_OPTIONS ( setupPwmParams, "--opt_level=0" );
 
 void setupPwmParams(void)
@@ -95,17 +122,33 @@ void KillMotor(void)
     RestoreInts(mask) ;
 }
 
-void SetGateDriveEable(short in)
-{
-    (void) in ;
-}
-
 
 
 /*
- * Setup PWM5 as master-mind counter. It just ticks. Not connected to ant external pins
+ * Setup PWM9 as fast-sync counter. It just ticks. Not connected to ant external pins
  */
-void InitEPwm7AsMasterCounetr()
+void InitEPwm9AsFastCounter(void)
+{
+    EPwm9Regs.TBPRD = (unsigned short) (CPU_CLK_MHZ * LMeasTsampUsec )-1;                        // Set timer period
+    EPwm9Regs.TBPHS.bit.TBPHS = 0x0000;            // Phase is 0
+    EPwm9Regs.TBCTR = 0x0000;                      // Clear counter
+
+    //
+    // Setup TBCLK to 50MHZ
+    //
+    EPwm9Regs.TBCTL.bit.CTRMODE = TB_COUNT_UP  ; // Count up
+    EPwm9Regs.TBCTL.bit.PHSEN = TB_DISABLE;        // Disable phase loading
+    EPwm9Regs.TBCTL.bit.HSPCLKDIV = TB_DIV1;       // Clock ratio to SYSCLKOUT
+    EPwm9Regs.TBCTL.bit.CLKDIV = TB_DIV1;
+
+    // Set sync out on zero
+    EPwm9Regs.EPWMSYNCOUTEN.all = 0x2 ; // Sync out on zero
+
+}
+/*
+ * Setup PWM7 as master-sync counter. It just ticks. Not connected to ant external pins
+ */
+void InitEPwm7AsMasterCounter()
 {
     EPwm7Regs.TBPRD = (unsigned short) (CPU_CLK_MHZ * 250UL)-1;                        // Set timer period
     EPwm7Regs.TBPHS.bit.TBPHS = 0x0000;            // Phase is 0
@@ -159,8 +202,8 @@ void setupPWMForDacEna(uint32_t base,unsigned long DacSet_nsec,unsigned long Dis
     HWREGH(base + EPWM_O_AQSFRC) = 0x0   ; // Shadowed continuous software load, next counter = 0
 
     // Set PWM synchronization scheme all to PWM5
-    HWREGH(base + EPWM_O_HRPCTL) = 0x40  ; // CMPC will synchronize DAC
-    HWREGH(base + EPWM_O_CMPC) = (short unsigned) (DacSet_nsec/ CPU_CLK_NSEC )  ; // CMP3 will synchronize DAC
+    HWREGH(base + EPWM_O_HRPCTL) = 0x60  ; // CMPD will synchronize DAC
+    HWREGH(base + EPWM_O_CMPD  ) = (short unsigned) (DacSet_nsec/ CPU_CLK_NSEC )  ; // CMP3 will synchronize DAC
 
     HWREGH(base + EPWM_O_SYNCINSEL) = PWM_SYNCSEL ;
 
@@ -249,5 +292,34 @@ void SetupPWM_Phase(uint32_t base,unsigned long pwmPeriod_nsec)
 
 }
 
+void StopPwmsAndSync(void)
+{
+    EALLOW ;
+    CpuSysRegs.PCLKCR0.bit.TBCLKSYNC = 0;
+    HWREGH(EPWM1_BASE+EPWM_O_TBCTR) = 0 ;
+    HWREGH(EPWM2_BASE+EPWM_O_TBCTR) = 0 ;
+    HWREGH(EPWM3_BASE+EPWM_O_TBCTR) = 0 ;
+    HWREGH(EPWM4_BASE+EPWM_O_TBCTR) = 0 ;
+    HWREGH(EPWM5_BASE+EPWM_O_TBCTR) = 0 ;
+    HWREGH(EPWM6_BASE+EPWM_O_TBCTR) = 0 ;
+    HWREGH(EPWM7_BASE+EPWM_O_TBCTR) = 0 ;
+    HWREGH(EPWM8_BASE+EPWM_O_TBCTR) = 0 ;
+    HWREGH(EPWM9_BASE+EPWM_O_TBCTR) = 0 ;
+    HWREGH(EPWM10_BASE+EPWM_O_TBCTR) = 0 ;
+}
+
+void StartPwmsAndSync(void)
+{
+    StopPwmsAndSync() ;
+    EALLOW ;
+    CpuSysRegs.PCLKCR0.bit.TBCLKSYNC = 1;
+}
 
 
+void SetPwmSyncSource( short unsigned idx )
+{
+    StopPwmsAndSync() ;
+    HWREGH(PWM_A_BASE + EPWM_O_SYNCINSEL) = idx ;
+    HWREGH(PWM_B_BASE + EPWM_O_SYNCINSEL) = idx ;
+    HWREGH(PWM_C_BASE + EPWM_O_SYNCINSEL) = idx ;
+}

@@ -61,7 +61,7 @@ end
         action.ProgRec = 1 ; 
     end 
 
-    DataType=struct( 'long' , 0 , 'float', 1 , 'short' , 2 , 'char' , 3 ,'string', 9 ,'lvec' , 10 ,'fvec' , 11 , 'ulvec' , 20 ) ; 
+    DataType = GetDataType() ; 
 
     %Added for compiled version debuging - do not delete.
 	try 
@@ -341,14 +341,16 @@ end
     end
     
     if  action.Struct 
-        gap = FetchObj( [hex2dec('2000'),1,TargetId.Id] , DataType.short , 'Gap' ) ;
-        s2c = FetchObj( [hex2dec('2000'),6,TargetId.Id] , DataType.short  , 'Sync2C' ) ;
-        if s2c 
-            Ts = FetchObj( [hex2dec('2000'),63,TargetId.Id] , DataType.long ,'Get TS') ; 
-        else
-            Ts = FetchObj( [hex2dec('2000'),62,TargetId.Id] , DataType.short ,'Get TS') ; 
-        end 
-        Ts = Ts * gap * 1e-6 ;
+%         gap = FetchObj( [hex2dec('2000'),1,TargetId.Id] , DataType.short , 'Gap' ) ;
+%         s2c = FetchObj( [hex2dec('2000'),6,TargetId.Id] , DataType.short  , 'Sync2C' ) ;
+%         if s2c 
+%             Ts = FetchObj( [hex2dec('2000'),63,TargetId.Id] , DataType.long ,'Get TS') ; 
+%         else
+%             Ts = FetchObj( [hex2dec('2000'),62,TargetId.Id] , DataType.short ,'Get TS') ; 
+%         end 
+%         Ts = Ts * gap * 1e-6 ;
+        
+        Ts = FetchObj( [hex2dec('2000'),67,TargetId.Id] , DataType.float ,'Get TS') ; 
         RR = struct( 't' ,  Ts * (0:(length(RecVec(1,:) )-1) ),'Ts',Ts) ; 
         for cnt = 1:listlen
             RR.(strtrim(RecNames{cnt})) = RecVec(cnt,:); 
