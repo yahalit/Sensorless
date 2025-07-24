@@ -117,6 +117,8 @@ struct CClaControlPars
     float MinPotRef ; // !< Minimum legal value for potentiometer reference
     float PotFilterCst ; // !< Potentiometer 1st order filter constant
     float CurrentCommandDir   ; // !< Direction of command to the current controller composed of Reference and of speed corrections
+    float DInjectionDelta ; // Injection delta (One Ts) for the D axis
+    float DInjectionLevel ; // Injection level for the D axis
     float ExtCutCst ; // Filtering constant for reported current on PDO
     float VoltageDacGain ; // DAC gain for integrating phase voltage
     float DcCurrentDacGain ;  // DAC gain for integrating DC current
@@ -208,6 +210,7 @@ struct CClaCurrentControl
     float CurrentCmdFilterState0 ;
     float CurrentCmdFilterState1 ;
     float CurrentCommandFiltered  ; // !< Command to the current controller after slope limiting and filtering
+    float CurrentCommandDInjection  ; // !< Command to the current controller d as injection
     float ExtCurrentCommandFiltered  ; // !< Command to the current controller after slope limiting and filtering
     float Int_q ; // Integrals of the Q and the D axes
     float Int_d ;

@@ -206,12 +206,28 @@ struct CProjSpecificData
          .CanId = 1
      } ,
 
+     {.ProjIndex = 1 ,// PROJ_TYPE_BESENSORLESS
+      .ProjSpecificDataRevision = HwConfigRevision,
+         .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = WHEEL_REV2POS  , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
+         .KpCur = 10.0f , .KiCur = 20000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
+         .MaxCurCmdDdt = 10000.0f , .CurrentFilterBWHz = 3000.0f ,
+        .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
+        .BrakeReleaseVolts = 23.0f,
+        .Pot1RatRad  = 3.1415926f  ,
+        .Pot2RatRad  = 3.1415926f  ,
+        .Pot1CenterRat = 0.5f,
+        .Pot2CenterRat = 0.5f,
+        .I2tCurLevel  = 24.0f ,
+        .I2tCurTime   = 24.0f ,
+        .CurrentCommandDir = 1.0f ,
+        .CanId = 44
+     } ,
 
-      {.ProjIndex = 1 ,// PROJ_TYPE_BESENSORLESS
+      {.ProjIndex = 2 ,// PROJ_TYPE_ZOOZ_S
        .ProjSpecificDataRevision = HwConfigRevision,
           .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = WHEEL_REV2POS  , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
           .KpCur = 4.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
-          .MaxCurCmdDdt = 100.0f , .CurrentFilterBWHz = 3000.0f ,
+          .MaxCurCmdDdt = 10000.0f , .CurrentFilterBWHz = 3000.0f ,
          .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
          .BrakeReleaseVolts = 23.0f,
          .Pot1RatRad  = 3.1415926f  ,

@@ -7,8 +7,8 @@
    {& ClaControlPars.DcCurrentDacGain,12, 1.0e-3f,1.0e6f,1.0f} ,//  !< DAC gain for integrating DC supply current
    {& ClaControlPars.MaxCurCmdDdt,14, 1.0f,1.0e6f,1.0f} ,//  !< Maximum permissible rate for current command
    {& ClaControlPars.KeHz,15, 0.0000f,1.0e6f,0.0f} ,// !< Speed to required motor voltage
-   {& ClaControlPars.KpCur,16, 1.0e-6f,1.0e1f,1.5f} ,// !< Kp for current control
-   {& ClaControlPars.KiCur,17, 1.0e-6f,3.0e4f,6000.0f} ,// !< Ki for current control
+   {& ClaControlPars.KpCur,16, 1.0e-6f,4.0e1f,1.5f} ,// !< Kp for current control
+   {& ClaControlPars.KiCur,17, 1.0e-6f,6.0e4f,6000.0f} ,// !< Ki for current control
    {& ClaControlPars.VectorSatFac,18, 0.1f,1.0f,0.63f} ,// !< Vector saturation factor
    {& ClaControlPars.KAWUCur,19, 0.0000001f,1.0e6f,0.88f} ,// !< Anti windup for current control
    {& ClaControlPars.VDcMax,20, 0.0000001f,1.0e6f,680.0f} ,// !< Maximum for VDC

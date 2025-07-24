@@ -1045,7 +1045,8 @@ const float  * pFloatData[] =  {
                              & SysState.CLMeas.TholdHigh , // 30
                              & SysState.CLMeas.TholdZero , // 31
                              & SysState.CLMeas.RecTime, // 32
-                             & SysState.CLMeas.Tout  // 33
+                             & SysState.CLMeas.Tout,  // 33
+                             & TRefGenPars.Slope  // 34
                              };
 
 
@@ -1080,9 +1081,13 @@ long unsigned  SetFloatData( struct CSdo * pSdo ,short unsigned nData)
     si = pSdo->SubIndex ;
 
     f = * ((float*)pSdo->SlaveBuf) ;
+    if ( isnan(f) )
+    {
+        return General_parameter_incompatibility_reason ;
+    }
 
 
-    if ( si < nFloatData && !isnan(f) )
+    if ( si < nFloatData  )
     {
         pf = (float *) pFloatData[si];
         *pf = f ;
@@ -1143,7 +1148,7 @@ short bcnt ;
 long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
 {
     short unsigned si  ,us   , YesNo ;
-    short stat , fok  ;
+    short stat , fok ,  L2L ;
     long unsigned ul ;
     long lstat ;
     float f ;
@@ -1460,9 +1465,16 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
         break ;
 
     case 38: // Make motionless identification experiment
-        if ( us >= 6 )
+        if ( us >= 12 )
         {
             return General_parameter_incompatibility_reason ;
+        }
+
+        L2L = 1 ;
+        if ( us >= 6 )
+        {
+            us -= 6 ;
+            L2L = 0 ;
         }
 
         switch ( us)
@@ -1491,7 +1503,7 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
             SysState.CLMeas.pPwmFrc[1]     = (unsigned short *) (PWM_A_BASE + EPWM_O_AQCSFRC) ;
             SysState.CLMeas.pPwmFrc[2]     = (unsigned short *) (PWM_B_BASE + EPWM_O_AQCSFRC) ;
             break ;
-        case 4:
+        case 3:
             SysState.CLMeas.pCurIn  = &ClaState.Analogs.PhaseCur[1] ;
             SysState.CLMeas.pCurOut = &ClaState.Analogs.PhaseCur[0] ;
             SysState.CLMeas.pPTripForce = (unsigned short *) (PWM_C_BASE + EPWM_O_TZFRC) ;
@@ -1499,7 +1511,7 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
             SysState.CLMeas.pPwmFrc[1]     = (unsigned short *) (PWM_A_BASE + EPWM_O_AQCSFRC) ;
             SysState.CLMeas.pPwmFrc[2]     = (unsigned short *) (PWM_C_BASE + EPWM_O_AQCSFRC) ;
             break ;
-        case 5:
+        case 4:
             SysState.CLMeas.pCurIn  = &ClaState.Analogs.PhaseCur[2] ;
             SysState.CLMeas.pCurOut = &ClaState.Analogs.PhaseCur[1] ;
             SysState.CLMeas.pPTripForce = (unsigned short *) (PWM_A_BASE + EPWM_O_TZFRC) ;
@@ -1507,7 +1519,7 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
             SysState.CLMeas.pPwmFrc[1]     = (unsigned short *) (PWM_B_BASE + EPWM_O_AQCSFRC) ;
             SysState.CLMeas.pPwmFrc[2]     = (unsigned short *) (PWM_A_BASE + EPWM_O_AQCSFRC) ;
             break ;
-        case 6:
+        case 5:
             SysState.CLMeas.pCurIn  = &ClaState.Analogs.PhaseCur[0] ;
             SysState.CLMeas.pCurOut = &ClaState.Analogs.PhaseCur[2] ;
             SysState.CLMeas.pPTripForce = (unsigned short *) (PWM_B_BASE + EPWM_O_TZFRC) ;
@@ -1538,10 +1550,34 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
             return (long unsigned ) lstat ;
         }
         ClearTrip() ;
+        EALLOW ;
+        if ( L2L )
+        {
+            * SysState.CLMeas.pPTripForce = 0x4 ; // Kill branch 2
+        }
+
         // Clear exceptions
         SysState.Mot.KillingException = 0 ;
         SysState.Mot.LastException = 0    ;
-        PwmEnable() ;
+
+        // Prevent compares
+        HWREGH(PWM_A_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
+        HWREGH(PWM_A_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
+        HWREGH(PWM_B_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
+        HWREGH(PWM_B_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
+        HWREGH(PWM_C_BASE + EPWM_O_CMPB + 0x1U) =  ClaState.PwmMax ;
+        HWREGH(PWM_C_BASE + EPWM_O_CMPA + 0x1U) =  ClaState.PwmMax ;
+
+
+        HWREGH(PWM_A_BASE + EPWM_O_AQCSFRC) = 0x5 ; // All forced low to start
+        HWREGH(PWM_B_BASE + EPWM_O_AQCSFRC) = 0x5 ;
+        HWREGH(PWM_C_BASE + EPWM_O_AQCSFRC) = 0x5 ;
+
+        // Normal dead band control - complementary
+        HWREGH(PWM_A_BASE + EPWM_O_DBCTL ) = 0xb ;
+        HWREGH(PWM_B_BASE + EPWM_O_DBCTL ) = 0xb ;
+        HWREGH(PWM_C_BASE + EPWM_O_DBCTL ) = 0xb ;
+
         SetGateDriveEnable(1) ;
         ClaState.MotorOn = 1 ;
         ClaState.MotorOnRequest = 1 ;

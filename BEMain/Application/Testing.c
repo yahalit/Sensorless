@@ -210,9 +210,9 @@ void RefGen(struct  CRefGenPars *pPars , struct CRefGenState *pState , float dt 
     {
     case E_S_Fixed:
         d = pState->State  ;
-        if ( pPars->Amp > 0 )
+        if ( pPars->Slope > 0 )
         {
-            slope = pPars->Amp * dt * pPars->f ;
+            slope = pPars->Slope * dt  ;
             pState->State = pState->State + __fmax( __fmin( pPars->Dc - pState->State , slope ) , -slope ) ;
             dOut = ( pState->State - d ) / dt ;
         }

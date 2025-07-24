@@ -384,6 +384,9 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 
         ClaState.CurrentControl.ExtIq = ClaState.CurrentControl.Iq * ClaControlPars.CurrentCommandDir ;
         ClaState.CurrentControl.ExtIqFilt = ClaState.CurrentControl.ExtIqFilt + ClaControlPars.ExtCutCst * ( ClaState.CurrentControl.ExtIq - ClaState.CurrentControl.ExtIqFilt ) ;
+
+        //ClaState.CurrentControl.CurrentCommandDInjection += ClaControlPars.DInjectionDelta ;
+        //if ( ClaControlPars.DInjectionLevel  )
     #ifdef SIMULATION_MODE
         RunLoadSim();
     #endif
@@ -391,7 +394,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
         if ( ClaState.MotorOn)
         {
             ClaState.CurrentControl.Error_q = ClaState.CurrentControl.CurrentCommandFiltered - ClaState.CurrentControl.Iq ;
-            ClaState.CurrentControl.Error_d = - ClaState.CurrentControl.Id;
+            ClaState.CurrentControl.Error_d = -ClaState.CurrentControl.Id;
 
             ClaState.CurrentControl.vpre_q = ClaState.Encoder1.MotSpeedHz * ClaControlPars.KeHz  + ClaState.CurrentControl.Int_q ;
             ClaState.CurrentControl.vpre_d = ClaState.CurrentControl.Int_d ;

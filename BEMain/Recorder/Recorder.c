@@ -1283,6 +1283,17 @@ long unsigned  GetRecorder( struct CSdo * pSdo ,short unsigned *nData)
         return 0;
     }
 
+    if ( pSdo->SubIndex >= 120 && pSdo->SubIndex < (120+N_RECS_MAX ) )
+    {
+        ind   = si - 120 ;
+        flags = RecorderProg.RecorderFlags[ind];
+        * ((long unsigned *) &pSdo->SlaveBuf[0] ) =
+                RecorderProg.RecorderListIndex[ind]  +
+                    ((long unsigned)flags << 16 )   ;
+        *nData = 4 ;
+        return 0;
+    }
+
     switch ( si)
     {
     case 1:

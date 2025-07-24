@@ -291,12 +291,12 @@ __interrupt void AdcIsrLMeas(void)
     ClaState.Analogs.Vdc = (( c1.Num2048 - ADC_READ_VOLTDC - Calib.VdcOffset) * ClaControlPars.Vdc2Bit2Volt) * ( 1 + Calib.VdcGain ) ;
 
     EALLOW ;
-    * SysState.CLMeas.pPwmFrc[2] = 0x5  ; // Force low
-    * SysState.CLMeas.pPTripForce = 0x4 ; // Kill branch 2
+    //* SysState.CLMeas.pPwmFrc[2] = 0x5  ; // Force low
     SysState.CLMeas.CurIn   = *SysState.CLMeas.pCurIn ;
     SysState.CLMeas.CurOut  = *SysState.CLMeas.pCurOut;
     SysState.CLMeas.CurMean = ( SysState.CLMeas.CurIn - SysState.CLMeas.CurOut) * 0.5f ;
     SysState.CLMeas.Vdc     =  ClaState.Analogs.Vdc ;
+    //* SysState.CLMeas.pPTripForce = 0x4 ; // Kill branch 2
 
     if ( SysState.CLMeas.State == ELM_Nothing )
     {
@@ -425,14 +425,17 @@ __interrupt void AdcIsrLMeas(void)
     case 1:
         * SysState.CLMeas.pPwmFrc[0] = 0x6 ; // Force low
         * SysState.CLMeas.pPwmFrc[1] = 0x5 ; // Force High
+        * SysState.CLMeas.pPwmFrc[2] = 0x5 ; // Force low
         break ;
     case -1:
         * SysState.CLMeas.pPwmFrc[0] = 0x5 ; // Force High
         * SysState.CLMeas.pPwmFrc[1] = 0x6 ; // Force low
+        * SysState.CLMeas.pPwmFrc[2] = 0x6 ; // Force high
         break ;
     default:
         * SysState.CLMeas.pPwmFrc[0] = 0x5 ; // Force low
         * SysState.CLMeas.pPwmFrc[1] = 0x5 ; // Force low
+        * SysState.CLMeas.pPwmFrc[2] = 0x5 ; // Force low
         break ;
     }
 

@@ -1,6 +1,7 @@
 // Flags =  0 : long , 2 float , 4 unsigned , 8 short , 64 dfloat (sim only)  (see more options in the CCmdMode definition)
         { 0 , (long unsigned *) & SysState.Timing.UsecTimer },
         { 4 , (long unsigned *) & SysState.Timing.UsecTimer }, //1:UsecTimer [Time] {Microsecond timer at hardware}
+        { 4 , (long unsigned *) & SysState.CBit.all}, //:CBit [System] {CBit status bit field}
         { 0 , (long unsigned *) & SysState.Status.LongException}, //:LongException [Status] {Current exception and aborting exception}
         { 0 , (long unsigned *) & SysState.Mot.KillingException}, //:KillingException [Status] {Reason of motor kill}
         { 0 , (long unsigned *) & SysState.Mot.LastException}, //:LastException [Status] {Last exception}

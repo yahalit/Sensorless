@@ -835,6 +835,7 @@ struct CRefGenPars
     float Duty ;
     long  bAngleSpeed  ;
     float AnglePeriod ;
+    float Slope ;
 };
 
 union uPos
