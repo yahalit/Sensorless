@@ -17,6 +17,9 @@
 #define INTFC_EXTERN_TAG extern
 #endif
 
+
+#include "SealInterface.h"
+
 struct CLimitsBitField
 {
     int unsigned CurrentLimit   : 1 ;
@@ -91,22 +94,11 @@ struct CAppLimits
 
 struct CM2S
 {
-    short  MotorReady  ; // 1 : Motor ready to work
-    short  MotorOn     ; // 1 if motor is on
+    FeedbackBuf_T FeedbackBuf ;
+    SetupReportBuf_T SetupReportBuf ;
     short  unsigned SensorConfig[8] ; // Sensor configuration
     struct CLimitsBitField LimitsBitField ;
     long unsigned ExceptionCode ; // Exception code
-    float  SpeedSensor[3] ; // Up to 3 speed sensor
-    double PosSensor[3]   ; // Position sensor, non-modulo or within revolution
-    long long PositionRev[3] ; // Position revolution counters
-    float MotorPhaseCurrentAmp[3] ;
-    float MotorCurrentAmpIq ;
-    float MotorCurrentAmpId ;
-    float MotorVoltagePwm[3] ;
-    float MotorVoltageMeas[3] ;
-    float DcBusCurrentAmp ;
-    float DcBusPowerWatt ;
-    float DcBusVoltage   ;
     long  unsigned ProfileStatus ; // TBD profiling status
     struct CObjectResponse InterpreterResponse  ; // Interpreter response
     short  unsigned AppCanId;
@@ -127,16 +119,8 @@ union UM2S
 
 struct CS2M
 {
-    float CurrentCommand ;
-    float SpeedCommand ;
-    float PositionCommand ;
-    float CurrentLimit ;
-    float I2tLimit ;
-    float I2Time   ;
-    float UpperSpeedCommandLimit ;
-    float LowerSpeedCommandLimit ;
-    float AccelerationCommandLimit ;
-    float DecelerationCommandLimit ;
+    DrvCommandBuf_T DrvCommandBuf ;
+    short unsigned SnatchedBySeal ;
     struct CUserMessage UserMessage[8] ;
     short  unsigned UserMessageFetchCounter  ;
     struct CCommString CommString ; // Communication string, incoming

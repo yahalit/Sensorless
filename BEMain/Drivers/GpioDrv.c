@@ -135,6 +135,21 @@ void setupGpioSigmaDelta(void)
 
 }
 
+void setupGpioUART()
+{
+#undef NGP
+#define NGP 42
+    GPIO_setPinConfig(GPIO_42_UARTA_TX);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_OUT);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_SYNC);
+#undef NGP
+#define NGP 43
+    GPIO_setPinConfig(GPIO_43_UARTA_RX);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_3SAMPLE);
+}
 
 void setupGpioGpio(void)
 {
@@ -305,6 +320,7 @@ void setupGpio(void)
 {
     setupGpioGpio() ;
     setupGpioCAN() ;
+    setupGpioUART() ;
     setupGpioSigmaDelta() ;
     setupGpioPWM() ;
 }

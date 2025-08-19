@@ -38,7 +38,7 @@
 #include "Revisions.h"
 #include "..\Control\TrapezeProfiler.h"
 #include "..\Drivers\EEPROM_Config.h"
-#include "S2MM2S.h"
+#include "..\Core2Interface\S2MM2S.h"
 
 
 // Byte  0:1 Control word. Thats: .0: motor on, 1: Fault reset, :2..4: Loop type : 5..7: Reference type
