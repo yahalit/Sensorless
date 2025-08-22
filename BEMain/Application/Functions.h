@@ -108,7 +108,8 @@ short   SetupFlash(short unsigned cpu , unsigned long u32HclkFrequencyMHz  );
 short EraseSectors( long unsigned FlashAddress , long unsigned buflen32);
 short WriteToFlash( long unsigned FlashAddress , long unsigned * Write_Buffer , long unsigned buflen);
 
-
+// UART
+void InitUart(uint32_t base ) ;
 
 // Homing.c
 long HomeProfiler(void);
@@ -137,6 +138,7 @@ void InitPosPrefilter(void);
 void SetProjectId(void);
 void FlushCanQueues(void);
 short  SetMotionCommandLimits(void) ;
+void setupUart( long unsigned BaudRate);
 void SetupDMA(void);
 void setupDAC(void) ;
 void InitEPwm1(void);

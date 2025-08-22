@@ -40,6 +40,61 @@ void ResetRefGens(void)
 }
 
 
+typedef struct
+{
+    short Current[3] ;
+    short PhaseVolt[3] ;
+    short DcBusVolt ;
+    short CurrentIn    ;
+} CHSCanLogger_T ;
+
+typedef union
+{
+    CHSCanLogger_T LoggerData ;
+    short unsigned us[8] ;
+    long unsigned  ul[4] ;
+} UHSCanLogger ;
+UHSCanLogger HSLogger ;
+
+// Thats 16bytes (full FIFO) : 160 bit in 2M its 80usec. So that we can transmit every 2nd interrupt. No need to count, just look if FIFO is free
+// All  the data is 11bit so a leading 1 marks new batch
+// Current range is 64Amp (bidir) ,  bit =  0.00390625A
+// Voltage range is 1024V (unidir),  bit =  0.03125V
+
+
+void inline FillLoggerStruct(void)
+{
+    if (( HWREG(UARTA_BASE + UART_O_FR) & UART_FR_TXFE)== UART_FR_TXFE)
+    {
+        HSLogger.LoggerData.Current[0] = (short)(ClaState.Analogs.PhaseCur[0] * 128.0f) ;
+        HSLogger.LoggerData.Current[1] = (short)(ClaState.Analogs.PhaseCur[1] * 128.0f) ;
+        HSLogger.LoggerData.Current[2] = (short)(ClaState.Analogs.PhaseCur[2] * 128.0f) ;
+        HSLogger.LoggerData.PhaseVolt[0] = (short)(ClaState.Analogs.PhaseVoltMeas[0] * 16.0f ) ;
+        HSLogger.LoggerData.PhaseVolt[1] = (short)(ClaState.Analogs.PhaseVoltMeas[1] * 16.0f ) ;
+        HSLogger.LoggerData.PhaseVolt[2] = (short)(ClaState.Analogs.PhaseVoltMeas[2] * 16.0f ) ;
+        HSLogger.LoggerData.DcBusVolt = (short)(ClaState.Analogs.Vdc * 16.0f ) ;
+        HSLogger.LoggerData.CurrentIn = (short)(ClaState.Analogs.DcCur * 128.0f ) ;
+
+        // Put it all to the UART
+        HWREG(UARTA_BASE + UART_O_DR) = HSLogger.us[0] | 0x80;
+        HWREG(UARTA_BASE + UART_O_DR) = ((HSLogger.us[0] >> 7   ) & 0x7f )  ;
+        HWREG(UARTA_BASE + UART_O_DR) = (HSLogger.us[1] & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = ((HSLogger.us[1] >> 7   ) & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = (HSLogger.us[2] & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = ((HSLogger.us[2] >> 7   ) & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = (HSLogger.us[3] & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = ((HSLogger.us[3] >> 7   ) & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = (HSLogger.us[4] & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = ((HSLogger.us[4] >> 7   ) & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = (HSLogger.us[5] & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = ((HSLogger.us[5] >> 7   ) & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = (HSLogger.us[6] & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = ((HSLogger.us[6] >> 7   ) & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = (HSLogger.us[7] & 0x7f );
+        HWREG(UARTA_BASE + UART_O_DR) = ((HSLogger.us[7] >> 7   ) & 0x7f );
+    }
+}
+
 //short unsigned junkk =0;
 
 void ReadEncPosition1( void);
@@ -93,6 +148,7 @@ __interrupt void AdcIsr(void)
 
     Commutation.Status = GetCommAnglePu(ClaState.Encoder1.Pos ) ;
 
+    FillLoggerStruct();
 
     if ( SysState.Mot.ReferenceMode == E_PosModeDebugGen)
     {

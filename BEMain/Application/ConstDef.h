@@ -49,6 +49,8 @@
 #define ADC_BEFORE_PWM0_nsec 600UL
 #define ADC_BEFORE_ControlIsr_nsec 2000
 
+#define UART_BAUD_RATE 2000000UL
+
 
 #define FSI_OVER_CONTROL 0.5f // Rate of FSI cycles over control cycles
 #define MAX_BRAKE_VOLTAGE 26.0f

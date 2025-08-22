@@ -128,6 +128,8 @@ void InitPeripherals(void)
     CLA_configClaMemory();
     CLA_initCpu1Cla1();
 
+    InitUart(UARTA_BASE) ;
+
     setupMCAN();
 
 //
@@ -167,6 +169,7 @@ void InitPeripherals(void)
 
     SetupDMA();     // Setup DMA to be triggered on SPI-A
 
+    setupUart(UART_BAUD_RATE) ;
 
     setupGpio() ;
 
@@ -178,7 +181,6 @@ void InitPeripherals(void)
     EDIS;
 
 }
-
 
 void setupEcap(void)
 {

@@ -1,7 +1,7 @@
 /*
  * PrjMCAN.c
  *
- *  Created on: 3 במאי 2025
+ *  Created on: 3 MAY 2025
  *      Author: Yahali
  */
 
@@ -169,7 +169,7 @@ void setupMCAN(void)
     // Initialize MCAN Init parameters.
     //
     //
-    initParams.fdMode            = 0 ; // 0x1U; // FD operation enabled.
+    initParams.fdMode            = 0 ; // 0x1U; // FD operation enabled. // FD change: Was 0,0
     initParams.brsEnable         = 0 ; // x1U; // Bit rate switching for
                                          // transmissions enabled.
 
@@ -193,6 +193,7 @@ void setupMCAN(void)
     // Standard ID Filter List Size (1).
 
     msgRAMConfigParams.rxFIFO0startAddr     = MCAN_FIFO_0_START_ADDR;
+
     // Rx FIFO1 Start Address (748U).
     msgRAMConfigParams.rxFIFO0size          = MCAN_FIFO_0_NUM;
     // Number of Rx FIFO elements (1).
@@ -238,11 +239,20 @@ void setupMCAN(void)
     bitTimes.nomTimeSeg2        = 0x8U; // Nominal Time segment after SP
     bitTimes.nomSynchJumpWidth  = 0x8U; // Nominal SJW
 
+    // Data phase: 2 Mbps with BRS
+    // Keep DBRP=1 -> 40 MHz / (1+1) = 20 MHz tq clock
+    // Need 10 TQ/bit: 1 + TSEG1 + TSEG2 = 10  -> TSEG1=7, TSEG2=2 (˜80% SP)
+    // Encoded fields are "minus one".
+    bitTimes.dataRatePrescalar  = 0x1U; // DBRP (BRP-1)  => BRP=2
+    bitTimes.dataTimeSeg1       = 0x6U; // DTSEG1 (TSEG1-1) => TSEG1=7
+    bitTimes.dataTimeSeg2       = 0x1U; // DTSEG2 (TSEG2-1) => TSEG2=2
+    bitTimes.dataSynchJumpWidth = 0x1U; // DSJW  (SJW-1)    => SJW=2
+
     // Bit time = 20M / 20 = 1M NBD
-    bitTimes.dataRatePrescalar  = 0x1U; // Data Baud Rate Pre-scaler.
-    bitTimes.dataTimeSeg1       = 0x9U; // Data Time segment before SP
-    bitTimes.dataTimeSeg2       = 0x8U; // Data Time segment after SP
-    bitTimes.dataSynchJumpWidth = 0x8U; // Data SJW
+    //bitTimes.dataRatePrescalar  = 0x1U; // Data Baud Rate Pre-scaler.
+    //bitTimes.dataTimeSeg1       = 0x9U; // Data Time segment before SP
+    //bitTimes.dataTimeSeg2       = 0x8U; // Data Time segment after SP
+    //bitTimes.dataSynchJumpWidth = 0x8U; // Data SJW
 
     setupGpioCAN() ;
 
@@ -767,6 +777,10 @@ void BlockUploadConfirmService( struct CCanMsg *pMsg)
 
 #pragma FUNCTION_OPTIONS ( SetMsg2HW, "--opt_level=3" );
 
+
+/*
+ * Send a standard 8-byte message
+ */
 short SetMsg2HW(struct CCanMsg  *pMsg )
 {
     int  shift ;
@@ -796,6 +810,9 @@ short SetMsg2HW(struct CCanMsg  *pMsg )
     shift -= 15 ;
     pmsg = SysState.MCanSupport.pTxBufStart + shift * SysState.MCanSupport.TxBufElementWidth * MCAN_RAM_LONG_PTR_INC   ;
     pmsg[0] = ( pMsg->cobId & 0x7ff) << 18 ;
+#ifdef CANFD
+    pmsg[1] = ( pmsg[1] & 0xcf0000 ) | ( 0x8UL << 16 );
+#endif
     pmsg[MCAN_RAM_LONG_PTR_INC] = ( unsigned long) pMsg->dLen << 16 ;
     pmsg[MCAN_RAM_LONG_PTR_INC*2] = pMsg->data[0] ;
     pmsg[MCAN_RAM_LONG_PTR_INC*3] = pMsg->data[1] ;
@@ -806,7 +823,67 @@ short SetMsg2HW(struct CCanMsg  *pMsg )
     return 0 ;
 }
 
+#ifdef CANFD
 
+/*
+ * Send a standard 8-byte message
+ * LengthCode is 0 to 8, or 0x9-0xF (9-15): CAN FD: transmit frame has 12/16/20/24/32/48/64 data
+ */
+short SetFDMsg2HW(struct CCanMsg  *pMsg , long unsigned *databuf , short unsigned LengthCode )
+{
+    int  shift ;
+    union
+    {
+        long unsigned ul ;
+        short unsigned us[2];
+    } u2 ;
+    long unsigned *pmsg ;
+    short unsigned mask ;
+
+    mask = BlockInts() ;
+    // Invert the pending state so we have the clear mailboxes
+    u2.ul = ~HWREG(MCAN0_BASE + MCAN_TXBRP) ; // Free units
+
+    u2.us[0] &= (SysState.MCanSupport.TxNumElements-1)  ; // Look only at implemented boxes
+    if (  u2.us[0] == 0 )
+    {// All clogged, go home
+        RestoreInts(mask) ;
+        return -1 ;
+    }
+
+    u2.us[0] = __flip16(u2.us[0] ) ;
+    u2.us[1] = 0  ;
+    __norm32(u2.ul , &shift );
+    shift -= 15 ;
+    pmsg = SysState.MCanSupport.pTxBufStart + shift * SysState.MCanSupport.TxBufElementWidth * MCAN_RAM_LONG_PTR_INC   ;
+    pmsg[0] = ( pMsg->cobId & 0x7ff) << 18 ;
+    pmsg[1] = ( pmsg[1] & 0xcf0000 ) | (( 0x30UL + (unsigned long) LengthCode ) << 16 );
+    pmsg[MCAN_RAM_LONG_PTR_INC] = ( unsigned long) pMsg->dLen << 16 ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*2] = databuf[0] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*3] = databuf[1] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*4] = databuf[2] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*5] = databuf[3] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*6] = databuf[4] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*7] = databuf[5] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*8] = databuf[6] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*9] = databuf[7] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*10] = databuf[8] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*11] = databuf[9] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*12] = databuf[10] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*13] = databuf[11] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*14] = databuf[12] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*15] = databuf[13] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*16] = databuf[14] ;
+    pmsg[MCAN_RAM_LONG_PTR_INC*17] = databuf[15] ;
+
+
+
+    // Send request to transmit this buffer
+    HWREG(MCAN0_BASE +MCAN_TXBAR) = (1<<shift) ;
+    RestoreInts(mask) ;
+    return 0 ;
+}
+#endif
 
 /*
  * @brief handle the CAN communication in the real time.

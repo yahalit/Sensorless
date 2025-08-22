@@ -622,7 +622,9 @@ struct CSysState
     short unsigned IntfcDisableWheelAutoStop ;
     short unsigned SwState   ;
     short unsigned InterruptRoutineBusy ;
+    short unsigned bHighSpeedCanLogger   ;
     short unsigned WTF   ;
+    short unsigned WTF1   ;
     long  unsigned ControlWord       ; // Last sample of control word
     struct CLMeas CLMeas ;
 };

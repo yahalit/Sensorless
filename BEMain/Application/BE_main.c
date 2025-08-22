@@ -297,6 +297,7 @@ void main(void)
 // Initialize GPIO pins for EPWM-1
 //
     InitPeripherals() ;
+
     // InitEPwm1Gpio();
     CfgBlockTransport(); // Only after CAN ID is known
 

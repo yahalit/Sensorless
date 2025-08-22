@@ -188,7 +188,7 @@ typedef struct {
     /* Modulo count for position sensor #2 */
     real_T PositionModulo2;
 
-    /* Speed for overspeed exception */
+    /* Speed for over speed exception */
     real32_T OverSpeed;
 
     /* Absolute acceleration limit */
