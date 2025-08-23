@@ -16,6 +16,12 @@ typedef long int32_T;
 typedef unsigned long uint32_T;
 
 
+typedef enum
+{ 
+    E_ABORT = 1 , 
+    E_FATAL = 2 
+}  E_SealFatality;
+
 enum E_FunType
 {
     E_Func_Initializer = 1,
@@ -25,5 +31,7 @@ enum E_FunType
     E_FuncException = 5 ,
     E_FuncAbort = 6
 };
+
+
 
 #endif /* CORE2INTERFACE_SEALTYPEDEFS_H_ */

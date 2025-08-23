@@ -11,8 +11,8 @@
 
 #ifdef INTFC_OWNER
 #define INTFC_EXTERN_TAG
-#pragma DATA_SECTION(M2S, "MSGRAM_CPU1_TO_CPU2");
-#pragma DATA_SECTION(S2M, "MSGRAM_CPU2_TO_CPU1");
+#pragma DATA_SECTION(UM2S, "MSGRAM_CPU1_TO_CPU2");
+#pragma DATA_SECTION(US2M, "MSGRAM_CPU2_TO_CPU1");
 #else
 #define INTFC_EXTERN_TAG extern
 #endif
@@ -106,12 +106,13 @@ struct CM2S
     short  unsigned UserMessageOferflow ;
     short  unsigned CommBufferOverflow  ;
     long  long unsigned TimeStampUsec ;
+    float ControlTs ;
     struct CCommString CommString ; // Communication string, incoming
     struct CUserMessage UserMessage[8] ;
     struct CAppLimits AppLimits ;
 };
 
-union UM2S
+union UM2S_T
 {
     long ul[512] ;
     struct CM2S M2S ;
@@ -129,14 +130,14 @@ struct CS2M
     short unsigned bValid ;
 };
 
-INTFC_EXTERN_TAG union UM2S M2S ;
+INTFC_EXTERN_TAG union UM2S_T UM2S ;
 
-union US2M
+union US2M_T
 {
     long ul[512] ;
     struct CS2M S2M;
 };
 
-INTFC_EXTERN_TAG union US2M S2M ;
+INTFC_EXTERN_TAG union US2M_T US2M ;
 
 #endif /* APPLICATION_S2MM2S_H_ */

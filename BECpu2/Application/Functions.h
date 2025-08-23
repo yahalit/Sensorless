@@ -36,7 +36,9 @@ short RegressionSolve( struct CRegression * r , float *a , float *b );
 float TimeForCurrent( float I , float r , float L , float Vdc);
 
 
-
-
+/* Utility
+ *
+ */
+void ClearMem(short unsigned *ptr_in , short unsigned n);
 
 #endif /* APPLICATION_FUNCTIONS_H_ */

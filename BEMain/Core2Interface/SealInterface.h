@@ -38,7 +38,7 @@ typedef struct {
     int16_T FailureReset;
 
     /* Spare : 8 */
-    int32_T Spare_8;
+    int16_T bSetSealControl;
 
     /* Spare : 9 */
     int32_T Spare_9;

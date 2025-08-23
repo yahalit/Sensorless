@@ -235,7 +235,7 @@ void InitAppData(void)
 
     InitPosPrefilter() ;
 
-
+    UM2S.M2S.ControlTs = CUR_SAMPLE_TIME_USEC * 1e-6f  ;
 
 }
 

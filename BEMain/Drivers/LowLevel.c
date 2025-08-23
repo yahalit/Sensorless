@@ -169,8 +169,6 @@ void InitPeripherals(void)
 
     SetupDMA();     // Setup DMA to be triggered on SPI-A
 
-    setupUart(UART_BAUD_RATE) ;
-
     setupGpio() ;
 
 //
