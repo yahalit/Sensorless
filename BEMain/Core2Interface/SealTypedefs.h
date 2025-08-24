@@ -8,13 +8,14 @@
 #ifndef CORE2INTERFACE_SEALTYPEDEFS_H_
 #define CORE2INTERFACE_SEALTYPEDEFS_H_
 
+/*
 typedef double real_T;
 typedef float real32_T ;
 typedef short int16_T  ;
 typedef unsigned short uint16_T ;
 typedef long int32_T;
 typedef unsigned long uint32_T;
-
+*/
 
 typedef enum
 { 

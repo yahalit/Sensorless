@@ -5,8 +5,7 @@
  *      Author: user
  */
 
-#include "..\Application\StructDef2.h"
-
+#include "ProjMath.h"
 
 /*
  * Ready regression structure for new cycle

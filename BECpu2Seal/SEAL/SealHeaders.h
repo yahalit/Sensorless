@@ -19,11 +19,23 @@
 #endif
 
 
-#include "..\..\BEMain\Core2Interface\SealTypedefs.h"
-#include "..\..\BEMain\Core2Interface\SealInterface.h"
+//#include "..\..\BEMain\Core2Interface\SealTypedefs.h"
+//#include "..\..\BEMain\Core2Interface\SealInterface.h"
+#include ".\Automatic\rtwtypes.h"
 #include "Seal_errorcodes.h"
+#include ".\Automatic\Seal.h"
 
-#define MAX_TICKS_DELTA_4_EXCEPTION 16383
+enum E_FunType
+{
+    E_Func_None = 0,
+    E_Func_Initializer = 1,
+    E_Func_Idle = 2,
+    E_Func_ISR = 3,
+    E_Func_Setup = 4,
+    E_FuncException = 5 ,
+    E_FuncAbort = 6
+};
+
 
 typedef void (*voidFunc)(void);
 typedef struct
@@ -42,6 +54,19 @@ typedef  union
     FuncDescriptor_T desc ;
     unsigned short us[16] ;
 }UFuncDescriptor_T;
+
+#ifdef SEAL_VARS_OWNER
+const char unsigned GenesisVerse[196] = "In the beginning God created the heaven and the earth. And the earth was without form, and void; and darkness was upon the face of the deep. And the Spirit of God moved upon the face of the waters";
+#pragma DATA_SECTION (GenesisVerse,".GenesisVerse")
+#include ".\Automatic\ExternSeal.h"
+#else
+extern const char unsigned GenesisVerse[];
+#endif
+
+#define MAX_TICKS_DELTA_4_EXCEPTION 16383
+
+#define N_FUNC_DESCRIPTORS 16
+
 
 typedef union
 {
@@ -86,10 +111,12 @@ typedef struct
     short unsigned nExceptionFuncs ;
     short unsigned nAbortFuncs ;
 
-    FuncDescriptor_T IdleFuncs[N_FUNC_DESCRIPTORS];
-    FuncDescriptor_T IsrFuncs[N_FUNC_DESCRIPTORS];
-    FuncDescriptor_T ExceptionFuncs[N_FUNC_DESCRIPTORS];
-    FuncDescriptor_T AbortFuncs[N_FUNC_DESCRIPTORS];
+    UFuncDescriptor_T InitalizerFunc;
+    UFuncDescriptor_T SetupFunc ;
+    UFuncDescriptor_T IdleFuncs[N_FUNC_DESCRIPTORS];
+    UFuncDescriptor_T IsrFuncs[N_FUNC_DESCRIPTORS];
+    UFuncDescriptor_T ExceptionFuncs[N_FUNC_DESCRIPTORS];
+    UFuncDescriptor_T AbortFuncs[N_FUNC_DESCRIPTORS];
 
     DrvCommandBuf_T* pDrvCommandBuf;
     FeedbackBuf_T* pFeedbackBuf;

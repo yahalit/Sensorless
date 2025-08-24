@@ -18,7 +18,11 @@
 #include "..\SelfTest\ErrorCode.h"
 
 #include "ConstDef.h"
+#include "..\SEAL\rtwtypes.h"
 #include "..\..\BEMain\Core2Interface\S2MM2S.h"
+
+
+
 #include "..\SEAL\SealHeaders.h"
 
 #ifdef CORE2_VARS_OWNER

@@ -11,6 +11,7 @@
 
 #define N_FUNC_DESCRIPTORS 16
 
+#include "rtwtypes.h"
 #include "SealTypedefs.h"
 
 

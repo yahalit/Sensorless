@@ -1,0 +1,10 @@
+"./SEAL_codestartbranch.obj"
+"./Drivers/LowLevel.obj"
+"./SEAL/Automatic/ExternalCode/CANServer.obj"
+"./SEAL/Automatic/Seal.obj"
+"./SEAL/Automatic/div_nde_s16_floor.obj"
+"./SEAL/Automatic/mod_CTxUEiaB.obj"
+"./SEAL/Automatic/rt_roundd.obj"
+"./SEAL/SealMain.obj"
+"../SEAL_generic_flash_lnk_cpu2.cmd"
+-llibc.a

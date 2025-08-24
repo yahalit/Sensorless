@@ -4,14 +4,14 @@ MEMORY
 
    BOOT_RSVD        : origin = 0x000002, length = 0x0001AF     /* Part of M0, BOOT rom will use this for stack */
    RAMM0            : origin = 0x0001B1, length = 0x00024F
-   RAMM1            : origin = 0x000400, length = 0x000400
+   RAMM1            : origin = 0x000400, length = 0x0003f0		/* Leave 0x10 of stack for Nidme Li" of seal.*/
 
    // RAMD2            : origin = 0x008000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x01A000. User should comment/uncomment based on core selection
    // RAMD3            : origin = 0x00A000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x01C000. User should comment/uncomment based on core selection
    // RAMD4            : origin = 0x00C000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x01E000. User should comment/uncomment based on core selection
    // RAMD5            : origin = 0x00E000, length = 0x002000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x020000. User should comment/uncomment based on core selection
-   RAMD45            : origin = 0x00C000, length = 0x00c000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x01E000. User should comment/uncomment based on core selection
 
+   RAMD45            : origin = 0x00C000, length = 0x00c000  // Can be mapped to either CPU1 or CPU2. When configured to CPU1, use the address 0x01E000. User should comment/uncomment based on core selection
    RAMGS4             : origin = 0x018000, length = 0x00a000
    //RAMGS1           : origin = 0x012000, length = 0x002000
    //RAMGS2           : origin = 0x014000, length = 0x002000
@@ -23,7 +23,7 @@ MEMORY
    // FLASH_BANK1     : origin = 0x0A0000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
    // FLASH_BANK2     : origin = 0x0C0000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
    FLASH_BANK3     : origin = 0x0E0002, length = 0x1FFFE  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
-   FLASH_BANK4     : origin = 0x100000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
+   //FLASH_BANK4     : origin = 0x100000, length = 0x20000  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
 
 
    CPU1TOCPU2RAM    : origin = 0x03A000, length = 0x000400
@@ -43,7 +43,7 @@ MEMORY
 SECTIONS
 {
    codestart        : > BEGIN
-   .text            : >> FLASH_BANK3 | FLASH_BANK4, ALIGN(8)
+   .text            : >> FLASH_BANK3, ALIGN(8)
    .cinit           : > FLASH_BANK3, ALIGN(8)
    .switch          : > FLASH_BANK3, ALIGN(8)
    .reset           : > RESET, TYPE = DSECT /* not used, */
