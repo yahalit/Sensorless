@@ -41,4 +41,22 @@ float TimeForCurrent( float I , float r , float L , float Vdc);
  */
 void ClearMem(short unsigned *ptr_in , short unsigned n);
 
+
+
+// PrjMCAN
+void setupMCAN(void);
+void RtCanService(void);
+short SetMsg2HW(struct CCanMsg  *pMsg );
+void SetBootUpMessage( void );
+void SetExtendedBootUpMessage( void );
+void SetLLCBootUpMessage( void );
+void RTDealBlockUpload(void);
+void DealBlockDloadRt();
+void BlockUploadConfirmService( struct CCanMsg *pMsg) ;
+short PutCanSlaveQueue( struct CCanMsg * pMsg);
+
+
+// Hardware drivers
+void setupGpioCAN(void);
+
 #endif /* APPLICATION_FUNCTIONS_H_ */

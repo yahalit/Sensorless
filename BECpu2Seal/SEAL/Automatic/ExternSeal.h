@@ -3,14 +3,14 @@
 typedef const short unsigned * bPtr;
 void (*InitFunc)(void)=Seal_initialize;
 void (*SetupFunc)(void)=SetupDrive;
-CANCyclicBuf_T G_CANCyclicBuf_in;
 CANCyclicBuf_T G_CANCyclicBuf_out;
+CANCyclicBuf_T G_CANCyclicBuf_in;
 UartCyclicBuf_T G_UartCyclicBuf_in;
 UartCyclicBuf_T G_UartCyclicBuf_out;
 MicroInterp_T G_MicroInterp;
 SetupReportBuf_T G_SetupReportBuf;
-DrvCommandBuf_T G_DrvCommandBuf;
 FeedbackBuf_T G_FeedbackBuf;
+DrvCommandBuf_T G_DrvCommandBuf;
 UFuncDescriptor_T IdleLoopFuncs[8] ={
 {.desc={.func = (voidFunc) IdleLoopCAN, .FunType =E_Func_Idle, .Priority=8, .nInts = 1 , .Ts = 0.001 , .Algn=0, .Ticker = 0}},
 {.desc={.func = (voidFunc) IdleLoopUART, .FunType =E_Func_Idle, .Priority=7, .nInts = 1 , .Ts = 0.001 , .Algn=0, .Ticker = 0}},

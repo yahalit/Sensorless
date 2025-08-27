@@ -1,0 +1,2 @@
+C:\Projects\SEAL\Hfile2String\HfileAsString.exe C:\Projects\SensorLess\Software\BEMain\Core2Interface\SealInterface.h  FeedbackBuf_T c:\yahali\kuku\kuku.h --var Str_FeedbackBuf  --macro STRING_DESC_OWNER --sep " : "
+pause

@@ -118,9 +118,11 @@ union UM2S_T
     struct CM2S M2S ;
 };
 
+
 struct CS2M
 {
     DrvCommandBuf_T DrvCommandBuf ;
+    //SealCanMailBox_T DrvCanOutMail ;
     short unsigned SnatchedBySeal ;
     struct CUserMessage UserMessage[8] ;
     short  unsigned UserMessageFetchCounter  ;

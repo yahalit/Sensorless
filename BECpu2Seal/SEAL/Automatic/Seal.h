@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'Seal'.
  *
- * Model version                  : 11.71
+ * Model version                  : 11.111
  * Simulink Coder version         : 25.1 (R2025a) 21-Nov-2024
- * C/C++ source code generated on : Thu Aug 21 09:41:15 2025
+ * C/C++ source code generated on : Tue Aug 26 22:22:24 2025
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Texas Instruments->C2000
@@ -30,6 +30,9 @@
 #define DEFINED_TYPEDEF_FOR_FeedbackBuf_T_
 
 typedef struct {
+  /* Time counted from process start */
+  real_T SystemTime;
+
   /* The main encoder sensor */
   int32_T EncoderMain;
 
@@ -48,6 +51,9 @@ typedef struct {
   /* Q-channel current Amp */
   real32_T Id;
 
+  /* Spare : 8 */
+  int16_T Spare_8;
+
   /* DC bus voltage V */
   real32_T DcBusVoltage;
 
@@ -57,14 +63,8 @@ typedef struct {
   /* Motor electrical field angle */
   real32_T FieldAngle;
 
-  /* Spare : 10 */
-  int32_T Spare_10;
-
-  /* Spare : 11 */
-  int32_T Spare_11;
-
-  /* Spare : 12 */
-  int32_T Spare_12;
+  /* Motor failure report */
+  uint32_T ErrorCode;
 
   /* Control loop configuration */
   int16_T LoopConfiguration;
@@ -84,23 +84,23 @@ typedef struct {
   /* Status bit field */
   int16_T StatusBitField;
 
-  /* Motor failure report */
-  uint32_T ErrorCode;
+  /* Confirm Release the drive from SEAL control */
+  int16_T ConfirmRelinquishControl;
 
   /* Spare : 20 */
-  int32_T Spare_20;
+  int16_T Spare_20;
 
   /* Spare : 21 */
-  int32_T Spare_21;
+  int16_T Spare_21;
 
   /* Spare : 22 */
-  int32_T Spare_22;
+  int16_T Spare_22;
 
   /* Spare : 23 */
-  int32_T Spare_23;
+  int16_T Spare_23;
 
   /* Spare : 24 */
-  int32_T Spare_24;
+  int16_T Spare_24;
 } FeedbackBuf_T;
 
 #endif
@@ -166,21 +166,40 @@ typedef struct {
   /* Profiler sampling time  */
   real32_T Ts;
 
-  /* Spare : 20 */
-  int32_T Spare_20;
+  /* Confirms that the SEAL uses the UART and the drive should not interpret UART communication */
+  int16_T bConfirmControlUART;
 
   /* Spare : 21 */
-  int32_T Spare_21;
+  int16_T Spare_21;
 
   /* Spare : 22 */
-  int32_T Spare_22;
+  int16_T Spare_22;
 
   /* Spare : 23 */
-  int32_T Spare_23;
+  int16_T Spare_23;
 
   /* Spare : 24 */
-  int32_T Spare_24;
+  int16_T Spare_24;
 } SetupReportBuf_T;
+
+#endif
+
+#ifndef DEFINED_TYPEDEF_FOR_CANMessage_T_
+#define DEFINED_TYPEDEF_FOR_CANMessage_T_
+
+typedef struct {
+  /* ID of the CAN message */
+  uint32_T CANID;
+
+  /* Data length of the CAN message */
+  uint16_T DataLen;
+
+  /* Data for incoming CAN messages */
+  uint32_T MsgData[2];
+
+  /* Number TX requests including this message */
+  uint16_T CANTxCnt;
+} CANMessage_T;
 
 #endif
 
@@ -240,56 +259,56 @@ typedef struct {
   /* Failure Reset Request */
   int16_T FailureReset;
 
-  /* Spare : 8 */
-  int32_T Spare_8;
+  /* Oblige the drive from SEAL control */
+  int16_T bSetSealControl;
 
-  /* Spare : 9 */
-  int32_T Spare_9;
+  /* Flag that the SEAL uses the UART and the drive should not interpret UART communication */
+  int16_T bControlUART;
 
-  /* Spare : 10 */
-  int32_T Spare_10;
+  /* Seal 11 bit CAN ID */
+  int16_T SealCanID_11;
 
-  /* Spare : 11 */
-  int32_T Spare_11;
+  /* Seal 29 bit CAN ID */
+  int16_T SealCanID_29;
 
   /* Spare : 12 */
-  int32_T Spare_12;
+  int16_T Spare_12;
 
   /* Spare : 13 */
-  int32_T Spare_13;
+  int16_T Spare_13;
 
   /* Spare : 14 */
-  int32_T Spare_14;
+  int16_T Spare_14;
 
   /* Spare : 15 */
-  int32_T Spare_15;
+  int16_T Spare_15;
 
   /* Spare : 16 */
-  int32_T Spare_16;
+  int16_T Spare_16;
 
   /* Spare : 17 */
-  int32_T Spare_17;
+  int16_T Spare_17;
 
   /* Spare : 18 */
-  int32_T Spare_18;
+  int16_T Spare_18;
 
   /* Spare : 19 */
-  int32_T Spare_19;
+  int16_T Spare_19;
 
   /* Spare : 20 */
-  int32_T Spare_20;
+  int16_T Spare_20;
 
   /* Spare : 21 */
-  int32_T Spare_21;
+  int16_T Spare_21;
 
   /* Spare : 22 */
-  int32_T Spare_22;
+  int16_T Spare_22;
 
   /* Spare : 23 */
-  int32_T Spare_23;
+  int16_T Spare_23;
 
   /* Spare : 24 */
-  int32_T Spare_24;
+  int16_T Spare_24;
 } DrvCommandBuf_T;
 
 #endif
@@ -356,7 +375,7 @@ typedef struct {
   uint16_T CANError;
 
   /* Software Queue for incoming CAN messages */
-  uint32_T CANQueue[256];
+  uint32_T CANQueue[128];
 
   /* The location in the CANQueue of the next message to transmit */
   uint16_T TxFetchCounter;
@@ -367,6 +386,28 @@ typedef struct {
   /* Data length and attributes */
   uint16_T DLenAndAttrib[64];
 } CANCyclicBuf_T;
+
+#endif
+
+#ifndef DEFINED_TYPEDEF_FOR_UartCyclicBuf_T_
+#define DEFINED_TYPEDEF_FOR_UartCyclicBuf_T_
+
+typedef struct {
+  /* The place in the UARTQueue where next character is to be put */
+  uint16_T PutCounter;
+
+  /* The location in the UARTQueue of the next character to read */
+  uint16_T FetchCounter;
+
+  /* UART error */
+  uint16_T UartError;
+
+  /* The location in the TX UARTQueue of the next character to read */
+  uint16_T TxFetchCounter;
+
+  /* Software Queue for incoming UART characters */
+  uint16_T UARTQueue[256];
+} UartCyclicBuf_T;
 
 #endif
 
@@ -404,28 +445,6 @@ typedef struct {
 
 #endif
 
-#ifndef DEFINED_TYPEDEF_FOR_UartCyclicBuf_T_
-#define DEFINED_TYPEDEF_FOR_UartCyclicBuf_T_
-
-typedef struct {
-  /* The place in the UARTQueue where next character is to be put */
-  uint16_T PutCounter;
-
-  /* The location in the UARTQueue of the next character to read */
-  uint16_T FetchCounter;
-
-  /* UART error */
-  uint16_T UartError;
-
-  /* The location in the TX UARTQueue of the next character to read */
-  uint16_T TxFetchCounter;
-
-  /* Software Queue for incoming UART characters */
-  uint16_T UARTQueue[256];
-} UartCyclicBuf_T;
-
-#endif
-
 #ifndef DEFINED_TYPEDEF_FOR_VarDataTypes_
 #define DEFINED_TYPEDEF_FOR_VarDataTypes_
 
@@ -444,21 +463,43 @@ typedef uint16_T VarDataTypes;
 typedef struct {
   PosProfilerData_T G_PosProfilerData; /* '<Root>/Data Store Memory2' */
   PosProfilerState_T G_PosProfilerState;/* '<Root>/Data Store Memory5' */
+  CANMessage_T CANMessage_Init;        /* '<S10>/Data Store Memory' */
   real_T DiscreteFilter_states;        /* '<S1>/Discrete Filter' */
 } DW;
 
+/* External inputs (root inport signals with default storage) */
+typedef struct {
+  FeedbackBuf_T DrvFeedback;           /* '<Root>/DrvFeedback' */
+  SetupReportBuf_T DrvSetup;           /* '<Root>/DrvSetup' */
+  uint16_T u;                          /* '<Root>/u' */
+  CANMessage_T RxMsg;                  /* '<Root>/RxMsg' */
+} ExtU;
+
+/* External outputs (root outports fed by signals with default storage) */
+typedef struct {
+  DrvCommandBuf_T DrvCommand;          /* '<Root>/DrvCommand' */
+  uint16_T Out1;                       /* '<Root>/Out1' */
+  CANMessage_T y;                      /* '<Root>/y' */
+} ExtY;
+
 /* Imported (extern) states */
-extern CANCyclicBuf_T G_CANCyclicBuf_in;/* '<S5>/G_CANCyclicBuf_in' */
-extern CANCyclicBuf_T G_CANCyclicBuf_out;/* '<S5>/G_CANCyclicBuf_out' */
-extern UartCyclicBuf_T G_UartCyclicBuf_in;/* '<S6>/G_UartCyclicBuf_in' */
-extern UartCyclicBuf_T G_UartCyclicBuf_out;/* '<S6>/G_UartCyclicBuf_out' */
-extern MicroInterp_T G_MicroInterp;    /* '<S6>/G_MicroInterp' */
+extern CANCyclicBuf_T G_CANCyclicBuf_out;/* '<Root>/G_CANCyclicBuf_out' */
+extern CANCyclicBuf_T G_CANCyclicBuf_in;/* '<Root>/G_CANCyclicBuf_in' */
+extern UartCyclicBuf_T G_UartCyclicBuf_in;/* '<Root>/G_UartCyclicBuf_in' */
+extern UartCyclicBuf_T G_UartCyclicBuf_out;/* '<Root>/G_UartCyclicBuf_out' */
+extern MicroInterp_T G_MicroInterp;    /* '<S12>/G_MicroInterp' */
 extern SetupReportBuf_T G_SetupReportBuf;/* '<Root>/Data Store Memory1' */
-extern DrvCommandBuf_T G_DrvCommandBuf;/* '<Root>/Data Store Memory3' */
 extern FeedbackBuf_T G_FeedbackBuf;    /* '<Root>/Data Store Memory' */
+extern DrvCommandBuf_T G_DrvCommandBuf;/* '<Root>/Data Store Memory3' */
 
 /* Block signals and states (default storage) */
 extern DW rtDW;
+
+/* External inputs (root inport signals with default storage) */
+extern ExtU rtU;
+
+/* External outputs (root outports fed by signals with default storage) */
+extern ExtY rtY;
 
 /*
  * Exported Global Parameters
@@ -502,6 +543,15 @@ extern SEALVerControl_T G_SEALVerControl;/* '<Root>/Data Store Memory6' */
 extern void Seal_initialize(void);
 
 /* Exported entry point function */
+extern void CanGetTxMsg(void);
+
+/* Exported entry point function */
+extern void CanSetRxMsg(void);
+
+/* Exported entry point function */
+extern void EnvSet(void);
+
+/* Exported entry point function */
 extern void ISR100uController(void);
 
 /* Exported entry point function */
@@ -515,6 +565,12 @@ extern void IdleLoopUART(void);
 
 /* Exported entry point function */
 extern void SetupDrive(void);
+
+/* Exported entry point function */
+extern void UartAddChar(void);
+
+/* Exported entry point function */
+extern void UartGetChar(void);
 
 /*-
  * The generated code includes comments that allow you to trace directly
@@ -533,14 +589,25 @@ extern void SetupDrive(void);
  * '<Root>' : 'Seal'
  * '<S1>'   : 'Seal/100 usec Periodic controller'
  * '<S2>'   : 'Seal/100 usec Periodic profiler'
- * '<S3>'   : 'Seal/DocBlock'
- * '<S4>'   : 'Seal/Drive configuration'
- * '<S5>'   : 'Seal/Idle process CAN interpreter'
- * '<S6>'   : 'Seal/Idle process UART interpreter'
- * '<S7>'   : 'Seal/100 usec Periodic profiler/MATLAB Function'
- * '<S8>'   : 'Seal/Drive configuration/MATLAB Function'
- * '<S9>'   : 'Seal/Idle process CAN interpreter/CAN message response'
- * '<S10>'  : 'Seal/Idle process UART interpreter/UART message response'
+ * '<S3>'   : 'Seal/Add char to UART'
+ * '<S4>'   : 'Seal/CanSetRcvMsg'
+ * '<S5>'   : 'Seal/DocBlock'
+ * '<S6>'   : 'Seal/Drive configuration'
+ * '<S7>'   : 'Seal/Function-Call Subsystem'
+ * '<S8>'   : 'Seal/Function-Call Subsystem1'
+ * '<S9>'   : 'Seal/Function-Call Subsystem2'
+ * '<S10>'  : 'Seal/Get CAN Msg to transmit'
+ * '<S11>'  : 'Seal/Idle process CAN interpreter'
+ * '<S12>'  : 'Seal/Idle process UART interpreter'
+ * '<S13>'  : 'Seal/Remove UART char for Tx'
+ * '<S14>'  : 'Seal/100 usec Periodic profiler/MATLAB Function'
+ * '<S15>'  : 'Seal/Add char to UART/Accept character'
+ * '<S16>'  : 'Seal/CanSetRcvMsg/MATLAB Function'
+ * '<S17>'  : 'Seal/Drive configuration/MATLAB Function'
+ * '<S18>'  : 'Seal/Get CAN Msg to transmit/MATLAB Function'
+ * '<S19>'  : 'Seal/Idle process CAN interpreter/CAN message response'
+ * '<S20>'  : 'Seal/Idle process UART interpreter/UART message response'
+ * '<S21>'  : 'Seal/Remove UART char for Tx/MATLAB Function'
  */
 
 /*-

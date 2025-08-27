@@ -7,7 +7,8 @@
 #define SEAL_VARS_OWNER
 #include "SealHeaders.h"
 
-void main()
+// Dont really need any main() , this is a service module
+void Appmain()
 {
 
 }

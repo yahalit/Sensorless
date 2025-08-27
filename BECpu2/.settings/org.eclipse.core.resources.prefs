@@ -47,3 +47,4 @@ encoding//CPU2_RAM/objects.mk=UTF-8
 encoding//CPU2_RAM/sources.mk=UTF-8
 encoding//CPU2_RAM/subdir_rules.mk=UTF-8
 encoding//CPU2_RAM/subdir_vars.mk=UTF-8
+encoding//Drivers/PrjMCAN.c=UTF-8

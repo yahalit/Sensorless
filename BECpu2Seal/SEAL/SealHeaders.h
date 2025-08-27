@@ -55,12 +55,51 @@ typedef  union
     unsigned short us[16] ;
 }UFuncDescriptor_T;
 
+typedef union
+{
+    struct
+    {
+        short unsigned Year ;
+        short unsigned Month ;
+        short unsigned Day ;
+        short unsigned Version ;
+        short unsigned SubVersion ;
+        short unsigned Patch ;
+        short unsigned ProductCode ;
+        short unsigned ProductVersion ;
+        short unsigned ProductSubVersion ;
+        short unsigned nAxes ;
+    } items ;
+    long unsigned ul[20] ;
+} USEALRev;
+;
+
+
+
 #ifdef SEAL_VARS_OWNER
 const char unsigned GenesisVerse[196] = "In the beginning God created the heaven and the earth. And the earth was without form, and void; and darkness was upon the face of the deep. And the Spirit of God moved upon the face of the waters";
 #pragma DATA_SECTION (GenesisVerse,".GenesisVerse")
+
+const USEALRev SealVersion = { .items = {.Year = 2025 , .Month = 8 , .Day = 25 , .Version = 1 , .SubVersion = 1 , .Patch = 0 , .ProductCode = 1234 , .ProductVersion = 1 , .ProductSubVersion=1, .nAxes = 1 } };
+
+
 #include ".\Automatic\ExternSeal.h"
+
+#pragma DATA_SECTION(SetupFunc ,".setupCall") ;
+#pragma DATA_SECTION(InitFunc ,".moduleInit") ;
+
+#pragma DATA_SECTION(BufferPtrs ,".FlashBuffers") ;
+
+#pragma DATA_SECTION(IsrFuncs ,".IsrFuncs") ;
+#pragma DATA_SECTION(IdleLoopFuncs ,".IdleFuncs") ;
+#pragma DATA_SECTION(ExceptionFuncs ,".ExcptPtrs") ;
+#pragma DATA_SECTION(AbortFuncs ,".AbortPtr") ;
+#pragma DATA_SECTION(SealVersion ,".SealRevision") ;
+
+
 #else
 extern const char unsigned GenesisVerse[];
+extern const USEALRev SealVersion
 #endif
 
 #define MAX_TICKS_DELTA_4_EXCEPTION 16383
@@ -131,8 +170,6 @@ typedef struct
 
 SEAL_EXT_TAG SealSetup_T SealSetup ;
 
-
-#include "SealFunctions.h"
 
 
 #endif /* SEAL_SEALHEADERS_H_ */

@@ -15,243 +15,275 @@
 #include "SealTypedefs.h"
 
 
+#ifndef DEFINED_TYPEDEF_FOR_SEALVerControl_T_
+#define DEFINED_TYPEDEF_FOR_SEALVerControl_T_
 
 typedef struct {
-    /* Command to position controller */
-    real_T PositionCommand;
+  /* SEAL database version */
+  uint16_T Version;
 
-    /* Command to speed controller */
-    real_T SpeedCommand;
+  /* SEAL database sub version */
+  uint16_T SubVersion;
 
-    /* Command to current controller */
-    real_T CurrentCommand;
+  /* SEAL database support data */
+  uint32_T UserData;
+} SEALVerControl_T;
 
-    /* Control loop configuration */
-    int16_T LoopConfiguration;
+#endif
 
-    /* ReferenceMode */
-    int16_T ReferenceMode;
 
-    /* Motor on request */
-    int16_T MotorOn;
+#ifndef DEFINED_TYPEDEF_FOR_CANMessage_T_
+#define DEFINED_TYPEDEF_FOR_CANMessage_T_
 
-    /* Failure Reset Request */
-    int16_T FailureReset;
+typedef struct {
+  /* ID of the CAN message */
+  uint32_T CANID;
 
-    /* Spare : 8 */
-    int16_T bSetSealControl;
+  /* Data length of the CAN message */
+  uint16_T DataLen;
 
-    /* Spare : 9 */
-    int32_T Spare_9;
+  /* Data for incoming CAN messages */
+  uint32_T MsgData[2];
 
-    /* Spare : 10 */
-    int32_T Spare_10;
+  /* Number TX requests including this message */
+  uint16_T CANTxCnt;
+} CANMessage_T;
 
-    /* Spare : 11 */
-    int32_T Spare_11;
+#endif
 
-    /* Spare : 12 */
-    int32_T Spare_12;
+typedef struct {
+  /* Command to position controller */
+  real_T PositionCommand;
 
-    /* Spare : 13 */
-    int32_T Spare_13;
+  /* Command to speed controller */
+  real_T SpeedCommand;
 
-    /* Spare : 14 */
-    int32_T Spare_14;
+  /* Command to current controller */
+  real_T CurrentCommand;
 
-    /* Spare : 15 */
-    int32_T Spare_15;
+  /* Control loop configuration */
+  int16_T LoopConfiguration;
 
-    /* Spare : 16 */
-    int32_T Spare_16;
+  /* ReferenceMode */
+  int16_T ReferenceMode;
 
-    /* Spare : 17 */
-    int32_T Spare_17;
+  /* Motor on request */
+  int16_T MotorOn;
 
-    /* Spare : 18 */
-    int32_T Spare_18;
+  /* Failure Reset Request */
+  int16_T FailureReset;
 
-    /* Spare : 19 */
-    int32_T Spare_19;
+  /* Oblige the drive from SEAL control */
+  int16_T bSetSealControl;
 
-    /* Spare : 20 */
-    int32_T Spare_20;
+  /* Flag that the SEAL uses the UART and the drive should not interpret UART communication */
+  int16_T bControlUART;
 
-    /* Spare : 21 */
-    int32_T Spare_21;
+  /* Seal 11 bit CAN ID */
+  int16_T SealCanID_11;
 
-    /* Spare : 22 */
-    int32_T Spare_22;
+  /* Seal 29 bit CAN ID */
+  int16_T SealCanID_29;
 
-    /* Spare : 23 */
-    int32_T Spare_23;
+  /* Spare : 12 */
+  int16_T Spare_12;
 
-    /* Spare : 24 */
-    int32_T Spare_24;
+  /* Spare : 13 */
+  int16_T Spare_13;
+
+  /* Spare : 14 */
+  int16_T Spare_14;
+
+  /* Spare : 15 */
+  int16_T Spare_15;
+
+  /* Spare : 16 */
+  int16_T Spare_16;
+
+  /* Spare : 17 */
+  int16_T Spare_17;
+
+  /* Spare : 18 */
+  int16_T Spare_18;
+
+  /* Spare : 19 */
+  int16_T Spare_19;
+
+  /* Spare : 20 */
+  int16_T Spare_20;
+
+  /* Spare : 21 */
+  int16_T Spare_21;
+
+  /* Spare : 22 */
+  int16_T Spare_22;
+
+  /* Spare : 23 */
+  int16_T Spare_23;
+
+  /* Spare : 24 */
+  int16_T Spare_24;
 } DrvCommandBuf_T;
 
 
+#ifndef DEFINED_TYPEDEF_FOR_FeedbackBuf_T_
+#define DEFINED_TYPEDEF_FOR_FeedbackBuf_T_
 
 typedef struct {
-    /* The main encoder sensor */
-    int32_T EncoderMain;
+  /* Time counted from process start */
+  real_T SystemTime;
 
-    /* The secondary encoder sensor */
-    int32_T EncoderSecondary;
+  /* The main encoder sensor */
+  int32_T EncoderMain;
 
-    /* Speed of main encoder sensor */
-    real32_T EncoderMainSpeed;
+  /* The secondary encoder sensor */
+  int32_T EncoderSecondary;
 
-    /* Speed of secondary encoder sensor */
-    real32_T EncoderSecondarySpeed;
+  /* Speed of main encoder sensor */
+  real32_T EncoderMainSpeed;
 
-    /* Q-channel current Amp */
-    real32_T Iq;
+  /* Speed of secondary encoder sensor */
+  real32_T EncoderSecondarySpeed;
 
-    /* Q-channel current Amp */
-    real32_T Id;
+  /* Q-channel current Amp */
+  real32_T Iq;
 
-    /* DC bus voltage V */
-    real32_T DcBusVoltage;
+  /* Q-channel current Amp */
+  real32_T Id;
 
-    /* Power stage temperature C */
-    real32_T PowerStageTemperature;
+  /* Spare : 8 */
+  int16_T Spare_8;
 
-    /* Motor electrical field angle */
-    real32_T FieldAngle;
+  /* DC bus voltage V */
+  real32_T DcBusVoltage;
 
-    /* Spare : 10 */
-    int32_T Spare_10;
+  /* Power stage temperature C */
+  real32_T PowerStageTemperature;
 
-    /* Spare : 11 */
-    int32_T Spare_11;
+  /* Motor electrical field angle */
+  real32_T FieldAngle;
 
-    /* Spare : 12 */
-    int32_T Spare_12;
+  /* Motor failure report */
+  uint32_T ErrorCode;
 
-    /* Control loop configuration */
-    int16_T LoopConfiguration;
+  /* Control loop configuration */
+  int16_T LoopConfiguration;
 
-    /* ReferenceMode */
-    int16_T ReferenceMode;
+  /* ReferenceMode */
+  int16_T ReferenceMode;
 
-    /* Motor on report */
-    int16_T MotorOn;
+  /* Motor on report */
+  int16_T MotorOn;
 
-    /* Code of Hall sensors */
-    int16_T HallCode;
+  /* Code of Hall sensors */
+  int16_T HallCode;
 
-    /* 1 if disabled by STO */
-    int16_T STODisable;
+  /* 1 if disabled by STO */
+  int16_T STODisable;
 
-    /* Status bit field */
-    int16_T StatusBitField;
+  /* Status bit field */
+  int16_T StatusBitField;
 
-    /* Motor failure report */
-    uint32_T ErrorCode;
+  /* Confirm Release the drive from SEAL control */
+  int16_T ConfirmRelinquishControl;
 
-    /* Spare : 20 */
-    int32_T Spare_20;
+  /* Spare : 20 */
+  int16_T Spare_20;
 
-    /* Spare : 21 */
-    int32_T Spare_21;
+  /* Spare : 21 */
+  int16_T Spare_21;
 
-    /* Spare : 22 */
-    int32_T Spare_22;
+  /* Spare : 22 */
+  int16_T Spare_22;
 
-    /* Spare : 23 */
-    int32_T Spare_23;
+  /* Spare : 23 */
+  int16_T Spare_23;
 
-    /* Spare : 24 */
-    int32_T Spare_24;
+  /* Spare : 24 */
+  int16_T Spare_24;
 } FeedbackBuf_T;
 
+#endif
+
+#ifndef DEFINED_TYPEDEF_FOR_SetupReportBuf_T_
+#define DEFINED_TYPEDEF_FOR_SetupReportBuf_T_
 
 typedef struct {
-    /* Maximum position referece */
-    real_T MaximumPositionReference;
+  /* Maximum position referece */
+  real_T MaximumPositionReference;
 
-    /* Minimum position reference */
-    real_T MinimumPositionReference;
+  /* Minimum position reference */
+  real_T MinimumPositionReference;
 
-    /* High position value that causes an exception  */
-    real_T HighPositionException;
+  /* High position value that causes an exception  */
+  real_T HighPositionException;
 
-    /* Low position value that causes an exception  */
-    real_T LowPositionException;
+  /* Low position value that causes an exception  */
+  real_T LowPositionException;
 
-    /* Absolute speed limit */
-    real32_T AbsoluteSpeedLimit;
+  /* Absolute speed limit */
+  real32_T AbsoluteSpeedLimit;
 
-    /* Modulo count for position sensor #1 */
-    real_T PositionModulo1;
+  /* Modulo count for position sensor #1 */
+  real_T PositionModulo1;
 
-    /* Modulo count for position sensor #2 */
-    real_T PositionModulo2;
+  /* Modulo count for position sensor #2 */
+  real_T PositionModulo2;
 
-    /* Speed for over speed exception */
-    real32_T OverSpeed;
+  /* Speed for overspeed exception */
+  real32_T OverSpeed;
 
-    /* Absolute acceleration limit */
-    real32_T AbsoluteAccelerationLimit;
+  /* Absolute acceleration limit */
+  real32_T AbsoluteAccelerationLimit;
 
-    /* Continuous current limit */
-    real32_T ContinuousCurrentLimit;
+  /* Continuous current limit */
+  real32_T ContinuousCurrentLimit;
 
-    /* Peak current limit */
-    real32_T PeakCurrentLimit;
+  /* Peak current limit */
+  real32_T PeakCurrentLimit;
 
-    /* Peak current duration */
-    real32_T PeakCurrentDuration;
+  /* Peak current duration */
+  real32_T PeakCurrentDuration;
 
-    /* Over current that causes an exception */
-    real32_T OverCurrent;
+  /* Over current that causes an exception */
+  real32_T OverCurrent;
 
-    /* Baud rate of UART */
-    uint32_T UARTBaudRate;
+  /* Baud rate of UART */
+  uint32_T UARTBaudRate;
 
-    /* Baud rate of CAN */
-    uint32_T CANBaudRate;
+  /* Baud rate of CAN */
+  uint32_T CANBaudRate;
 
-    /* Is Sensor modulo: 1 */
-    uint16_T IsPosSensorModulo1;
+  /* Is Sensor modulo: 1 */
+  uint16_T IsPosSensorModulo1;
 
-    /* Is Sensor modulo: 2 */
-    uint16_T IsPosSensorModulo2;
+  /* Is Sensor modulo: 2 */
+  uint16_T IsPosSensorModulo2;
 
-    /* CAN ID 11bit */
-    uint16_T CANId11bit;
+  /* CAN ID 11bit */
+  uint16_T CANId11bit;
 
-    /* Profiler sampling time  */
-    real32_T Ts;
+  /* Profiler sampling time  */
+  real32_T Ts;
 
-    /* Spare : 20 */
-    int32_T Spare_20;
+  /* Confirms that the SEAL uses the UART and the drive should not interpret UART communication */
+  int16_T bConfirmControlUART;
 
-    /* Spare : 21 */
-    int32_T Spare_21;
+  /* Spare : 21 */
+  int16_T Spare_21;
 
-    /* Spare : 22 */
-    int32_T Spare_22;
+  /* Spare : 22 */
+  int16_T Spare_22;
 
-    /* Spare : 23 */
-    int32_T Spare_23;
+  /* Spare : 23 */
+  int16_T Spare_23;
 
-    /* Spare : 24 */
-    int32_T Spare_24;
+  /* Spare : 24 */
+  int16_T Spare_24;
 } SetupReportBuf_T;
 
+#endif
 
-typedef struct {
-    /* SEAL database version */
-    uint16_T Version;
-
-    /* SEAL database sub version */
-    uint16_T SubVersion;
-
-    /* SEAL database support data */
-    uint32_T UserData;
-} SEALVerControl_T;
 
 typedef struct {
     /* The place in the CANQueue where the next message is to be put */

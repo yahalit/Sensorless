@@ -71,6 +71,7 @@ typedef struct
     short AbortHonored ;
     short Algn ;
     UMultiTypeLL_T InterruptCnt ;
+    double SystemTime ; // System time counted in seconds
     float Ts ;
 } SealState_T;
 

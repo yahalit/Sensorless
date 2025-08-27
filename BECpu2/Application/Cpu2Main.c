@@ -50,6 +50,7 @@
 //
 // Included Files
 //
+#define INTFC_OWNER
 #define CORE2_VARS_OWNER
 #include "StructDef2.h"
 
@@ -80,6 +81,16 @@ HWREGH(CPUSYS_BASE + SYSCTL_O_WDCR) = ( HWREGH(CPUSYS_BASE + SYSCTL_O_WDCR) & 0x
 }
 
 
+__interrupt void IPC3_ISR(void);
+
+
+void InitAppData2()
+{
+    ClearMem( (short unsigned *) &SysState , sizeof(SysState) ) ;
+    CanId = 48 ;
+    SysState.ConfigDone = 1 ;
+    ProjId = 0x3000;
+}
 
 //
 // Main
@@ -136,22 +147,43 @@ void main(void)
 //
     while(IPCRtoLFlagBusy(IPC_FLAG0) == 0);
 
-//
-// Setup CPU Timer 1 to interrupt every 10 ms
-//
+
+    InitAppData2() ;
+
+
     InitCpuTimers();
     ConfigCpuTimer(&CpuTimer1, 200, 10000);
     CpuTimer1Regs.TCR.all = 0x4000;
 
+    setupMCAN();
+    //
+    // Setup CPU IPC0 to interrupt every 10 ms
+    //
+
+    // Register ISR for IPC0 (CPU1 -> CPU2)
+    Interrupt_register(INT_CIPC3, &IPC3_ISR);
+
+    // Enable the interrupt in PIE/CPU
+    Interrupt_enable(INT_CIPC3);
+
+    // Enable PIE and global ints
+    EINT;  // Global enable
+    ERTM;  // Real-time DBGM
+
+
+
 //
 // Configure CPU Timer 1 ISR
 //
-    EALLOW;
-    PieVectTable.TIMER1_INT = &cpu_timer1_isr;
-    IER |= M_INT13;
-    EDIS;
+//    EALLOW;
+//    PieVectTable.TIMER1_INT = &cpu_timer1_isr;
+//    IER |= M_INT13;
+//    EDIS;
 
-//
+
+
+
+    //
 // Enable global Interrupts and higher priority real-time debug
 // events:
 //
@@ -210,7 +242,6 @@ void ExampleInitSysCtrl(void)
     CpuSysRegs.PCLKCR8.bit.SPI_A = 1;
     EDIS;
 }
-
 
 
 //

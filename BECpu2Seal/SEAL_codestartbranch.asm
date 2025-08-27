@@ -78,7 +78,8 @@ WD_DISABLE  .set  1    ;set to 1 to disable WD, else set to 0
     .retain
 
 code_start:
-	lretr ; Nothing to do there is no code start
+; // Loop forever, we must never land here
+	lb  code_start ; Nothing to do there is no code start
 ;end wd_disable
 
     .end

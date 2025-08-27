@@ -19,6 +19,7 @@ void PrepSetupReportBuf(SetupReportBuf_T *pSetupReport)
 void PrepFeedbackBuf(FeedbackBuf_T * pFeedbackBuf)
 {
     *pFeedbackBuf = UM2S.M2S.FeedbackBuf  ;
+    pFeedbackBuf->SystemTime = SealState.SystemTime ;
 }
 
 void UpdateDrvCmdBuf(DrvCommandBuf_T *pDrvCommandBuf)

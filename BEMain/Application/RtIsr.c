@@ -105,6 +105,10 @@ __interrupt void AdcIsr(void)
 {
     SysState.EcapOnInt = HWREG (ECAP3_BASE + ECAP_O_TSCTR );
     GpioDataRegs.GPASET.bit.GPIO18 = 1 ;
+
+    // Interrupt CPU2
+    HWREG(IPC_CPUXTOCPUX_BASE+IPC_O_CPU1TOCPU2IPCSET) = IPC_FLAG3;
+
     //long unsigned port ;
     //short unsigned potcase ;
 

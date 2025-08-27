@@ -72,7 +72,7 @@ static void InitSealData(void)
 
 void GoSeal()
 {
-    // Test that Baruch Gamili is there
+    // Test that Bereshit verse is there
     short cnt, verseGood , versionGood ,  funcgood ;
 
     float quo;
