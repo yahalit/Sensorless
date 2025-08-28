@@ -110,6 +110,8 @@ struct CSysState
     struct CBlockUpload BlockUpload ;
     struct CBlockDnload BlockDnload ;
     struct CTiming Timing ;
+    short unsigned LoadSealByCAN ;
+    short unsigned LoadSealByUART ;
     short  ConfigDone ;
 };
 

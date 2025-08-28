@@ -241,7 +241,7 @@ void setupMCAN(void)
 
     // Data phase: 2 Mbps with BRS
     // Keep DBRP=1 -> 40 MHz / (1+1) = 20 MHz tq clock
-    // Need 10 TQ/bit: 1 + TSEG1 + TSEG2 = 10  -> TSEG1=7, TSEG2=2 (˜80% SP)
+    // Need 10 TQ/bit: 1 + TSEG1 + TSEG2 = 10  -> TSEG1=7, TSEG2=2 (â‰ˆ80% SP)
     // Encoded fields are "minus one".
     bitTimes.dataRatePrescalar  = 0x1U; // DBRP (BRP-1)  => BRP=2
     bitTimes.dataTimeSeg1       = 0x6U; // DTSEG1 (TSEG1-1) => TSEG1=7

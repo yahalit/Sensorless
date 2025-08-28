@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'Seal'.
  *
- * Model version                  : 11.111
+ * Model version                  : 11.120
  * Simulink Coder version         : 25.1 (R2025a) 21-Nov-2024
- * C/C++ source code generated on : Tue Aug 26 22:22:24 2025
+ * C/C++ source code generated on : Thu Aug 28 17:14:46 2025
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Texas Instruments->C2000
@@ -87,14 +87,14 @@ typedef struct {
   /* Confirm Release the drive from SEAL control */
   int16_T ConfirmRelinquishControl;
 
-  /* Spare : 20 */
-  int16_T Spare_20;
+  /* Drive-sourecd Command to position controller */
+  real_T ProfiledPositionCommand;
 
-  /* Spare : 21 */
-  int16_T Spare_21;
+  /* Drive sources Command to speed controller */
+  real_T ProfiledSpeedCommand;
 
-  /* Spare : 22 */
-  int16_T Spare_22;
+  /* Drive sources Command to current controller */
+  real_T ProfiledTorqueCommand;
 
   /* Spare : 23 */
   int16_T Spare_23;
@@ -160,7 +160,7 @@ typedef struct {
   /* Is Sensor modulo: 2 */
   uint16_T IsPosSensorModulo2;
 
-  /* CAN ID 11bit */
+  /* CAN ID 11bit of the drive itself */
   uint16_T CANId11bit;
 
   /* Profiler sampling time  */
@@ -247,10 +247,10 @@ typedef struct {
   /* Command to current controller */
   real_T CurrentCommand;
 
-  /* Control loop configuration */
+  /* Control loop configuration: see enumerated type VarFeedbackMode */
   int16_T LoopConfiguration;
 
-  /* ReferenceMode */
+  /* ReferenceMode: see enumerated type VarReferenceModes */
   int16_T ReferenceMode;
 
   /* Motor on request */
@@ -265,11 +265,11 @@ typedef struct {
   /* Flag that the SEAL uses the UART and the drive should not interpret UART communication */
   int16_T bControlUART;
 
-  /* Seal 11 bit CAN ID */
-  int16_T SealCanID_11;
+  /* Spare : 10 */
+  int16_T Spare_10;
 
-  /* Seal 29 bit CAN ID */
-  int16_T SealCanID_29;
+  /* Spare : 11 */
+  int16_T Spare_11;
 
   /* Spare : 12 */
   int16_T Spare_12;
@@ -483,14 +483,16 @@ typedef struct {
 } ExtY;
 
 /* Imported (extern) states */
-extern CANCyclicBuf_T G_CANCyclicBuf_out;/* '<Root>/G_CANCyclicBuf_out' */
-extern CANCyclicBuf_T G_CANCyclicBuf_in;/* '<Root>/G_CANCyclicBuf_in' */
-extern UartCyclicBuf_T G_UartCyclicBuf_in;/* '<Root>/G_UartCyclicBuf_in' */
-extern UartCyclicBuf_T G_UartCyclicBuf_out;/* '<Root>/G_UartCyclicBuf_out' */
 extern MicroInterp_T G_MicroInterp;    /* '<S12>/G_MicroInterp' */
 extern SetupReportBuf_T G_SetupReportBuf;/* '<Root>/Data Store Memory1' */
 extern FeedbackBuf_T G_FeedbackBuf;    /* '<Root>/Data Store Memory' */
 extern DrvCommandBuf_T G_DrvCommandBuf;/* '<Root>/Data Store Memory3' */
+
+/* Imported (extern) pointer states */
+extern CANCyclicBuf_T *G_pCANCyclicBuf_out;/* '<Root>/G_CANCyclicBuf_out' */
+extern CANCyclicBuf_T *G_pCANCyclicBuf_in;/* '<Root>/G_CANCyclicBuf_in' */
+extern UartCyclicBuf_T *G_pUartCyclicBuf_in;/* '<Root>/G_UartCyclicBuf_in' */
+extern UartCyclicBuf_T *G_pUartCyclicBuf_out;/* '<Root>/G_UartCyclicBuf_out' */
 
 /* Block signals and states (default storage) */
 extern DW rtDW;

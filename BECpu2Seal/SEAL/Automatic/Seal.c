@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'Seal'.
  *
- * Model version                  : 11.111
+ * Model version                  : 11.120
  * Simulink Coder version         : 25.1 (R2025a) 21-Nov-2024
- * C/C++ source code generated on : Tue Aug 26 22:22:24 2025
+ * C/C++ source code generated on : Thu Aug 28 17:14:46 2025
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Texas Instruments->C2000
@@ -98,20 +98,20 @@ void CanGetTxMsg(void)
   /* MATLAB Function: '<S10>/MATLAB Function' incorporates:
    *  Outport: '<Root>/y'
    */
-  if (G_CANCyclicBuf_out.PutCounter != G_CANCyclicBuf_out.FetchCounter) {
-    next = (G_CANCyclicBuf_out.FetchCounter & 255U) + 1U;
-    rtY.y.CANID = G_CANCyclicBuf_out.CANID[(int16_T)next - 1];
-    rtY.y.DataLen = G_CANCyclicBuf_out.DLenAndAttrib[(int16_T)next - 1];
+  if (G_pCANCyclicBuf_out->PutCounter != G_pCANCyclicBuf_out->FetchCounter) {
+    next = (G_pCANCyclicBuf_out->FetchCounter & 255U) + 1U;
+    rtY.y.CANID = G_pCANCyclicBuf_out->CANID[(int16_T)next - 1];
+    rtY.y.DataLen = G_pCANCyclicBuf_out->DLenAndAttrib[(int16_T)next - 1];
     tmp = (int16_T)(next << 1U);
-    rtY.y.MsgData[0] = G_CANCyclicBuf_out.CANQueue[tmp - 2];
-    rtY.y.MsgData[1] = G_CANCyclicBuf_out.CANQueue[tmp - 1];
-    qY = G_CANCyclicBuf_out.FetchCounter - G_CANCyclicBuf_out.PutCounter;
-    if (qY > G_CANCyclicBuf_out.FetchCounter) {
+    rtY.y.MsgData[0] = G_pCANCyclicBuf_out->CANQueue[tmp - 2];
+    rtY.y.MsgData[1] = G_pCANCyclicBuf_out->CANQueue[tmp - 1];
+    qY = G_pCANCyclicBuf_out->FetchCounter - G_pCANCyclicBuf_out->PutCounter;
+    if (qY > G_pCANCyclicBuf_out->FetchCounter) {
       qY = 0U;
     }
 
     rtY.y.CANTxCnt = qY - ((qY >> 6U) << 6U);
-    G_CANCyclicBuf_out.FetchCounter = next;
+    G_pCANCyclicBuf_out->FetchCounter = next;
   }
 
   /* End of Outputs for RootInportFunctionCallGenerator generated from: '<Root>/CanGetTxMsg' */
@@ -129,14 +129,14 @@ void CanSetRxMsg(void)
   /* MATLAB Function: '<S4>/MATLAB Function' incorporates:
    *  Inport: '<Root>/RxMsg'
    */
-  next = (G_CANCyclicBuf_in.PutCounter & 63U) + 1U;
-  if (next != G_CANCyclicBuf_in.FetchCounter) {
-    G_CANCyclicBuf_in.CANID[(int16_T)next - 1] = rtU.RxMsg.CANID;
+  next = (G_pCANCyclicBuf_in->PutCounter & 63U) + 1U;
+  if (next != G_pCANCyclicBuf_in->FetchCounter) {
+    G_pCANCyclicBuf_in->CANID[(int16_T)next - 1] = rtU.RxMsg.CANID;
     b = next << 1U;
-    G_CANCyclicBuf_in.CANQueue[(int16_T)b - 2] = rtU.RxMsg.MsgData[0];
-    G_CANCyclicBuf_in.CANQueue[(int16_T)b - 1] = rtU.RxMsg.MsgData[1];
-    G_CANCyclicBuf_in.DLenAndAttrib[(int16_T)next - 1] = rtU.RxMsg.DataLen;
-    G_CANCyclicBuf_in.PutCounter = next;
+    G_pCANCyclicBuf_in->CANQueue[(int16_T)b - 2] = rtU.RxMsg.MsgData[0];
+    G_pCANCyclicBuf_in->CANQueue[(int16_T)b - 1] = rtU.RxMsg.MsgData[1];
+    G_pCANCyclicBuf_in->DLenAndAttrib[(int16_T)next - 1] = rtU.RxMsg.DataLen;
+    G_pCANCyclicBuf_in->PutCounter = next;
   }
 
   /* End of MATLAB Function: '<S4>/MATLAB Function' */
@@ -364,29 +364,30 @@ void IdleLoopCAN(void)
    *  SubSystem: '<Root>/Idle process CAN interpreter'
    */
   /* MATLAB Function: '<S11>/CAN message response' */
-  if (G_CANCyclicBuf_in.PutCounter != G_CANCyclicBuf_in.FetchCounter) {
+  if (G_pCANCyclicBuf_in->PutCounter != G_pCANCyclicBuf_in->FetchCounter) {
     cnt = 0;
     exitg1 = false;
     while ((!exitg1) && (cnt < 3)) {
-      nfetch = (G_CANCyclicBuf_in.FetchCounter & 63U) + 1U;
-      nput = (G_CANCyclicBuf_out.PutCounter & 63U) + 1U;
+      nfetch = (G_pCANCyclicBuf_in->FetchCounter & 63U) + 1U;
+      nput = (G_pCANCyclicBuf_out->PutCounter & 63U) + 1U;
       nextput = (nput + 1U) & 63U;
-      if (nextput == G_CANCyclicBuf_out.FetchCounter) {
+      if (nextput == G_pCANCyclicBuf_out->FetchCounter) {
         exitg1 = true;
       } else {
         nmsgGet = (nfetch << 1U) - 1U;
         nmsgPut = (nput << 1U) - 1U;
-        G_CANCyclicBuf_out.CANID[(int16_T)nput - 1] = G_CANCyclicBuf_in.CANID
-          [(int16_T)nfetch - 1];
-        G_CANCyclicBuf_out.DLenAndAttrib[(int16_T)nput - 1] =
-          G_CANCyclicBuf_in.DLenAndAttrib[(int16_T)nfetch - 1];
-        G_CANCyclicBuf_out.CANQueue[(int16_T)nmsgPut - 1] =
-          G_CANCyclicBuf_in.CANQueue[(int16_T)nmsgGet - 1];
-        G_CANCyclicBuf_out.CANQueue[(int16_T)nmsgPut] =
-          G_CANCyclicBuf_in.CANQueue[(int16_T)nmsgGet];
-        G_CANCyclicBuf_out.PutCounter = nextput;
-        G_CANCyclicBuf_in.FetchCounter = (nfetch + 1U) & 63U;
-        if (G_CANCyclicBuf_in.PutCounter == G_CANCyclicBuf_in.FetchCounter) {
+        G_pCANCyclicBuf_out->CANID[(int16_T)nput - 1] =
+          G_pCANCyclicBuf_in->CANID[(int16_T)nfetch - 1];
+        G_pCANCyclicBuf_out->DLenAndAttrib[(int16_T)nput - 1] =
+          G_pCANCyclicBuf_in->DLenAndAttrib[(int16_T)nfetch - 1];
+        G_pCANCyclicBuf_out->CANQueue[(int16_T)nmsgPut - 1] =
+          G_pCANCyclicBuf_in->CANQueue[(int16_T)nmsgGet - 1];
+        G_pCANCyclicBuf_out->CANQueue[(int16_T)nmsgPut] =
+          G_pCANCyclicBuf_in->CANQueue[(int16_T)nmsgGet];
+        G_pCANCyclicBuf_out->PutCounter = nextput;
+        G_pCANCyclicBuf_in->FetchCounter = (nfetch + 1U) & 63U;
+        if (G_pCANCyclicBuf_in->PutCounter == G_pCANCyclicBuf_in->FetchCounter)
+        {
           exitg1 = true;
         } else {
           cnt++;
@@ -427,15 +428,15 @@ void IdleLoopUART(void)
    */
   /* MATLAB Function: '<S12>/UART message response' */
   cnt = 0;
-  while ((cnt < 10) && (G_UartCyclicBuf_in.PutCounter !=
-                        G_UartCyclicBuf_in.FetchCounter)) {
-    nmsgGet = G_UartCyclicBuf_in.FetchCounter & 255U;
-    G_UartCyclicBuf_in.FetchCounter = (nmsgGet + 1U) & 255U;
-    if (G_UartCyclicBuf_in.UartError != 0U) {
-      G_UartCyclicBuf_in.UartError = 0U;
+  while ((cnt < 10) && (G_pUartCyclicBuf_in->PutCounter !=
+                        G_pUartCyclicBuf_in->FetchCounter)) {
+    nmsgGet = G_pUartCyclicBuf_in->FetchCounter & 255U;
+    G_pUartCyclicBuf_in->FetchCounter = (nmsgGet + 1U) & 255U;
+    if (G_pUartCyclicBuf_in->UartError != 0U) {
+      G_pUartCyclicBuf_in->UartError = 0U;
       G_MicroInterp.InterpretError = 3U;
     } else {
-      nmsgGet = G_UartCyclicBuf_in.UARTQueue[(int16_T)nmsgGet];
+      nmsgGet = G_pUartCyclicBuf_in->UARTQueue[(int16_T)nmsgGet];
       if (nmsgGet == 59U) {
         G_MicroInterp.NewString = G_MicroInterp.cnt;
       } else {
@@ -857,14 +858,14 @@ void IdleLoopUART(void)
           sgnMant = 0;
           exitg3 = false;
           while ((!exitg3) && (sgnMant <= (int16_T)G_MicroInterp.cnt - 1)) {
-            nmsgGet = G_UartCyclicBuf_out.PutCounter & 255U;
+            nmsgGet = G_pUartCyclicBuf_out->PutCounter & 255U;
             b_c = (nmsgGet + 1U) & 255U;
-            if (b_c == G_UartCyclicBuf_out.FetchCounter) {
+            if (b_c == G_pUartCyclicBuf_out->FetchCounter) {
               exitg3 = true;
             } else {
-              G_UartCyclicBuf_out.UARTQueue[(int16_T)nmsgGet] =
+              G_pUartCyclicBuf_out->UARTQueue[(int16_T)nmsgGet] =
                 G_MicroInterp.TempString[sgnMant];
-              G_UartCyclicBuf_out.PutCounter = b_c;
+              G_pUartCyclicBuf_out->PutCounter = b_c;
               sgnMant++;
             }
           }
@@ -910,13 +911,13 @@ void UartAddChar(void)
   /* MATLAB Function: '<S3>/Accept character' incorporates:
    *  Inport: '<Root>/u'
    */
-  next = (G_UartCyclicBuf_in.PutCounter & 255U) + 1U;
-  if (next == G_UartCyclicBuf_in.FetchCounter) {
-    G_UartCyclicBuf_in.UartError = 1U;
+  next = (G_pUartCyclicBuf_in->PutCounter & 255U) + 1U;
+  if (next == G_pUartCyclicBuf_in->FetchCounter) {
+    G_pUartCyclicBuf_in->UartError = 1U;
   } else {
-    G_UartCyclicBuf_in.UARTQueue[(int16_T)G_UartCyclicBuf_in.PutCounter - 1] =
-      rtU.u;
-    G_UartCyclicBuf_in.PutCounter = next;
+    G_pUartCyclicBuf_in->UARTQueue[(int16_T)G_pUartCyclicBuf_in->PutCounter - 1]
+      = rtU.u;
+    G_pUartCyclicBuf_in->PutCounter = next;
   }
 
   /* End of MATLAB Function: '<S3>/Accept character' */
@@ -937,12 +938,12 @@ void UartGetChar(void)
   rtY.Out1 = 0U;
 
   /* MATLAB Function: '<S13>/MATLAB Function' */
-  if (G_UartCyclicBuf_out.PutCounter != G_UartCyclicBuf_out.FetchCounter) {
-    next = (G_UartCyclicBuf_out.FetchCounter & 255U) + 1U;
+  if (G_pUartCyclicBuf_out->PutCounter != G_pUartCyclicBuf_out->FetchCounter) {
+    next = (G_pUartCyclicBuf_out->FetchCounter & 255U) + 1U;
 
     /* Outport: '<Root>/Out1' */
-    rtY.Out1 = G_UartCyclicBuf_out.UARTQueue[(int16_T)next - 1];
-    G_UartCyclicBuf_out.FetchCounter = next;
+    rtY.Out1 = G_pUartCyclicBuf_out->UARTQueue[(int16_T)next - 1];
+    G_pUartCyclicBuf_out->FetchCounter = next;
   }
 
   /* End of Outputs for RootInportFunctionCallGenerator generated from: '<Root>/UartGetChar' */

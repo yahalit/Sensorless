@@ -62,7 +62,7 @@
 //
 // Function Prototypes
 //
-void ExampleInitSysCtrl(void);
+void InitSysCtrl2(void);
 void InitCpuTimer(void);
 __interrupt void cpu_timer1_isr(void);
 void load_buffer(void);
@@ -108,7 +108,7 @@ void main(void)
 // PLL, WatchDog, enable Peripheral Clocks
 // This example function is found in the f28p65x_sysctrl.c file.
 //
-    ExampleInitSysCtrl();
+    InitSysCtrl2();
 
 
 //
@@ -166,45 +166,47 @@ void main(void)
     // Enable the interrupt in PIE/CPU
     Interrupt_enable(INT_CIPC3);
 
-    // Enable PIE and global ints
-    EINT;  // Global enable
-    ERTM;  // Real-time DBGM
-
-
-
-//
-// Configure CPU Timer 1 ISR
-//
-//    EALLOW;
-//    PieVectTable.TIMER1_INT = &cpu_timer1_isr;
-//    IER |= M_INT13;
-//    EDIS;
-
-
-
-
-    //
 // Enable global Interrupts and higher priority real-time debug
 // events:
 //
     EINT;  // Enable Global interrupt INTM
     ERTM;  // Enable Global realtime interrupt DBGM
 
+    // Look for SEAL. If it is there
+    GoSeal() ;
 //
-// IDLE loop. Just sit and loop forever (optional):
+//  No Seal found. Just sit and loop forever (optional):
 //
     for(;;)
     {
-        asm ("  NOP");
+        IdleSealLoader ();
     }
 }
 
+
+void IdleSealLoader (void)
+{
+    if ( SysState.LoadSealByCAN = 0 )
+    {
+        if ( UM2S.M2S.SetupReportBuf.bConfirmControlUART )
+        {
+        }
+    }
+    if ( SysState.LoadSealByUART = 0 )
+    {
+
+    }
+}
+
+
+
+
 //
-// ExampleInitSysCtrl function
+// InitSysCtrl2 function
 // This example uses custom InitSysCtrl function since CPU2 owns some of the
 // peripherals
 //
-void ExampleInitSysCtrl(void)
+void InitSysCtrl2(void)
 {
     //
     // Disable the watchdog

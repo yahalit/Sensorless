@@ -59,4 +59,7 @@ short PutCanSlaveQueue( struct CCanMsg * pMsg);
 // Hardware drivers
 void setupGpioCAN(void);
 
+// Seal basics
+void GoSeal(void) ;
+
 #endif /* APPLICATION_FUNCTIONS_H_ */
