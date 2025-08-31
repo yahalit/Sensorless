@@ -31,7 +31,9 @@
 
 #define NUM_OF_MSG                    (7U)  // Must be 2^N-1
 #define MCAN_STD_ID_FILT_START_ADDR   (0U)
-#define MCAN_STD_ID_FILTER_NUM        (4U)
+//#define MCAN_STD_ID_FILTER_NUM        (4U)
+#define MCAN_EXT_ID_FILT_START_ADDR   (4U)
+//#define MCAN_EXT_ID_FILTER_NUM        (4U)
 
 #define MCAN_FIFO_1_START_ADDR        (2560U)  // (64 + 18 * 16 + 18 * 16 ) * 4
 #define MCAN_FIFO_1_NUM               (NUM_OF_MSG)
@@ -46,7 +48,7 @@
 
 
 //#define MCANA_MSG_RAM_BASE        0x00058000U
-#define MCAN0_BASE MCANA_MSG_RAM_BASE
+#define MCAN1_BASE MCANA_MSG_RAM_BASE
 
 const short SpaceForElementSizeInLongs[8] = {4 , 5 , 6 , 7 , 8 , 10 , 14 , 18 } ;
 const short Dlc2Len[16] = {0,1,2,3,4,5,6,7,8,12,16,20,32,18,48,64} ;
@@ -71,7 +73,7 @@ short SetPDO2HW(struct CCanMsg  *pMsg , short unsigned nPdo )
 
 
     // Invert the pending state so we have the clear mailboxes
-    u2.ul = ~HWREG(MCAN0_BASE + MCAN_TXBRP) ;
+    u2.ul = ~HWREG(MCAN1_BASE + MCAN_TXBRP) ;
     u2.us[0] &= (1<<nPdo);
 
     if (  u2.us[0] == 0 )
@@ -90,7 +92,7 @@ short SetPDO2HW(struct CCanMsg  *pMsg , short unsigned nPdo )
     pmsg[MCAN_RAM_LONG_PTR_INC*3] = pMsg->data[1] ;
 
     // Send request to transmit this buffer
-    HWREG(MCAN0_BASE +MCAN_TXBAR) = (1<<shift) ;
+    HWREG(MCAN1_BASE +MCAN_TXBAR) = (1<<shift) ;
     return 0 ;
 }
 
@@ -112,12 +114,31 @@ short unsigned dLen2Dlc(short unsigned l )
 
 volatile long unsigned rmw ;
 
-void setupMCAN(void)
+short unsigned IsValidCanId ( short unsigned id , short unsigned mask)
 {
+    if ( (mask | id)  & ~0x3ff )
+    {
+        return 0 ;
+    }
+    return 1 ;
+}
+short unsigned IsValidExtCanId ( long unsigned id , long unsigned mask)
+{
+    if ( (mask | id)  & ~0x1ffffffffUL )
+    {
+        return 0 ;
+    }
+    return 1 ;
+}
+
+void setupMCAN2(short unsigned CanId[], short unsigned CanIDMask[] ,  long unsigned ExtCanId[], long unsigned ExtCanIDMask[] )
+{
+    short unsigned cnt,n ;
     MCAN_InitParams            initParams;
     MCAN_MsgRAMConfigParams    msgRAMConfigParams;
     MCAN_BitTimingParams       bitTimes;
     MCAN_StdMsgIDFilterElement stdFiltelem;
+    MCAN_ExtMsgIDFilterElement ExtFiltelem;
     MCAN_GlobalFiltConfig      filter_config_obj;
 
     ClearMem((short unsigned *)&initParams , sizeof(initParams));
@@ -137,7 +158,7 @@ void setupMCAN(void)
     //
     // Configure the divisor for the MCAN bit-clock
     //
-    SysCtl_setMCANClk(SYSCTL_MCANA,SYSCTL_MCANCLK_DIV_5);
+    SysCtl_setMCANClk(SYSCTL_MCANB,SYSCTL_MCANCLK_DIV_5);
 
     // Initialize MCAN Init parameters.
     //
@@ -162,8 +183,23 @@ void setupMCAN(void)
     msgRAMConfigParams.flssa                = MCAN_STD_ID_FILT_START_ADDR;
 
     // Standard ID Filter List Start Address (0).
-    msgRAMConfigParams.lss                  = MCAN_STD_ID_FILTER_NUM;
+    n = 0  ;
+    for ( cnt = 0; cnt < 4 ; cnt++)
+    {
+        n+=IsValidCanId ( CanId[cnt], CanIDMask[cnt]) ;
+    }
+
+    msgRAMConfigParams.lss  = n;
     // Standard ID Filter List Size (1).
+
+    msgRAMConfigParams.flesa = MCAN_EXT_ID_FILT_START_ADDR ;
+    n = 0  ;
+    for ( cnt = 0; cnt < 4 ; cnt++)
+    {
+        n+=IsValidCanId ( ExtCanId[cnt], ExtCanIDMask[cnt]) ;
+    }
+    msgRAMConfigParams.lse  =  n;
+
 
     msgRAMConfigParams.rxFIFO0startAddr     = MCAN_FIFO_0_START_ADDR;
 
@@ -232,35 +268,35 @@ void setupMCAN(void)
     //
     // Wait for memory initialization to happen.
     //
-    while(false == MCAN_isMemInitDone(MCAN0_BASE))
+    while(false == MCAN_isMemInitDone(MCAN1_BASE))
     {
     }
 
     //
     // Put MCAN in SW initialization mode.
     //
-    MCAN_setOpMode(MCAN0_BASE, MCAN_OPERATION_MODE_SW_INIT);
+    MCAN_setOpMode(MCAN1_BASE, MCAN_OPERATION_MODE_SW_INIT);
 
     //
     // Wait till MCAN is not initialized.
     //
-    while (MCAN_OPERATION_MODE_SW_INIT != MCAN_getOpMode(MCAN0_BASE))
+    while (MCAN_OPERATION_MODE_SW_INIT != MCAN_getOpMode(MCAN1_BASE))
     {}
 
     //
     // Initialize MCAN module.
     //
-    MCAN_init(MCAN0_BASE, &initParams);
+    MCAN_init(MCAN1_BASE, &initParams);
 
     //
     // Configure Bit timings.
     //
-    MCAN_setBitTime(MCAN0_BASE, &bitTimes);
+    MCAN_setBitTime(MCAN1_BASE, &bitTimes);
 
     //
     // Configure Message RAM Sections
     //
-    MCAN_msgRAMConfig(MCAN0_BASE, &msgRAMConfigParams);
+    MCAN_msgRAMConfig(MCAN1_BASE, &msgRAMConfigParams);
 
     SysState.MCanSupport.Fifo0ElementWidth = SpaceForElementSizeInLongs[msgRAMConfigParams.rxFIFO0ElemSize] ;
     SysState.MCanSupport.pFifo0Start       = (unsigned long *)(MCANA_MSG_RAM_BASE+msgRAMConfigParams.rxFIFO0startAddr);
@@ -275,50 +311,28 @@ void setupMCAN(void)
     // Initialize Rx Buffer Filter element Configuration parameters.
     //
     //CanId
-
-    stdFiltelem.sfid2              = 0x7ffU; // Standard ID Filter Mask. 0 bit is "don't care"
-    stdFiltelem.sfid1              = CanId + PDO1_RX ; // Standard ID Filter
-    stdFiltelem.sfec               = 0x5U; // Store into FIFO 0.
-    stdFiltelem.sft                = 0x02U; // SFID1 = filter; SFID2 = mask
-
-    //
-    // Configure Standard ID filter element
-    //
-    MCAN_addStdMsgIDFilter(MCAN0_BASE, 0U, &stdFiltelem);
-
-    stdFiltelem.sfid2              = 0x7ffU; // Standard ID Filter Mask. 0 bit is "dont care"
-    stdFiltelem.sfid1              = CanId + PDO2_RX ; // Standard ID Filter
-    stdFiltelem.sfec               = 0x5U; // Store into FIFO 0.
-    stdFiltelem.sft                = 0x02U; // SFID1 = filter; SFID2 = mask
-
-    //
-    // Configure Standard ID filter element
-    //
-    MCAN_addStdMsgIDFilter(MCAN0_BASE, 1U, &stdFiltelem);
-
-    stdFiltelem.sfid2              = 0x700U; // Standard ID Filter Mask. 0 bit is "dont care"
-    stdFiltelem.sfid1              = CAN_SYNC ; // Standard ID Filter
-    stdFiltelem.sfec               = 0x5U; // Store into FIFO 0.
-    stdFiltelem.sft                = 0x02U; // SFID1 = filter; SFID2 = mask
-
-    //
-    // Configure Standard ID filter element
-    //
-    MCAN_addStdMsgIDFilter(MCAN0_BASE, 2U, &stdFiltelem);
-
-    stdFiltelem.sfid2              = 0x7ffU; // Standard ID Filter Mask. 0 bit is "dont care"
-    stdFiltelem.sfid1              = CanId + SDO_RX ; // Standard ID Filter
-    stdFiltelem.sfec               = 0x5U; // Store into FIFO 0.
-    stdFiltelem.sft                = 0x02U; // SFID1 = filter; SFID2 = mask
-
-    //
-    // Configure Standard ID filter element
-    //
-    MCAN_addStdMsgIDFilter(MCAN0_BASE, 3U, &stdFiltelem);
-
+    for ( cnt = 0 ; cnt < 4 ; cnt++ )
+    {
+        if ( IsValidCanId ( CanId[cnt], CanIDMask[cnt]))
+        {
+            stdFiltelem.sfid2              = CanIDMask[cnt]; // Standard ID Filter Mask. 0 bit is "don't care"
+            stdFiltelem.sfid1              = CanId[cnt] ; // Standard ID Filter
+            stdFiltelem.sfec               = 0x5U; // Store into FIFO 0.
+            stdFiltelem.sft                = 0x02U; // SFID1 = filter; SFID2 = mask
+            MCAN_addStdMsgIDFilter(MCAN1_BASE, cnt, &stdFiltelem);
+        }
+        if ( IsValidCanId ( ExtCanId[cnt], ExtCanIDMask[cnt]))
+        {
+            ExtFiltelem.efid2              = CanIDMask[cnt]; // Standard ID Filter Mask. 0 bit is "don't care"
+            ExtFiltelem.efid1              = CanId[cnt] ; // Standard ID Filter
+            ExtFiltelem.efec               = 0x5U; // Store into FIFO 0.
+            ExtFiltelem.eft                = 0x02U; // SFID1 = filter; SFID2 = mask
+            MCAN_addExtMsgIDFilter(MCAN1_BASE, cnt, &ExtFiltelem);
+        }
+    }
 
     /*
-     * Uncommend the following line in order to bypass any type of Message Filter
+     * Un-comment the following line in order to bypass any type of Message Filter
      */
    // MCAN_config(MCANA_BASE, &config_params);         // Reserve
 
@@ -326,37 +340,37 @@ void setupMCAN(void)
     //
     // Take MCAN out of the SW initialization mode
     //
-    //MCAN_writeProtectedRegAccessUnlock(MCAN0_BASE);
-    rmw = * (unsigned long *) (MCAN0_BASE + MCAN_CCCR) ;
+    //MCAN_writeProtectedRegAccessUnlock(MCAN1_BASE);
+    rmw = * (unsigned long *) (MCAN1_BASE + MCAN_CCCR) ;
     rmw |= 2 ;
-    * (unsigned long *) (MCAN0_BASE + MCAN_CCCR) = rmw ;
+    * (unsigned long *) (MCAN1_BASE + MCAN_CCCR) = rmw ;
 
     // Reject all non-matching messages
-    * (unsigned long *) (MCAN0_BASE + MCAN_GFC) = 0x3ff ;
+    * (unsigned long *) (MCAN1_BASE + MCAN_GFC) = 0x3ff ;
 
-    MCAN_setOpMode(MCAN0_BASE, MCAN_OPERATION_MODE_NORMAL);
+    MCAN_setOpMode(MCAN1_BASE, MCAN_OPERATION_MODE_NORMAL);
 
-    //cccr = * (unsigned long *) (MCAN0_BASE + MCAN_CCCR) ;
-    while (MCAN_OPERATION_MODE_NORMAL != MCAN_getOpMode(MCAN0_BASE))
+    //cccr = * (unsigned long *) (MCAN1_BASE + MCAN_CCCR) ;
+    while (MCAN_OPERATION_MODE_NORMAL != MCAN_getOpMode(MCAN1_BASE))
     {
-        MCAN_setOpMode(MCAN0_BASE, MCAN_OPERATION_MODE_NORMAL);
-        //cccr = * (unsigned long *) (MCAN0_BASE + MCAN_CCCR) ;
+        MCAN_setOpMode(MCAN1_BASE, MCAN_OPERATION_MODE_NORMAL);
+        //cccr = * (unsigned long *) (MCAN1_BASE + MCAN_CCCR) ;
     }
 
     //
     // Enable Interrupts.
     //
-    //MCAN_enableIntr(MCAN0_BASE, MCAN_INTR_MASK_ALL, 1U);
+    //MCAN_enableIntr(MCAN1_BASE, MCAN_INTR_MASK_ALL, 1U);
 
     //
     // Select Interrupt Line.
     //
-    //MCAN_selectIntrLine(MCAN0_BASE, MCAN_INTR_MASK_ALL, MCAN_INTR_LINE_NUM_1);
+    //MCAN_selectIntrLine(MCAN1_BASE, MCAN_INTR_MASK_ALL, MCAN_INTR_LINE_NUM_1);
 
     //
     // Enable Interrupt Line.
     //
-    //MCAN_enableIntrLine(MCAN0_BASE, MCAN_INTR_LINE_NUM_1, 1U);
+    //MCAN_enableIntrLine(MCAN1_BASE, MCAN_INTR_LINE_NUM_1, 1U);
 
     return;
 }
@@ -391,7 +405,7 @@ void RtCanService(void)
     }
 */
     //Test which receivers are free to use;
-    u.ul = HWREG(MCAN0_BASE + MCAN_RXF0S) ;
+    u.ul = HWREG(MCAN1_BASE + MCAN_RXF0S) ;
     nf     = (short unsigned) (u.us[0] & 0x7f) ;
     if ( nf )
     {
@@ -403,7 +417,7 @@ void RtCanService(void)
             u3.ul = pmsg[0] ;
             if ( u3.us[1] & 0x6000 )
             {
-                HWREG(MCAN0_BASE + MCAN_RXF0A) = nget ;
+                HWREG(MCAN1_BASE + MCAN_RXF0A) = nget ;
                 continue ; // Either RTR or extended frame
             }
             cobId =  ( u3.ul >> 18 ) & 0x7ff ;
@@ -411,7 +425,7 @@ void RtCanService(void)
             u2.ul = pmsg[MCAN_RAM_LONG_PTR_INC] ;
             if ( u2.us[1] & 0x30  )
             { // Either baud rate change or FD
-                HWREG(MCAN0_BASE + MCAN_RXF0A) = nget ;
+                HWREG(MCAN1_BASE + MCAN_RXF0A) = nget ;
                 continue ;
             }
 
@@ -518,8 +532,8 @@ void RtCanService(void)
                 //next = ( CanSlaveInQueue.nPut + 1 ) & (CanSlaveInQueue.nQueue-1) ;
                 break;
             }
-            HWREG(MCAN0_BASE + MCAN_RXF0A) = nget ;
-            u.ul = HWREG(MCAN0_BASE + MCAN_RXF0S) ;
+            HWREG(MCAN1_BASE + MCAN_RXF0A) = nget ;
+            u.ul = HWREG(MCAN1_BASE + MCAN_RXF0S) ;
             nget =  ( u.us[0] >> 8 ) & 0x3f ;
         }
     }
@@ -632,7 +646,7 @@ short SetMsg2HW(struct CCanMsg  *pMsg )
 
     mask = BlockInts() ;
     // Invert the pending state so we have the clear mailboxes
-    u2.ul = ~HWREG(MCAN0_BASE + MCAN_TXBRP) ; // Free units
+    u2.ul = ~HWREG(MCAN1_BASE + MCAN_TXBRP) ; // Free units
 
     u2.us[0] &= (SysState.MCanSupport.TxNumElements-1)  ; // Look only at implemented boxes
     if (  u2.us[0] == 0 )
@@ -655,7 +669,7 @@ short SetMsg2HW(struct CCanMsg  *pMsg )
     pmsg[MCAN_RAM_LONG_PTR_INC*3] = pMsg->data[1] ;
 
     // Send request to transmit this buffer
-    HWREG(MCAN0_BASE +MCAN_TXBAR) = (1<<shift) ;
+    HWREG(MCAN1_BASE +MCAN_TXBAR) = (1<<shift) ;
     RestoreInts(mask) ;
     return 0 ;
 }
@@ -679,7 +693,7 @@ short SetFDMsg2HW(struct CCanMsg  *pMsg , long unsigned *databuf , short unsigne
 
     mask = BlockInts() ;
     // Invert the pending state so we have the clear mailboxes
-    u2.ul = ~HWREG(MCAN0_BASE + MCAN_TXBRP) ; // Free units
+    u2.ul = ~HWREG(MCAN1_BASE + MCAN_TXBRP) ; // Free units
 
     u2.us[0] &= (SysState.MCanSupport.TxNumElements-1)  ; // Look only at implemented boxes
     if (  u2.us[0] == 0 )
@@ -716,7 +730,7 @@ short SetFDMsg2HW(struct CCanMsg  *pMsg , long unsigned *databuf , short unsigne
 
 
     // Send request to transmit this buffer
-    HWREG(MCAN0_BASE +MCAN_TXBAR) = (1<<shift) ;
+    HWREG(MCAN1_BASE +MCAN_TXBAR) = (1<<shift) ;
     RestoreInts(mask) ;
     return 0 ;
 }
@@ -846,7 +860,7 @@ void RTDealBlockUpload(void)
         long unsigned ul ;
         short unsigned us[2] ;
     }u2 ;
-    u2.ul =  HWREG(MCAN0_BASE + MCAN_TXBRP) ;// Each "1" stands for in-use transmitter
+    u2.ul =  HWREG(MCAN1_BASE + MCAN_TXBRP) ;// Each "1" stands for in-use transmitter
 
     u2.us[0] &= (SysState.MCanSupport.TxNumElements-1)  ; // Look only at implemented boxes
     if (  u2.us[0] )

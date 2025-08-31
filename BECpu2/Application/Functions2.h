@@ -5,8 +5,8 @@
  *      Author: user
  */
 
-#ifndef APPLICATION_FUNCTIONS_H_
-#define APPLICATION_FUNCTIONS_H_
+#ifndef APPLICATION_FUNCTIONS2_H_
+#define APPLICATION_FUNCTIONS2_H_
 
 
 // Interrupt handler functions
@@ -44,7 +44,8 @@ void ClearMem(short unsigned *ptr_in , short unsigned n);
 
 
 // PrjMCAN
-void setupMCAN(void);
+void setupMCAN2(short unsigned CanId[], short unsigned CanIDMask[] ,  long unsigned ExtCanId[], long unsigned ExtCanIDMask[] );
+;
 void RtCanService(void);
 short SetMsg2HW(struct CCanMsg  *pMsg );
 void SetBootUpMessage( void );
@@ -59,7 +60,15 @@ short PutCanSlaveQueue( struct CCanMsg * pMsg);
 // Hardware drivers
 void setupGpioCAN(void);
 
+// Low level
+void TestAvailableConnections(void);
+void RtUartService(void);
+
+
+// Loader
+void IdleSealLoader (void) ;
+
 // Seal basics
 void GoSeal(void) ;
 
-#endif /* APPLICATION_FUNCTIONS_H_ */
+#endif /* APPLICATION_FUNCTIONS2_H_ */

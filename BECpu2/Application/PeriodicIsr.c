@@ -25,6 +25,11 @@ __interrupt void IPC3_ISR(void)
     SealState.InterruptCnt.ll += 1 ;
     SealState.SystemTime += UM2S.M2S.ControlTs ;
 
+    if ( SysState.UartAcquired )
+    {
+        RtUartService();
+    }
+
     RtCanService() ;
 
 

@@ -87,6 +87,11 @@ __interrupt void IPC3_ISR(void);
 void InitAppData2()
 {
     ClearMem( (short unsigned *) &SysState , sizeof(SysState) ) ;
+    ClearMem( (short unsigned *) &CANCyclicBuf_out , sizeof(CANCyclicBuf_out) ) ;
+    ClearMem( (short unsigned *) &CANCyclicBuf_in , sizeof(CANCyclicBuf_in) ) ;
+    ClearMem( (short unsigned *) &UartCyclicBuf_in , sizeof(UartCyclicBuf_in) ) ;
+    ClearMem( (short unsigned *) &UartCyclicBuf_out , sizeof(UartCyclicBuf_out) ) ;
+
     CanId = 48 ;
     SysState.ConfigDone = 1 ;
     ProjId = 0x3000;
@@ -109,7 +114,6 @@ void main(void)
 // This example function is found in the f28p65x_sysctrl.c file.
 //
     InitSysCtrl2();
-
 
 //
 // Clear all interrupts and initialize PIE vector table:
@@ -155,7 +159,7 @@ void main(void)
     ConfigCpuTimer(&CpuTimer1, 200, 10000);
     CpuTimer1Regs.TCR.all = 0x4000;
 
-    setupMCAN();
+    setupMCAN2();
     //
     // Setup CPU IPC0 to interrupt every 10 ms
     //
@@ -184,19 +188,6 @@ void main(void)
 }
 
 
-void IdleSealLoader (void)
-{
-    if ( SysState.LoadSealByCAN = 0 )
-    {
-        if ( UM2S.M2S.SetupReportBuf.bConfirmControlUART )
-        {
-        }
-    }
-    if ( SysState.LoadSealByUART = 0 )
-    {
-
-    }
-}
 
 
 
@@ -247,7 +238,9 @@ void InitSysCtrl2(void)
 
 
 //
-// cpu_timer1_isr - Function for CPU Timer1 Interrupt Service Routine
+// cpu_timer1_isr - Function for CPU Timer1 Interrupt Service Routine. This interrupt does the following:
+// Operates time ticker
+// Makes UART communication if UART is handed.
 //
 __interrupt void cpu_timer1_isr(void)
 {

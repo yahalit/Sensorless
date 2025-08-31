@@ -27,6 +27,7 @@ void setupGpio(void);
 void setupGpioCAN(void);
 
 // LowLevel
+void setUartOwnership(short unsigned owner);
 
 // LowLevel
 void InitPeripherals(void) ;
@@ -215,7 +216,8 @@ short SpeedProfiler( void ) ;
 void InitSysCtrlCpu1(void) ;
 void PrepCpu2Work(void);
 
-
+//SealInterface
+void SealRelations(void) ;
 
 inline
 float CenterDiffPu( float x, float y )

@@ -107,6 +107,7 @@ struct CM2S
     short  unsigned CommBufferOverflow  ;
     long  long unsigned TimeStampUsec ;
     float ControlTs ;
+    long  unsigned CpuClockHz ;
     struct CCommString CommString ; // Communication string, incoming
     struct CUserMessage UserMessage[8] ;
     struct CAppLimits AppLimits ;

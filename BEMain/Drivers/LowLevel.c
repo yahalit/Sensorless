@@ -335,6 +335,7 @@ void GrantCpu2ItsDuePeripherals(void)
 {
     EALLOW;
     DevCfgRegs.CPUSEL6.bit.SPI_A = 1;       // Give CPU2 control to SPIA
+    DevCfgRegs.CPUSEL8.bit.MCAN_B = 1 ;   // Give MCAN_B to CPU2
     EDIS;
 }
 

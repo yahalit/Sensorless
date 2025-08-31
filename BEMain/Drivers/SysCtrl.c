@@ -269,7 +269,7 @@ void Bsp_bootCPU2(void) // uint32_t bootmode)
 extern volatile short unsigned kuku ;
 void PrepCpu2Work(void)
 {
-
+    long unsigned next ;
     // Give CPU2 its dues memories
     //GrantCpu2ItsMemories() ;
 
@@ -277,6 +277,9 @@ void PrepCpu2Work(void)
 
     // Flag CPU2 its time to wakeup
     Cpu1toCpu2IpcRegs.CPU1TOCPU2IPCSET.all |= 0x10 ;
+
+    // Initialize CAN B clock divider
+    SysCtl_setMCANClk(SYSCTL_MCANB,SYSCTL_MCANCLK_DIV_5);
 
     //
     //Give CPU2 its due peripherals
@@ -287,6 +290,22 @@ void PrepCpu2Work(void)
     // Send IPC flag to CPU2 signaling the completion of system initialization
     //
     IPCLtoRFlagSet(IPC_FLAG31);
+
+    // Wait 1 second
+    HWREG( CPUTIMER1_BASE+CPUTIMER_O_TIM) = 1000000UL ;
+    while ( IPCLtoRFlagBusy(IPC_FLAG31))
+    {
+        next = HWREG( CPUTIMER1_BASE+CPUTIMER_O_TIM) ;
+
+        if ( next & 0x80000000 )
+        {
+            // Timeout
+            ESTOP1 ;
+            SysState.bCore2IsDead = 1 ;
+        }
+
+    }
+    HWREG( CPUTIMER1_BASE+CPUTIMER_O_TIM) = 0 ;
 
 }
 

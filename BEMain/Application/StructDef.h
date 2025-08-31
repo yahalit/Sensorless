@@ -623,6 +623,7 @@ struct CSysState
     short unsigned SwState   ;
     short unsigned InterruptRoutineBusy ;
     short unsigned bHighSpeedCanLogger   ;
+    short unsigned bCore2IsDead ; // Mark that core 2 is dead
     short unsigned WTF   ;
     short unsigned WTF1   ;
     long  unsigned ControlWord       ; // Last sample of control word

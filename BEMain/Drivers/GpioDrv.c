@@ -30,6 +30,24 @@ void setupGpioCAN(void)
     GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
     GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
     GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+
+/* Prep for CAN 2
+#undef NGP
+#define NGP 21
+    GPIO_setPinConfig(GPIO_21_MCANB_RX);
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+    GPIO_setControllerCore(NGP, GPIO_CORE_CPU2);
+
+#undef NGP
+#define NGP 41
+    GPIO_setPinConfig(GPIO_41_MCANB_TX );
+    GPIO_setDirectionMode(NGP, GPIO_DIR_MODE_IN);
+    GPIO_setPadConfig(NGP, GPIO_PIN_TYPE_STD);
+    GPIO_setQualificationMode(NGP, GPIO_QUAL_6SAMPLE);
+    GPIO_setControllerCore(NGP, GPIO_CORE_CPU2);
+*/
 }
 
 
@@ -134,6 +152,8 @@ void setupGpioSigmaDelta(void)
     GPIO_setQualificationMode(NGP, GPIO_QUAL_3SAMPLE);
 
 }
+
+
 
 void setupGpioUART()
 {

@@ -10,6 +10,7 @@
 
 #define PROJ_TYPE 110
 
+#define UART_BUF_CYC_SIZE 256
 #define ON_BOARD_CAN
 
 

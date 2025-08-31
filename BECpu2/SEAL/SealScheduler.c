@@ -102,22 +102,14 @@ void GoSeal()
         SealSetup.pFeedbackBuf = (FeedbackBuf_T*)SM_BufferPtrs[1];
         SealSetup.pSetupReportBuf = (SetupReportBuf_T*)SM_BufferPtrs[2];
         SealSetup.pSEALVerControl = (SEALVerControl_T*)SM_BufferPtrs[7];
-
+		// Transfer pointers to the communication buffers 
         *((CANCyclicBuf_T**)SM_BufferPtrs[3])  = &CANCyclicBuf_in  ;
         *((CANCyclicBuf_T**)SM_BufferPtrs[4])  = &CANCyclicBuf_out ;
 
         *((UartCyclicBuf_T**)SM_BufferPtrs[5])  = &UartCyclicBuf_in  ;
         *((UartCyclicBuf_T**)SM_BufferPtrs[6])  = &UartCyclicBuf_out ;
 
-
-        SealSetup.pCANCyclicBuf_in = &CANCyclicBuf_in ;
-        SealSetup.pCANCyclicBuf_out = &CANCyclicBuf_out ;
-        SealSetup.pUartCyclicBuf_in = &UartCyclicBuf_in ;
-        SealSetup.pUartCyclicBuf_out = &UartCyclicBuf_out ;
     }
-
-
-    G_pCANCyclicBuf_in,(bPtr)&G_pCANCyclicBuf_out,(bPtr)&G_pUartCyclicBuf_in,(bPtr)&G_pUartCyclicBuf_out
 
     // Read the descriptor of functions
     SealSetup.nIdleFuncs = 0;
@@ -200,10 +192,16 @@ void GoSeal()
         nIdleRun = 0;
         while (RunSealIdleLoop == 0)
         {
+            TestAvailableConnections();
+
             SealLoop();
         }
     }
 }
+
+
+
+
 static void SealLoop()
 {
     short unsigned cnt;

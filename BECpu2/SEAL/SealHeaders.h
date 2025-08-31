@@ -78,6 +78,12 @@ typedef struct
 SEAL_EXT_TAG SealState_T SealState ;
 
 
+SEAL_EXT_TAG CANCyclicBuf_T  CANCyclicBuf_out;/* '<Root>/G_CANCyclicBuf_out' */
+SEAL_EXT_TAG CANCyclicBuf_T  CANCyclicBuf_in;/* '<Root>/G_CANCyclicBuf_in' */
+SEAL_EXT_TAG UartCyclicBuf_T UartCyclicBuf_in;/* '<Root>/G_UartCyclicBuf_in' */
+SEAL_EXT_TAG UartCyclicBuf_T UartCyclicBuf_out;/* '<Root>/G_UartCyclicBuf_out' */
+
+
 typedef struct
 {
     short unsigned nIdleFuncs;

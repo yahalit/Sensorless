@@ -24,6 +24,9 @@ void IdleLoop(void)
     }
 */
 
+    // Manage relations with the SEAL core
+    SealRelations() ;
+
     IdleCbit() ;
 
     CanSlave();

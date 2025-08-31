@@ -112,6 +112,7 @@ struct CSysState
     struct CTiming Timing ;
     short unsigned LoadSealByCAN ;
     short unsigned LoadSealByUART ;
+    short unsigned UartAcquired  ;
     short  ConfigDone ;
 };
 
@@ -196,7 +197,7 @@ extern const short unsigned crc_ccitt_table[] ;
 #endif
 
 
-#include "Functions.h"
+#include <Application/Functions2.h>
 
 
 

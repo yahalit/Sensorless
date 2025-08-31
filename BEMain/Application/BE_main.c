@@ -236,6 +236,7 @@ void InitAppData(void)
     InitPosPrefilter() ;
 
     UM2S.M2S.ControlTs = CUR_SAMPLE_TIME_USEC * 1e-6f  ;
+    UM2S.M2S.CpuClockHz = (long unsigned) CPU_CLK_HZ ;
 
 }
 
@@ -302,6 +303,7 @@ void main(void)
     CfgBlockTransport(); // Only after CAN ID is known
 
 
+    // Prepare CPU 2 work: reboot it, allow due peripherals, and signal readiness
     PrepCpu2Work() ;
 //
 //  Uncomment to enable DMA ISR

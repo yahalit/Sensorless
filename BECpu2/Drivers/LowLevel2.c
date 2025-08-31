@@ -23,6 +23,9 @@ void ClearMem(short unsigned *ptr_in , short unsigned n)
     }
 }
 
+
+
+
 void setupGpioCAN(void)
 {
 
