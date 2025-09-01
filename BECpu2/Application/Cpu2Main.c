@@ -159,7 +159,6 @@ void main(void)
     ConfigCpuTimer(&CpuTimer1, 200, 10000);
     CpuTimer1Regs.TCR.all = 0x4000;
 
-    setupMCAN2();
     //
     // Setup CPU IPC0 to interrupt every 10 ms
     //

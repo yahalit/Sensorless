@@ -35,8 +35,8 @@ MEMORY
    FLASH_ABORT_FUNC_PTRS : origin = 0x1000a0, length = 0x20
    FLASH_SEAL_REV        : origin = 0x1000c0, length = 0x40
    FLASH_GENESIS_VERSE   : origin = 0x100100, length = 0xc4
-
-   FLASH_BANK4     : origin = 0x100200, length = 0x1Fe00  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
+   FLASH_DEVICE_SETUP    : origin = 0x100200, length = 0x40
+   FLASH_BANK4     : origin = 0x100240, length = 0x1Fe00  // Can be mapped to either CPU1 or CPU2. User should comment/uncomment based on core selection
 
 
 
@@ -81,6 +81,7 @@ SECTIONS
    .AbortPtr		:> FLASH_ABORT_FUNC_PTRS
    .GenesisVerse	:> FLASH_GENESIS_VERSE
    .SealRevision	:> FLASH_SEAL_REV
+   .DeviceSetup 	:> FLASH_DEVICE_SETUP
 
 
    //ramgs0 : > RAMGS0, type=NOINIT

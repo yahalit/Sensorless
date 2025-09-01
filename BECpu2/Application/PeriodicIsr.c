@@ -29,9 +29,8 @@ __interrupt void IPC3_ISR(void)
     {
         RtUartService();
     }
-
-    RtCanService() ;
-
-
-
+    if ( SealState.bCanInitialized )
+    {
+        RtCanService() ;
+    }
 }

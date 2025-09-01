@@ -109,6 +109,7 @@ void GoSeal()
         *((UartCyclicBuf_T**)SM_BufferPtrs[5])  = &UartCyclicBuf_in  ;
         *((UartCyclicBuf_T**)SM_BufferPtrs[6])  = &UartCyclicBuf_out ;
 
+        SealSetup.pDeviceSetup = (DeviceSetup_T *)SM_BufferPtrs[8];
     }
 
     // Read the descriptor of functions
@@ -176,6 +177,15 @@ void GoSeal()
         // Initializer
         SM_InitDescriptor();
 
+        // Activate communication interfaces
+        if ( SealSetup.pDeviceSetup->bUseUart )
+        {
+            US2M.S2M.DrvCommandBuf.bControlUART = 1 ; // Request UART control. UART shall be initialize upon permission grant
+        }
+        setupMCAN2(SealSetup.pDeviceSetup->CanID, SealSetup.pDeviceSetup->CanIDMask ,
+                   SealSetup.pDeviceSetup->ExtCanID, SealSetup.pDeviceSetup->ExtCanIDMask );
+
+
         // Setup function (if defined)
         if (SM_SetupDescriptor != (voidFunc)0)
         {
@@ -189,6 +199,8 @@ void GoSeal()
             SealSetup.IsrFuncs[cnt].Ticker = TickerValue;
             SealSetup.IdleFuncs[cnt].Ticker = TickerValue;
         }
+
+        // Set the eternal SEAL function scan loop
         nIdleRun = 0;
         while (RunSealIdleLoop == 0)
         {

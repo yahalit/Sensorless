@@ -69,7 +69,7 @@ typedef struct
     short AbortRequest ;
     short AbortiveException ;
     short AbortHonored ;
-    short Algn ;
+    short bCanInitialized  ; // 1 if CAN is initialized
     UMultiTypeLL_T InterruptCnt ;
     double SystemTime ; // System time counted in seconds
     float Ts ;
@@ -106,8 +106,12 @@ typedef struct
     UartCyclicBuf_T* pUartCyclicBuf_in;
     UartCyclicBuf_T* pUartCyclicBuf_out;
     SEALVerControl_T* pSEALVerControl;
+    DeviceSetup_T* pDeviceSetup;
 
 } SealSetup_T;
+
+
+
 
 SEAL_EXT_TAG SealSetup_T SealSetup ;
 

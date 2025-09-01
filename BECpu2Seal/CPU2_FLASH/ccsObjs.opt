@@ -5,6 +5,7 @@
 "./SEAL/Automatic/div_nde_s16_floor.obj"
 "./SEAL/Automatic/mod_CTxUEiaB.obj"
 "./SEAL/Automatic/rt_roundd.obj"
+"./SEAL/DeviceSetup.obj"
 "./SEAL/SealMain.obj"
 "../SEAL_generic_flash_lnk_cpu2.cmd"
 -llibc.a

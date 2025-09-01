@@ -149,10 +149,6 @@ EXTERN_TAG struct CFindPosMgr FindPosMgr ;
 EXTERN_TAG struct CSysTimerStr SysTimerStr ;
 
 
-EXTERN_TAG struct CCanQueue CanSlaveInQueue ;
-EXTERN_TAG struct CCanQueue CanSlaveOutQueue ;
-EXTERN_TAG unsigned long SlaveSdoBuf[SDO_BUF_LEN_LONGS];
-EXTERN_TAG struct CSdo SlaveSdo ;
 EXTERN_TAG short unsigned CanId ;
 EXTERN_TAG short unsigned ProjId;
 

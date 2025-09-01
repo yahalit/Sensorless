@@ -44,7 +44,7 @@ void ClearMem(short unsigned *ptr_in , short unsigned n);
 
 
 // PrjMCAN
-void setupMCAN2(short unsigned CanId[], short unsigned CanIDMask[] ,  long unsigned ExtCanId[], long unsigned ExtCanIDMask[] );
+void setupMCAN2(long unsigned CanId[], long unsigned CanIDMask[] ,  long unsigned ExtCanId[], long unsigned ExtCanIDMask[] );
 ;
 void RtCanService(void);
 short SetMsg2HW(struct CCanMsg  *pMsg );

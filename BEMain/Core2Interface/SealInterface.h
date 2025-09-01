@@ -18,6 +18,17 @@
 #ifndef DEFINED_TYPEDEF_FOR_SEALVerControl_T_
 #define DEFINED_TYPEDEF_FOR_SEALVerControl_T_
 
+typedef struct
+{
+    short unsigned bUseUart;
+    long unsigned UartBaudRate ;
+    long unsigned CanID[4] ;
+    long unsigned CanIDMask[4];
+    long unsigned ExtCanID[4];
+    long unsigned ExtCanIDMask[4];
+} DeviceSetup_T;
+
+
 typedef struct {
   /* SEAL database version */
   uint16_T Version;

@@ -11,6 +11,8 @@
 #define PROJ_TYPE 110
 
 #define UART_BUF_CYC_SIZE 256
+#define N_CAN_QUEUE_SIZE 64
+
 #define ON_BOARD_CAN
 
 

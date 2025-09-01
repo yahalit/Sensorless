@@ -90,7 +90,7 @@ void TestAvailableConnections(void)
     {
         if (SysState.UartAcquired == 0 )
         {
-            InitUART4CPU2(UARTA_BASE, 232400UL )  ;
+            InitUART4CPU2(UARTA_BASE, SealSetup.pDeviceSetup->UartBaudRate )  ;
             SysState.UartAcquired = 1 ;
         }
     }
