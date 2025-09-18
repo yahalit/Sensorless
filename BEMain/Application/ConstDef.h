@@ -22,7 +22,8 @@
 
 #define PROJ_TYPE_UNDEFINED 0
 #define PROJ_TYPE_BESENSORLESS 1
-#define PROJ_TYPE_LAST 2 // Must be 1 over the biggest
+#define PROJ_TYPE_ZOOZ_S 2
+#define PROJ_TYPE_LAST 3 // Must be 1 over the biggest
 
 #define PROJ_TYPE_ERROR 0xff
 
@@ -214,7 +215,8 @@ enum E_CommutationModes
     COM_OPEN_LOOP = 0 ,
     COM_HALLS_ONLY = 1 ,
     COM_ENCODER = 2 ,
-    COM_ENCODER_RESET= 3
+    COM_ENCODER_RESET= 3,
+    COM_ENCODER_SENSORLESS= 4
 };
 
 enum CF_CorrelationState

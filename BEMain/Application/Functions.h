@@ -208,6 +208,8 @@ void IdleCbit(void);
 long unsigned LogException (   short fatality , long unsigned exp );
 short IsResetBlocked(void) ;
 
+// Sensorless
+short PaicuPU(void);
 
 // SpeedProfiler
 short SpeedProfiler( void ) ;

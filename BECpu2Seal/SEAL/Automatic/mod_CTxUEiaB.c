@@ -3,16 +3,16 @@
  *
  * Code generated for Simulink model 'Seal'.
  *
- * Model version                  : 11.61
+ * Model version                  : 11.134
  * Simulink Coder version         : 25.1 (R2025a) 21-Nov-2024
- * C/C++ source code generated on : Tue Aug 19 09:56:33 2025
+ * C/C++ source code generated on : Tue Sep  2 11:12:31 2025
  */
 
 #include "rtwtypes.h"
 #include "mod_CTxUEiaB.h"
 #include <math.h>
 
-/* Function for MATLAB Function: '<S5>/UART message response' */
+/* Function for MATLAB Function: '<S12>/UART message response' */
 real_T mod_CTxUEiaB(real_T x)
 {
   real_T r;

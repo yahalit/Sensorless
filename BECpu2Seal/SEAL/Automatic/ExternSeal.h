@@ -1,5 +1,6 @@
 #ifndef EXTERN_SEAL_DEF_H
 #define EXTERN_SEAL_DEF_H
+#include "..\DeviceSetup.h"
 typedef const short unsigned * bPtr;
 void (*InitFunc)(void)=Seal_initialize;
 void (*SetupFunc)(void)=SetupDrive;
@@ -47,5 +48,5 @@ UFuncDescriptor_T ExceptionFuncs[8] ={
 {.desc={.func = ((voidFunc)0UL), .FunType = E_Func_None, .Priority=0 , .nInts = 1, .Ts=0.001 ,.Algn=0, .Ticker = 0}},
 {.desc={.func = ((voidFunc)0UL), .FunType = E_Func_None, .Priority=0 , .nInts = 1, .Ts=0.001 ,.Algn=0, .Ticker = 0}},
 {.desc={.func = ((voidFunc)0UL), .FunType = E_Func_None, .Priority=0 , .nInts = 1, .Ts=0.001 ,.Algn=0, .Ticker = 0}}};
-const short unsigned * BufferPtrs[16] = {(bPtr)&G_DrvCommandBuf,(bPtr)&G_FeedbackBuf,(bPtr)&G_SetupReportBuf,(bPtr)&G_pCANCyclicBuf_in,(bPtr)&G_pCANCyclicBuf_out,(bPtr)&G_pUartCyclicBuf_in,(bPtr)&G_pUartCyclicBuf_out,(bPtr)&G_SEALVerControl,0U,0U,0U,0U,0U,0U,0U,0U};
+const short unsigned * BufferPtrs[16] = {(bPtr)&G_DrvCommandBuf,(bPtr)&G_FeedbackBuf,(bPtr)&G_SetupReportBuf,(bPtr)&G_pCANCyclicBuf_in,(bPtr)&G_pCANCyclicBuf_out,(bPtr)&G_pUartCyclicBuf_in,(bPtr)&G_pUartCyclicBuf_out,(bPtr)&G_SEALVerControl,(bPtr)&G_DeviceSetup,0U,0U,0U,0U,0U,0U,0U};
 #endif

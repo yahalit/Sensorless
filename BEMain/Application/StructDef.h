@@ -32,6 +32,7 @@
 #include "Revisions.h"
 #include "HwConfig.h"
 #include "ProjControlPars.h"
+#include "Estimator.h"
 
 #include "..\Recorder\Recorder.h"
 #include "..\Control\ClaDefs.h"
@@ -39,7 +40,6 @@
 #include "..\Control\TrapezeProfiler.h"
 #include "..\Drivers\EEPROM_Config.h"
 #include "..\Core2Interface\S2MM2S.h"
-
 
 // Byte  0:1 Control word. Thats: .0: motor on, 1: Fault reset, :2..4: Loop type : 5..7: Reference type
 // Bytes 2..3 : Current limit, 10mAmp units
@@ -135,10 +135,10 @@ struct CSpeedControl
     float PiOut          ; // !< Output of PI controller
 };
 
-struct CCurrentControl
-{
-    short unsigned bInCurrentRefLimit ; // 1 if current reference is limited
-};
+//struct CCurrentControl
+//{
+//    short unsigned bInCurrentRefLimit ; // 1 if current reference is limited
+//};
 
 
 struct CVoltageControl
@@ -582,6 +582,13 @@ struct CLMeas
 };
 
 
+typedef struct
+{
+    float StaticCurrent ;
+    float SpeedCurrent  ;
+    float AccelerationCurrent ;
+} StepperCurrent_T;
+
 struct CSysState
 {
     struct CStatus Status ;
@@ -590,7 +597,8 @@ struct CSysState
     struct CProfiler Profiler ;
     struct CPosControl PosControl ;
     struct CSpeedControl SpeedControl ;
-    struct CCurrentControl CurrentControl ;
+    StepperCurrent_T StepperCurrent;
+    //struct CCurrentControl CurrentControl ;
     struct CVoltageControl VoltageControl ;
     struct CRtBit RtBit ;
 //    struct CPVT PVT ;
@@ -626,6 +634,8 @@ struct CSysState
     short unsigned bCore2IsDead ; // Mark that core 2 is dead
     short unsigned WTF   ;
     short unsigned WTF1   ;
+    short unsigned bInCurrentRefLimit ; // 1 if current reference is limited
+    short unsigned Algn   ;
     long  unsigned ControlWord       ; // Last sample of control word
     struct CLMeas CLMeas ;
 };

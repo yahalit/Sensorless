@@ -268,9 +268,15 @@ short GetCommAnglePu(long Encoder)
                }
            }
            break ;
+       case COM_ENCODER_SENSORLESS:
+           break;
+
        }
-       pu = fSat ( CenterDiffPu(Commutation.Encoder2CommAngle * enc,Commutation.ComAnglePu) , Commutation.MaxRawCommChangeInCycle) ;
-       Commutation.ComAnglePu = __fracf32(Commutation.ComAnglePu+pu+1.0f) ;
+       if ( Commutation.CommutationMode != COM_ENCODER_SENSORLESS)
+       {
+           pu = fSat ( CenterDiffPu(Commutation.Encoder2CommAngle * enc,Commutation.ComAnglePu) , Commutation.MaxRawCommChangeInCycle) ;
+           Commutation.ComAnglePu = __fracf32(Commutation.ComAnglePu+pu+1.0f) ;
+       }
    }
    // Limit rate of change
    Commutation.EncoderCounts = enc ;

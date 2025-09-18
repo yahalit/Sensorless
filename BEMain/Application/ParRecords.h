@@ -2,7 +2,7 @@
    {& ControlPars.FullAdcRangeCurrent,2, -100.0f,100.0f,FULL_ADC_RANGE_CURRENT_NECK} ,// !< Current for the full range of the ADC (over-ridden)
    {& ControlPars.MaxSpeedCmd,4, 1.0e-3f,1.0e6f,100.0f} ,// !< Maximum permissible speed command
    {& ControlPars.SpeedCtlDelay,5, 0.0f,1.0f,0.1f} ,// !< Delay to account for when preparing speed control command
-   {& ControlPars.MaxCurCmd,9, 1.0f,1.0e6f,20.0f} ,// !< Maximum permissible current command
+   {& ControlPars.MaxCurCmd,9, 1.0f,1.0e6f,16.0f} ,// !< Maximum permissible current command
    {& ClaControlPars.VoltageDacGain,11, 1.0e-3f,1.0e6f,0.66667f} ,//  !< DAC gain for integrating phase voltage
    {& ClaControlPars.DcCurrentDacGain,12, 1.0e-3f,1.0e6f,1.0f} ,//  !< DAC gain for integrating DC supply current
    {& ClaControlPars.MaxCurCmdDdt,14, 1.0f,1.0e6f,1.0f} ,//  !< Maximum permissible rate for current command
@@ -48,6 +48,21 @@
    {& ControlPars.MotionConvergeTime ,100, 0.001f,15.0f,0.1f}, // Time required for within window error to declare motion convergence
    {& ControlPars.SpeedConvergeWindow ,101, 0.0001f,15.0f,0.05f}, // Required maximal error for consecutive MotionConvergeTime to declare motion convergence
    {& ControlPars.PositionConvergeWindow,102, 0.0000001f,1.0e6f,0.1f} , // !< Required maximal position error for consecutive MotionConvergeTime to declare motion convergence
+   {& SysState.StepperCurrent.StaticCurrent, 105 , 0.0f,1.0e1f,6.0f} , // !<  Static Current for stepper mode
+   {& SysState.StepperCurrent.SpeedCurrent , 106 , 0.0f,1.0e1f,1.0f} , // !<   Speed dependent Current for stepper mode
+   {& SysState.StepperCurrent.AccelerationCurrent, 107 , 0.0f,1.0e2f,2.0f} , // !<  Acceleration dependent Current for stepper mode
+   {& SLPars.PhiM, 110 , 0.0000001f,1.0e6f,0.130f} , // !<  Flux of magnet
+   {& SLPars.Lq0, 111 , 0.0000001f,1.0e6f,5.0e-4f} , // !<  Nominal inductance for q
+   {& SLPars.LqCorner2, 112 , 0.0000000f,1.0e6f,0.0f} , // !< Saturation current for q field
+   {& SLPars.Ld0, 113 , 0.0000000f,1.0e6f,5.0e-4f} , // !<  Nominal inductance for d
+   {& SLPars.LdSlope, 114 , 0.0000000f,1.0e6f,0.0f} , // !<  Linear dependence of D inductance in d current
+   {& SLPars.R, 115 , 0.0000001f,1.0e6f,0.13f} , // !<  Resistance
+   {& SLPars.KiTheta, 116 , 0.0000001f,1.0e6f,7.8026e+03f} , // !<  Ki of the theta PLL
+   {& SLPars.KpTheta, 117 , 0.0000001f,1.0e6f,149.0188f} , // !<Kp of the theta PLL
+   {& SLPars.KiFlux, 118 , 0.0000001f,1.0e6f,2.0f} , // !<KiFlux
+   {& SLPars.KpFlux, 119 , 0.0000001f,1.0e6f,30.0f} , // !<KpFlux
+   {& SLPars.DInjectionFreqFac, 120 , 0.0000001f,1.0e6f,0.0f} , // !<Factor between D injection frequency and motor frequency
+   {& SLPars.DInjectionAmp, 121 , 0.0000001f,1.0e6f,0.9f} , // !<D injection amplitude in Amp
    {& ClaMailIn.StoTholdScale,239, -1.5f,1.5f,1.0f} ,// !< Simulation voltage DC bus
    {& ClaControlPars.ExtCutCst,247, 0.000001f,0.99999999f,0.001666f} ,// !< Filter constant for torque report , about 30msec
    {& ControlPars.KGyroMerge,248, 0.00000f,0.99999999f,0.00125f} ,// !< Filter constant for gyro merge

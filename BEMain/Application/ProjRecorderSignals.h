@@ -9,6 +9,7 @@
         { 2 , (long unsigned *) & ClaState.Encoder1.UserPos }, //:UserPos [Sensors] {User position measured by encoder}
         { 2 , (long unsigned *) & ClaState.ThetaPuInUse }, //:ThetaElect [Current] {Electrical angle'}
         { 2 , (long unsigned *) & ClaState.CurrentControl.Iq }, //:Iq [Current] {Current Q channel}
+        { 2 , (long unsigned *) & ClaState.CurrentControl.Id }, //:Id [Current] {Current D channel}
         { 2 , (long unsigned *) & ClaState.Encoder1.UserSpeed }, //:UserSpeed [Sensors] {User Speed measured by encoder}
         { 2 , (long unsigned *) & ClaState.Encoder1.UserPos }, //:UserPos [Sensors] {User position measured by encoder}
         { 2 , (long unsigned *) & ClaState.Analogs.PhaseCur[0] }, //:PhaseCur0 [Analogs] {Motor current A}
@@ -50,6 +51,39 @@
         { 2 , (long unsigned *) & ClaState.CurrentControl.ExtCurrentCommandFiltered }, //:CurrentCommandFiltered [Current] {Reference to current control - final filtered}
         { 2 , (long unsigned *) & ClaState.CurrentControl.CurrentCommandFiltered }, //:InternalCurrentCommandFiltered [Current] {Reference to current control - final filtered}
         { 0 , (long unsigned *) & SysState.Timing.LmeasClocksOfInt }, //:LmeasClocksOfInt [LMeasure] {Max number of clocks in an interrupt}
+        { 2 , (long unsigned *) & SLessState.ThetaEst}, //:SlessThetaEst  [SensorLess] {Sensorless ThetaEst}
+        { 2 , (long unsigned *) & SLessState.ThetaPsi}, //:SlessThetaPsi  [SensorLess] {Sensorless ThetaPsi}
+        { 2 , (long unsigned *) & SLessState.IAlpha}, //:SlessIAlpha  [SensorLess] {Sensorless IAlpha}
+        { 2 , (long unsigned *) & SLessState.IBeta}, //:SlessIBeta  [SensorLess] {SensorlessIBeta }
+        { 2 , (long unsigned *) & SLessState.VAlpha}, //:SlessVAlpha  [SensorLess] {SensorlessVAlpha }
+        { 2 , (long unsigned *) & SLessState.VBeta}, //:SlessVBeta  [SensorLess] {Sensorless VBeta}
+        { 2 , (long unsigned *) & SLessState.Id}, //:SlessId  [SensorLess] {Sensorless Id}
+        { 2 , (long unsigned *) & SLessState.Iq}, //:SlessIq  [SensorLess] {Sensorless Iq}
+        { 2 , (long unsigned *) & SLessState.Phida}, //:SlessPhida  [SensorLess] {Sensorless Phida}
+        { 2 , (long unsigned *) & SLessState.FluxIntA}, //:SlessFluxIntA  [SensorLess] {Sensorless FluxIntA}
+        { 2 , (long unsigned *) & SLessState.FluxIntB}, //:SlessFluxIntB  [SensorLess] {Sensorless FluxIntB}
+        { 2 , (long unsigned *) & SLessState.FluxErrA}, //:SlessFluxErrA  [SensorLess] {Sensorless FluxErrA}
+        { 2 , (long unsigned *) & SLessState.FluxErrB}, //:SlessFluxErrB  [SensorLess] {Sensorless FluxErrB}
+        { 2 , (long unsigned *) & SLessState.FluxErrIntA}, //:SlessFluxErrIntA  [SensorLess] {Sensorless FluxErrIntA}
+        { 2 , (long unsigned *) & SLessState.FluxErrIntB}, //:SlessFluxErrIntB  [SensorLess] {Sensorless FluxErrIntB}
+        { 2 , (long unsigned *) & SLessState.VcompA}, //:SlessVcompA  [SensorLess] {Sensorless VcompA}
+        { 2 , (long unsigned *) & SLessState.VcompB}, //:SlessVcompB  [SensorLess] {Sensorless VcompB}
+        { 2 , (long unsigned *) & SLessState.ETheta}, //:SlessETheta  [SensorLess] {Sensorless ETheta}
+        { 2 , (long unsigned *) & SLessState.OmegaHat}, //:SlessOmegaHat  [SensorLess] {Sensorless OmegaHat}
+        { 2 , (long unsigned *) & SLessState.OmegaState}, //:SlessOmegaState  [SensorLess] {Sensorless OmegaState}
+        { 2 , (long unsigned *) & SLessState.ThetaHat}, //:SlessThetaHat  [SensorLess] {Sensorless ThetaHat}
+        { 2 , (long unsigned *) & SLessState.IdDemandPhase}, //:SlessIdDemandPhase  [SensorLess] {Sensorless IdDemandPhase}
+        { 2 , (long unsigned *) & SLessState.IdDisturbancePhase}, //:SlessIdDisturbancePhase  [SensorLess] {Sensorless IdDisturbancePhase}
+        { 2 , (long unsigned *) & SLessState.CommAngleDisturbance}, //:SlessCommAngleDisturbance  [SensorLess] {Sensorless CommAngleDisturbance}
+        { 2 , (long unsigned *) & SLessState.CommAngleQuadDisturbance}, //:SlessCommAngleQuadDisturbance  [SensorLess] {Sensorless CommAngleQuadDisturbance}
+        { 8 , (long unsigned *) & SLessState.On}, //:SlessOn  [SensorLess] {Sensorless On}
+        { 8 , (long unsigned *) & SLessState.DInjectionOn}, //:SlessDInjectionOn [SensorLess] {Sensorless DInjectionOn}
+        { 2 , (long unsigned *) & SLessData.V[0]}, //:SLessDataV0  [SensorLess] {Voltage A}
+        { 2 , (long unsigned *) & SLessData.V[1]}, //:SLessDataV1  [SensorLess] {Voltage B}
+        { 2 , (long unsigned *) & SLessData.V[2]}, //:SLessDataV2  [SensorLess] {Voltage C}
+        { 2 , (long unsigned *) & SLessData.I[0]}, //:SLessDataI0  [SensorLess] {Current A}
+        { 2 , (long unsigned *) & SLessData.I[1]}, //:SLessDataI1  [SensorLess] {Current B}
+        { 2 , (long unsigned *) & SLessData.I[2]}, //:SLessDataI2  [SensorLess] {Current C}
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVload  [ClaRecsCopy] {FastVload }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVout  [ClaRecsCopy] {FastVout }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastIsense  [ClaRecsCopy] {FastIsense }

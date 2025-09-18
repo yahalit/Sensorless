@@ -236,11 +236,11 @@ float GetCurrentCmdForSpeedErr(  float CurrentFF   )
 
     if (Cand == CandR)
     {
-        SysState.CurrentControl.bInCurrentRefLimit = 0;
+        SysState.bInCurrentRefLimit = 0;
     }
     else
     {
-        SysState.CurrentControl.bInCurrentRefLimit = 1 ;
+        SysState.bInCurrentRefLimit = 1 ;
     }
 
 
@@ -258,7 +258,7 @@ float GetCurrentCmdForSpeedErr(  float CurrentFF   )
 // Sequence of action to be taken while the motor is on.
 void MotorOnSeq(void)
 {
-    float CurCmd , CurMax , target;
+    float CurCmd , CurMax , target , sr , acc ;
     long unsigned lstat ;
     short unsigned refmode , ClosureMode, expmode ;
 
@@ -286,8 +286,39 @@ void MotorOnSeq(void)
     { // Open loop mode always goes with debug waveforms - G for the current command and T for the angle
         if ( ClosureMode == E_LC_OpenLoopField_Mode )
         {
-            CurCmd = SysState.Debug.TRef.Out;
-            ClaMailIn.ThetaElect = __fracf32( __fracf32( SysState.Debug.GRef.Out ) + 1  );
+
+            if ( refmode == E_PosModeDebugGen )
+            {
+                CurCmd = SysState.Debug.TRef.Out;
+                ClaMailIn.ThetaElect = __fracf32( __fracf32( SysState.Debug.GRef.Out ) + 1  );
+            }
+            else
+            {
+                sr = SysState.SpeedControl.SpeedReference ;
+                switch (refmode )
+                {
+                case E_RefModeSpeed:
+                    SysState.Mot.ProfileConverged = SpeedProfiler() ;
+                    break ;
+                case E_PosModePTP:
+                    // here is point to point mode
+                    SysState.Mot.ProfileConverged = AdvanceProfiler(&SysState.Profiler , SysState.Timing.TsTraj ) ;
+                    SysState.SpeedControl.SpeedReference = SysState.Profiler.ProfileSpeed ;
+                    break ;
+                default: // case E_PosModeStayInPlace:
+                    SysState.SpeedControl.SpeedTarget = 0 ;
+                    SysState.Mot.ProfileConverged = SpeedProfiler() ;
+                    break ;
+                }
+
+                acc = ( SysState.SpeedControl.SpeedReference - sr ) * SysState.Timing.OneOverTsTraj ;
+                CurCmd = fSatNanProt( SysState.StepperCurrent.StaticCurrent +
+                        fabsf(SysState.SpeedControl.SpeedReference) * SysState.StepperCurrent.SpeedCurrent +
+                        fabsf(acc) * SysState.StepperCurrent.AccelerationCurrent,
+                        CurMax ) ;
+                ClaMailIn.ThetaElect += ( SysState.SpeedControl.SpeedReference * SysState.Timing.TsTraj );
+            }
+
         }
         else
         {
@@ -571,7 +602,7 @@ void MotorHoldSeq(void)
 
     ClaMailIn.v_dbg_amp = 0 ;
 
-    ClearMemRpt( (short unsigned *)&SysState.CurrentControl  , sizeof(struct CCurrentControl)  ) ;
+    //ClearMemRpt( (short unsigned *)&SysState.CurrentControl  , sizeof(struct CCurrentControl)  ) ;
 
     SysState.PosControl.PosError = SysState.PosControl.PosReference - SysState.PosControl.PosFeedBack  ;
 
@@ -605,7 +636,7 @@ void MotorOffSeq(void)
 
     ClaMailIn.v_dbg_amp = 0 ;
 
-    ClearMemRpt( (short unsigned *)&SysState.CurrentControl  , sizeof(struct CCurrentControl)  ) ;
+    //ClearMemRpt( (short unsigned *)&SysState.CurrentControl  , sizeof(struct CCurrentControl)  ) ;
 
     SysState.PosControl.PosError    = 0 ;
     SysState.PosControl.PosErrorR   = 0 ;

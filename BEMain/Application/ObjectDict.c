@@ -1046,8 +1046,16 @@ const float  * pFloatData[] =  {
                              & SysState.CLMeas.TholdZero , // 31
                              & SysState.CLMeas.RecTime, // 32
                              & SysState.CLMeas.Tout,  // 33
-                             & TRefGenPars.Slope  // 34
+                             & TRefGenPars.Slope,  // 34
+                             & ControlPars.MaxAcc, // 35
+                             & SysState.Profiler.accel, //36
+                             & SysState.Profiler.dec, //37
+                             & SysState.Profiler.vmax , //38
+                             & SysState.StepperCurrent.StaticCurrent, //39
+                             & SysState.StepperCurrent.SpeedCurrent, //40
+                             & SysState.StepperCurrent.AccelerationCurrent //41
                              };
+
 
 
 const unsigned short nFloatData = sizeof(pFloatData) / sizeof(float *) ;

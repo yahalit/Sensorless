@@ -2,6 +2,7 @@
 "./Drivers/LowLevel.obj"
 "./SEAL/Automatic/ExternalCode/CANServer.obj"
 "./SEAL/Automatic/Seal.obj"
+"./SEAL/Automatic/Seal_data.obj"
 "./SEAL/Automatic/div_nde_s16_floor.obj"
 "./SEAL/Automatic/mod_CTxUEiaB.obj"
 "./SEAL/Automatic/rt_roundd.obj"

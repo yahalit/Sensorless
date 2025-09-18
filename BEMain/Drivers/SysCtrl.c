@@ -300,8 +300,9 @@ void PrepCpu2Work(void)
         if ( next & 0x80000000 )
         {
             // Timeout
-            ESTOP1 ;
+            //ESTOP1 ;
             SysState.bCore2IsDead = 1 ;
+            break ;
         }
 
     }

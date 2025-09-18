@@ -4,7 +4,7 @@
 
 SHELL = cmd.exe
 
-CG_TOOL_ROOT := C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS
+CG_TOOL_ROOT := C:/ti/ccs1260/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS
 
 GEN_OPTS__FLAG := 
 GEN_CMDS__FLAG := 
@@ -14,6 +14,7 @@ ORDERED_OBJS += \
 "./Drivers/LowLevel.obj" \
 "./SEAL/Automatic/ExternalCode/CANServer.obj" \
 "./SEAL/Automatic/Seal.obj" \
+"./SEAL/Automatic/Seal_data.obj" \
 "./SEAL/Automatic/div_nde_s16_floor.obj" \
 "./SEAL/Automatic/mod_CTxUEiaB.obj" \
 "./SEAL/Automatic/rt_roundd.obj" \
@@ -150,15 +151,15 @@ all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 BESeal.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: C2000 Linker'
-	"C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla2 --float_support=fpu64 --tmu_support=tmu1 --vcu_support=vcrc -Ooff --fp_mode=relaxed --define=DEBUG --define=CPU2 --define=_FLASH --diag_suppress=10063 --diag_warning=225 --diag_wrap=off --display_error_number --gen_func_subsections=on --abi=eabi -z -m"BESeal.map" --stack_size=0x10 --warn_sections -i"C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/lib" -i"C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --xml_link_info="BESeal_linkInfo.xml" --entry_point=code_start --rom_model -o "BESeal.out" $(ORDERED_OBJS)
+	"C:/ti/ccs1260/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla2 --float_support=fpu64 --tmu_support=tmu1 --vcu_support=vcrc -Ooff --fp_mode=relaxed --define=DEBUG --define=CPU2 --define=_FLASH --diag_suppress=10063 --diag_warning=225 --diag_wrap=off --display_error_number --gen_func_subsections=on --abi=eabi -z -m"BESeal.map" --stack_size=0x10 --warn_sections -i"C:/ti/ccs1260/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/lib" -i"C:/ti/ccs1260/ccs/tools/compiler/ti-cgt-c2000_22.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --xml_link_info="BESeal_linkInfo.xml" --entry_point=code_start --rom_model -o "BESeal.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "SEAL_codestartbranch.obj" "Drivers\LowLevel.obj" "SEAL\Automatic\ExternalCode\CANServer.obj" "SEAL\Automatic\Seal.obj" "SEAL\Automatic\div_nde_s16_floor.obj" "SEAL\Automatic\mod_CTxUEiaB.obj" "SEAL\Automatic\rt_roundd.obj" "SEAL\DeviceSetup.obj" "SEAL\SealMain.obj" 
-	-$(RM) "Drivers\LowLevel.d" "SEAL\Automatic\ExternalCode\CANServer.d" "SEAL\Automatic\Seal.d" "SEAL\Automatic\div_nde_s16_floor.d" "SEAL\Automatic\mod_CTxUEiaB.d" "SEAL\Automatic\rt_roundd.d" "SEAL\DeviceSetup.d" "SEAL\SealMain.d" 
+	-$(RM) "SEAL_codestartbranch.obj" "Drivers\LowLevel.obj" "SEAL\Automatic\ExternalCode\CANServer.obj" "SEAL\Automatic\Seal.obj" "SEAL\Automatic\Seal_data.obj" "SEAL\Automatic\div_nde_s16_floor.obj" "SEAL\Automatic\mod_CTxUEiaB.obj" "SEAL\Automatic\rt_roundd.obj" "SEAL\DeviceSetup.obj" "SEAL\SealMain.obj" 
+	-$(RM) "Drivers\LowLevel.d" "SEAL\Automatic\ExternalCode\CANServer.d" "SEAL\Automatic\Seal.d" "SEAL\Automatic\Seal_data.d" "SEAL\Automatic\div_nde_s16_floor.d" "SEAL\Automatic\mod_CTxUEiaB.d" "SEAL\Automatic\rt_roundd.d" "SEAL\DeviceSetup.d" "SEAL\SealMain.d" 
 	-$(RM) "SEAL_codestartbranch.d" 
 	-@echo 'Finished clean'
 	-@echo ' '

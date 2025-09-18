@@ -166,8 +166,49 @@ struct  CProjSpecificCtl
       .HiAutoMotorOffThold = 0.01 ,
       .LowAutoMotorOffThold = 0.005 ,
       .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO | UC_SUPPORT_BRAKE | US_SUPPORT_AUTOBRAKE)
-     } , // PROJ_NAME_WHEEL
+     } , // PROJ_TYPE_BESENSORLESS
 
+     {
+      .ProjIndex = PROJ_TYPE_ZOOZ_S ,// PROJ_TYPE_WHEEL_R
+      .qf0PBw   = 400.0f,
+      .qf0PXi   = 0.55f,
+      .qf0ZBw   = 1.0e5f,
+      .qf0ZXi   = 1.0f ,
+      .qf1PBw   = 6000.0f,
+      .qf1PXi   = 0.55f,
+      .qf1ZBw   = 1.0e5f,
+      .qf1ZXi   = 1.0f,
+      .qf0Cfg   = 17 ,
+      .qf1Cfg   = 17 ,
+      .SpeedKp   = 4.0f ,
+      .SpeedKi   = 400.0f ,
+      .PosKp   = 58.03392625f,
+      .MaxAcc   = 100.0f,
+      .MinPositionCmd = -1.4e6f, // Minimum position command
+      .MaxPositionCmd = 1.4e6f , // Maximum position command
+      .MinPositionFb = -1.48f,  // Minimum position feedback
+      .MaxPositionFb = 1.48f ,  // Maximum position feedback
+      .MaxSpeedCmd   = 25.0f ,
+      .OuterMergeCst = 0.1f ,
+      .MaxSupportedClosure = E_LC_Speed_Mode,
+      .MotionConvergeWindow = 0.008f ,
+      .Profiler_vmax = 20.0f,
+      .Profiler_accel = 20.000f  ,
+      .Profiler_decel = 20.000f ,
+      .SpeedProfileAcceleration= 60.0f ,
+      .HomingSpeed = 0.1f ,
+      .HomingExitUserPos = 0.01f ,
+      .HomingDirection = EHM_HomingReverse ,
+      .HomingMethod    = EHM_Immediate ,
+      .HomingSwInUse   = EHM_HomingSwitchD0 ,
+      .UserPosOnHomingFW = 0 ,
+      .UserPosOnHomingRev = 0 ,
+      .HighDeadBandThold = 0 ,
+      .LowDeadBandThold = 0 ,
+      .HiAutoMotorOffThold = 0.01 ,
+      .LowAutoMotorOffThold = 0.005 ,
+      .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO | UC_SUPPORT_BRAKE | US_SUPPORT_AUTOBRAKE)
+     } , // PROJ_TYPE_ZOOZ_S
 
 
     };

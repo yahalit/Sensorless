@@ -3,9 +3,9 @@
  *
  * Code generated for Simulink model 'Seal'.
  *
- * Model version                  : 11.120
+ * Model version                  : 11.134
  * Simulink Coder version         : 25.1 (R2025a) 21-Nov-2024
- * C/C++ source code generated on : Thu Aug 28 17:14:46 2025
+ * C/C++ source code generated on : Tue Sep  2 15:53:13 2025
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Texas Instruments->C2000
@@ -25,6 +25,22 @@
 #include "div_nde_s16_floor.h"
 
 /* Exported block parameters */
+UserInfo_T G_UserInfo_init = {
+  1L,
+  1U,
+  230400UL,
+
+  { 1000UL, 2000UL, 2147483647UL, 2147483647UL },
+
+  { 0UL, 0UL, 2147483647UL, 2147483647UL },
+
+  { 1000UL, 2000UL, 2147483647UL, 2147483647UL },
+
+  { 0UL, 0UL, 2147483647UL, 2147483647UL }
+} ;                                    /* Variable: G_UserInfo_init
+                                        * Referenced by: '<Root>/User information'
+                                        */
+
 PosProfilerData_T PosProfilerData_init = {
   0.0F,
   1.0F,
@@ -67,7 +83,6 @@ real_T KpSpeed = 5.0;                  /* Variable: KpSpeed
                                         */
 
 /* Exported block states */
-UserInfo_T G_UserInfo;                 /* '<Root>/Data Store Memory4' */
 SEALVerControl_T G_SEALVerControl;     /* '<Root>/Data Store Memory6' */
 
 /* Block signals and states (default storage) */
@@ -89,28 +104,28 @@ void CanGetTxMsg(void)
   /* RootInportFunctionCallGenerator generated from: '<Root>/CanGetTxMsg' incorporates:
    *  SubSystem: '<Root>/Get CAN Msg to transmit'
    */
-  /* Outport: '<Root>/y' incorporates:
+  /* Outport: '<Root>/CanMsg' incorporates:
    *  DataStoreRead: '<S10>/Data Store Read'
    *  MATLAB Function: '<S10>/MATLAB Function'
    */
-  rtY.y = rtDW.CANMessage_Init;
+  rtY.CanMsg = rtDW.CANMessage_Init;
 
   /* MATLAB Function: '<S10>/MATLAB Function' incorporates:
-   *  Outport: '<Root>/y'
+   *  Outport: '<Root>/CanMsg'
    */
   if (G_pCANCyclicBuf_out->PutCounter != G_pCANCyclicBuf_out->FetchCounter) {
     next = (G_pCANCyclicBuf_out->FetchCounter & 255U) + 1U;
-    rtY.y.CANID = G_pCANCyclicBuf_out->CANID[(int16_T)next - 1];
-    rtY.y.DataLen = G_pCANCyclicBuf_out->DLenAndAttrib[(int16_T)next - 1];
+    rtY.CanMsg.CANID = G_pCANCyclicBuf_out->CANID[(int16_T)next - 1];
+    rtY.CanMsg.DataLen = G_pCANCyclicBuf_out->DLenAndAttrib[(int16_T)next - 1];
     tmp = (int16_T)(next << 1U);
-    rtY.y.MsgData[0] = G_pCANCyclicBuf_out->CANQueue[tmp - 2];
-    rtY.y.MsgData[1] = G_pCANCyclicBuf_out->CANQueue[tmp - 1];
+    rtY.CanMsg.MsgData[0] = G_pCANCyclicBuf_out->CANQueue[tmp - 2];
+    rtY.CanMsg.MsgData[1] = G_pCANCyclicBuf_out->CANQueue[tmp - 1];
     qY = G_pCANCyclicBuf_out->FetchCounter - G_pCANCyclicBuf_out->PutCounter;
     if (qY > G_pCANCyclicBuf_out->FetchCounter) {
       qY = 0U;
     }
 
-    rtY.y.CANTxCnt = qY - ((qY >> 6U) << 6U);
+    rtY.CanMsg.CANTxCnt = qY - ((qY >> 6U) << 6U);
     G_pCANCyclicBuf_out->FetchCounter = next;
   }
 
@@ -144,16 +159,22 @@ void CanSetRxMsg(void)
 }
 
 /* Model step function */
+void EnvGet(void)
+{
+  /* RootInportFunctionCallGenerator generated from: '<Root>/EnvGet' incorporates:
+   *  SubSystem: '<Root>/Function-Call Subsystem2'
+   */
+  /* Outport: '<Root>/DrvCommand' incorporates:
+   *  DataStoreRead: '<S9>/Driver command interface'
+   */
+  rtY.DrvCommand = G_DrvCommandBuf;
+
+  /* End of Outputs for RootInportFunctionCallGenerator generated from: '<Root>/EnvGet' */
+}
+
+/* Model step function */
 void EnvSet(void)
 {
-  /* RootInportFunctionCallGenerator generated from: '<Root>/EnvSet' incorporates:
-   *  SubSystem: '<Root>/Function-Call Subsystem1'
-   */
-  /* DataStoreWrite: '<S8>/Data Store Write' incorporates:
-   *  Inport: '<Root>/DrvSetup'
-   */
-  G_SetupReportBuf = rtU.DrvSetup;
-
   /* RootInportFunctionCallGenerator generated from: '<Root>/EnvSet' incorporates:
    *  SubSystem: '<Root>/Function-Call Subsystem'
    */
@@ -163,12 +184,12 @@ void EnvSet(void)
   G_FeedbackBuf = rtU.DrvFeedback;
 
   /* RootInportFunctionCallGenerator generated from: '<Root>/EnvSet' incorporates:
-   *  SubSystem: '<Root>/Function-Call Subsystem2'
+   *  SubSystem: '<Root>/Function-Call Subsystem1'
    */
-  /* Outport: '<Root>/DrvCommand' incorporates:
-   *  DataStoreRead: '<S9>/Driver command interface'
+  /* DataStoreWrite: '<S8>/Data Store Write' incorporates:
+   *  Inport: '<Root>/DrvReportSetupData'
    */
-  rtY.DrvCommand = G_DrvCommandBuf;
+  G_SetupReportBuf = rtU.DrvReportSetupData;
 
   /* End of Outputs for RootInportFunctionCallGenerator generated from: '<Root>/EnvSet' */
 }
@@ -883,19 +904,26 @@ void IdleLoopUART(void)
 /* Model step function */
 void SetupDrive(void)
 {
-  real_T b_value;
   int32_T retCode;
 
   /* RootInportFunctionCallGenerator generated from: '<Root>/SetupDrive' incorporates:
    *  SubSystem: '<Root>/Drive configuration'
    */
+  /* CCaller: '<S6>/C Call Set UART parameters' incorporates:
+   *  DataStoreRead: '<S6>/Data Store Read'
+   */
+  SetUartParameters(rtDW.G_UserInfo.bUseUart, rtDW.G_UserInfo.UartBaudRate);
+
+  /* CCaller: '<S6>/C Call Set CAN parameters' incorporates:
+   *  DataStoreRead: '<S6>/Data Store Read1'
+   */
+  SetCanParameters(&rtDW.G_UserInfo.CanID[0L], &rtDW.G_UserInfo.CanIDMask[0L],
+                   &rtDW.G_UserInfo.ExtCanID[0L], &rtDW.G_UserInfo.ExtCanIDMask
+                   [0L]);
+
   /* MATLAB Function: '<S6>/MATLAB Function' */
   retCode = 0L;
   SetObject2Drive(24816U, 1U, 150000.0, T_uint32, &retCode);
-  retCode = 0L;
-  b_value = 0.0;
-  GetObjectFromDrive(24816U, 1U, T_uint32, &b_value, &retCode);
-  G_UserInfo.junk1 = (real32_T)b_value;
 
   /* End of Outputs for RootInportFunctionCallGenerator generated from: '<Root>/SetupDrive' */
 }
@@ -909,14 +937,14 @@ void UartAddChar(void)
    *  SubSystem: '<Root>/Add char to UART'
    */
   /* MATLAB Function: '<S3>/Accept character' incorporates:
-   *  Inport: '<Root>/u'
+   *  Inport: '<Root>/InChar'
    */
   next = (G_pUartCyclicBuf_in->PutCounter & 255U) + 1U;
   if (next == G_pUartCyclicBuf_in->FetchCounter) {
     G_pUartCyclicBuf_in->UartError = 1U;
   } else {
     G_pUartCyclicBuf_in->UARTQueue[(int16_T)G_pUartCyclicBuf_in->PutCounter - 1]
-      = rtU.u;
+      = rtU.InChar;
     G_pUartCyclicBuf_in->PutCounter = next;
   }
 
@@ -932,17 +960,17 @@ void UartGetChar(void)
   /* RootInportFunctionCallGenerator generated from: '<Root>/UartGetChar' incorporates:
    *  SubSystem: '<Root>/Remove UART char for Tx'
    */
-  /* Outport: '<Root>/Out1' incorporates:
+  /* Outport: '<Root>/UartTxChar' incorporates:
    *  MATLAB Function: '<S13>/MATLAB Function'
    */
-  rtY.Out1 = 0U;
+  rtY.UartTxChar = 0U;
 
   /* MATLAB Function: '<S13>/MATLAB Function' */
   if (G_pUartCyclicBuf_out->PutCounter != G_pUartCyclicBuf_out->FetchCounter) {
     next = (G_pUartCyclicBuf_out->FetchCounter & 255U) + 1U;
 
-    /* Outport: '<Root>/Out1' */
-    rtY.Out1 = G_pUartCyclicBuf_out->UARTQueue[(int16_T)next - 1];
+    /* Outport: '<Root>/UartTxChar' */
+    rtY.UartTxChar = G_pUartCyclicBuf_out->UARTQueue[(int16_T)next - 1];
     G_pUartCyclicBuf_out->FetchCounter = next;
   }
 
@@ -960,6 +988,9 @@ void Seal_initialize(void)
 
   /* Start for DataStoreMemory: '<Root>/Data Store Memory5' */
   rtDW.G_PosProfilerState = PosProfilerState_init;
+
+  /* Start for DataStoreMemory: '<Root>/User information' */
+  rtDW.G_UserInfo = G_UserInfo_init;
 }
 
 /*

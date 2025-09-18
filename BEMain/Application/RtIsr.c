@@ -103,6 +103,7 @@ short unsigned PwmAtInt ;
 #pragma FUNCTION_OPTIONS ( AdcIsr, "--opt_level=3" );
 __interrupt void AdcIsr(void)
 {
+    float Vn ;
     SysState.EcapOnInt = HWREG (ECAP3_BASE + ECAP_O_TSCTR );
     GpioDataRegs.GPASET.bit.GPIO18 = 1 ;
 
@@ -153,6 +154,28 @@ __interrupt void AdcIsr(void)
     Commutation.Status = GetCommAnglePu(ClaState.Encoder1.Pos ) ;
 
     FillLoggerStruct();
+
+    // Run sensorless estimator
+    SLessData.I[0] = ClaState.Analogs.PhaseCur[0];
+    SLessData.I[2] = ClaState.Analogs.PhaseCur[1];
+    SLessData.I[1] = ClaState.Analogs.PhaseCur[2];
+
+    Vn = ( ClaState.Analogs.PhaseVoltMeas[0] + ClaState.Analogs.PhaseVoltMeas[1] + ClaState.Analogs.PhaseVoltMeas[2]) * 0.333333333333333f;
+
+    SLessData.V[0] = (float)ClaState.Analogs.PhaseVoltMeas[0] - Vn ;
+    SLessData.V[2] = (float)ClaState.Analogs.PhaseVoltMeas[1] - Vn ;
+    SLessData.V[1] = (float)ClaState.Analogs.PhaseVoltMeas[2] - Vn ;
+
+    if (SLessState.On)
+    {
+        SLessState.ThetaEst = SLessState.ThetaHat;
+    }
+    else
+    {
+        SLessState.ThetaEst = Commutation.ComAnglePu ; //  (float)(*ThtM)* SysPars.npp; //  FieldFilter.ThetaHat;
+    }
+    PaicuPU();
+
 
     if ( SysState.Mot.ReferenceMode == E_PosModeDebugGen)
     {

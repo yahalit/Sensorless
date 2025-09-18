@@ -235,8 +235,8 @@ void inline IntegrateVolts0 (void) // Vandalized - swapped
     ClaState.DacValU[1] = __mmaxf32 (__mminf32 ( c.Num2732 - ClaControlPars.VoltageDacGain * ClaState.Analogs.PhaseVoltUnCalib[1] , 4095),0) ;
     ClaState.Analogs.PhaseVoltUnCalibSum[1] += ClaState.DacValU[1] ;
     ClaState.Analogs.PhaseVoltUnCalibSum[0] += ClaState.DacValU[0] ;
-    ClaState.Analogs.PhaseVoltMeas[0]  = ( c.Num1p65 + Calib.PhaseVoltOffsetU - (ClaState.Analogs.PhaseVoltUnCalibSum[0] *  c.Adc2Volt ) ) * c.Vres2Vphase * ( 1.0f  + Calib.PhaseVoltGainU ) ;
-    ClaState.Analogs.PhaseVoltMeas[1]  = ( c.Num1p65 + Calib.PhaseVoltOffsetV - (ClaState.Analogs.PhaseVoltUnCalibSum[1] *  c.Adc2Volt ) ) * c.Vres2Vphase * ( 1.0f  + Calib.PhaseVoltGainV ) ;
+    ClaState.Analogs.PhaseVoltMeas[0]  = ( c.Num3p3 + Calib.PhaseVoltOffsetU - (ClaState.Analogs.PhaseVoltUnCalibSum[0] *  c.Adc2Volt ) ) * c.Vres2Vphase * ( 1.0f  + Calib.PhaseVoltGainU ) ;
+    ClaState.Analogs.PhaseVoltMeas[1]  = ( c.Num3p3 + Calib.PhaseVoltOffsetV - (ClaState.Analogs.PhaseVoltUnCalibSum[1] *  c.Adc2Volt ) ) * c.Vres2Vphase * ( 1.0f  + Calib.PhaseVoltGainV ) ;
 
     ClaState.Analogs.PhaseVoltUnCalibSum[2] = ClaState.DacValU[2];
     ClaState.Analogs.DcUnCalibSum           = ClaState.DacValDc ;
@@ -246,7 +246,7 @@ void inline IntegrateVolts0 (void) // Vandalized - swapped
     ClaState.DacValDc   = __mmaxf32 (__mminf32 ( c.Num2732 - ClaControlPars.VoltageDacGain * ClaState.Analogs.DcCurUncalib , 4095),0) ;
     ClaState.Analogs.PhaseVoltUnCalibSum[2] += ClaState.DacValU[2] ;
     ClaState.Analogs.DcCurUncalibSum += ClaState.DacValDc ;
-    ClaState.Analogs.PhaseVoltMeas[2]  = ( c.Num1p65 + Calib.PhaseVoltOffsetW - (ClaState.Analogs.PhaseVoltUnCalibSum[2]  * c.Adc2Volt ) ) * c.Vres2Vphase * ( 1.0f  + Calib.PhaseVoltGainW ) ;
+    ClaState.Analogs.PhaseVoltMeas[2]  = ( c.Num3p3 + Calib.PhaseVoltOffsetW - (ClaState.Analogs.PhaseVoltUnCalibSum[2]  * c.Adc2Volt ) ) * c.Vres2Vphase * ( 1.0f  + Calib.PhaseVoltGainW ) ;
 
     #ifndef DAC_VANDAL
     //INT3 Phase V
@@ -335,7 +335,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 
         SampleCurrents() ;
 
-        // Uncomment this to debug the CLA while connected to the debugger
+        // Un-comment this to debug the CLA while connected to the debugger
         if ( ClaState.DbgStop == 1.0f )
         {
             __mdebugstop();

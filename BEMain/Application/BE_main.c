@@ -136,6 +136,11 @@ void InitAppData(void)
 
     ClearMemRpt((short unsigned *) &ClaState,sizeof( ClaState) );
     ClearMemRpt((short unsigned *) &ClaMailIn,sizeof( ClaMailIn) );
+    ClearMemRpt((short unsigned *) &SLessState,sizeof( SLessState) );
+    ClearMemRpt((short unsigned *) &SLessData,sizeof( SLessData) );
+    ClearMemRpt((short unsigned *) &SLessStatePU,sizeof( SLessStatePU) );
+    ClearMemRpt((short unsigned *) &SLessStateBU,sizeof( SLessStateBU) );
+    ClearMemRpt((short unsigned *) &SLPars,sizeof( SLPars) );
 
     // Test identity
     ApplyIdentity(pUIdentity);
@@ -207,7 +212,9 @@ void InitAppData(void)
         ClearMemRpt( (short unsigned * ) &CalibProg.C.Calib , sizeof(struct CCalib)  ) ;
 
     }
-
+    // Vandal
+    Calib.VdcOffset = 10 ;
+    Calib.PhaseVoltOffsetU = 0.00949999969 ;
 
     SysState.Mot.CurrentLimitFactor = 1 ;
 
@@ -237,6 +244,11 @@ void InitAppData(void)
 
     UM2S.M2S.ControlTs = CUR_SAMPLE_TIME_USEC * 1e-6f  ;
     UM2S.M2S.CpuClockHz = (long unsigned) CPU_CLK_HZ ;
+    SLPars.dT = UM2S.M2S.ControlTs ;
+
+
+    Commutation.CommutationMode = COM_ENCODER_SENSORLESS ;
+    SLessState.On = 1 ;
 
 }
 
@@ -448,7 +460,7 @@ void SetProjectId(void)
 {
     //if ( DBaseConf.IsValidDatabase  )
     {
-        ProjId =   PROJ_TYPE_BESENSORLESS ;
+        ProjId =   PROJ_TYPE_ZOOZ_S ; // PROJ_TYPE_BESENSORLESS ;
     }
 
     CanId = ProjSpecificData[ProjId].CanId ;
