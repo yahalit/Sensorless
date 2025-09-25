@@ -46,6 +46,9 @@
 #define exp_unidentified_safe_fault 0x946 // [Drive:Fatal] {Safe fault mode timed out without safe fault reason }
 #define exp_unidentified_fault 0x947 // [Drive:Fatal] {Fatal fault without fault reason }
 #define exp_homing_requires_calib 0x948 // [Drive:Fatal] {Homing requires calibration before }
+#define exp_unexpected_sensorless_mode 0x949 // [Drive:Fatal] {Unexpected sensorless mode }
+#define exp_sensorless_no_initconverge 0x94a  // [Drive:Fatal] {Sensorless estimator never converged }
+#define exp_sensorless_underspeed 0x94b  // [Drive:Fatal] {Sensorless estimator went underspeed }
 
 
 #define ERR_RECORDER_BUF_USED 0x70 // [Interpreter:Error] {Recorder buffer is used for FW programming}

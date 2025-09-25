@@ -442,6 +442,7 @@ struct CDebug
     short unsigned  bBypassPosFilter ;
     short IgnoreHostCW ; // 1 to ignore PDO1 control words from host
     short unsigned bDisablePotEncoderMatchTest ; // Disable testing the encoder agains the potentiometer
+    short DebugSLessCycle ;
     struct CCurExp CurExp ;
 };
 
@@ -587,6 +588,7 @@ typedef struct
     float StaticCurrent ;
     float SpeedCurrent  ;
     float AccelerationCurrent ;
+    float StepperAngle ;
 } StepperCurrent_T;
 
 struct CSysState

@@ -19,7 +19,14 @@
 #define EXTERN_TAG extern
 #endif
 
-
+enum E_AcceleratingAsV2FState
+{
+    E_AccelerationInit = 0 ,
+    E_PureF2FAcceleration = 1 ,
+    E_TakingFOM = 2 ,
+    E_EngagingAngleObserver = 3,
+    E_EngagingSpeedControl = 4
+};
 
 struct CSLessData
 {
@@ -28,7 +35,13 @@ struct CSLessData
     float V[3];
 };
 
-
+typedef struct
+{
+    short bBeforeTakingEstimatorFOM ; // 1 when not yet started FOM estimation
+    short bAcceleratingAsV2FState ;
+    float FOMConvergenceTimer ; // Timer for timeouting FOM convergence
+    float FOMConvergenceGoodTimer ; //Timer for establishing FOM convergence
+} FomState_T ;
 
 struct CSLState
 {
@@ -59,9 +72,26 @@ struct CSLState
     float IdDisturbancePhase;
     float CommAngleDisturbance;
     float CommAngleQuadDisturbance;
+    float DeltaThetaOnEngage ; // The angle difference that need be compensated at the engage time
     short On; // 1: Algorithm is active 0: Observing only
     short DInjectionOn; // 1: Inject D "noise"
+    FomState_T FOM ;
 };
+
+
+
+typedef struct
+{
+    float CyclesForConvergenceApproval ; // !< The number of cycles in open loop mode in which the observer must show convergence
+    float ObserverConvergenceToleranceFrac ; // !< The acceptable fraction of deviation from the expected speed
+    float MaximumSteadyStateFieldRetard ; // !< The maximum field retard acceptable on steady state.
+    float MinimumSteadyStateFieldRetard ; // !< The minimum field retard acceptable on steady state.
+    float FOMTakingStartSpeed ; // Speed following which FOM is taken
+    float OpenLoopAcceleration ; // !< The acceleration rate to OpenLoopEndSpeed
+    float FOMConvergenceTimeout ; // Timeout for FOM convergence decision
+    float OmegaCommutationLoss  ; // Speed that if you go below you consider commutation loss
+}FomEstimatePars_T;
+
 
 struct CSLPars
 {
@@ -78,6 +108,9 @@ struct CSLPars
     float KpFlux;
     float DInjectionFreqFac; // Factor between D injection frequency and motor frequency
     float DInjectionAmp    ; // D injection amplitude in Amp
+    float WorkAcceleration  ;
+    float WorkSpeed  ;
+    FomEstimatePars_T FomPars  ; // Parameters for initial FO estimate
 };
 
 EXTERN_TAG struct CSLessData SLessData;

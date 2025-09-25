@@ -155,16 +155,19 @@ __interrupt void AdcIsr(void)
 
     FillLoggerStruct();
 
+#define N1 2
+#define N2 1
+
     // Run sensorless estimator
     SLessData.I[0] = ClaState.Analogs.PhaseCur[0];
-    SLessData.I[2] = ClaState.Analogs.PhaseCur[1];
-    SLessData.I[1] = ClaState.Analogs.PhaseCur[2];
+    SLessData.I[1] = ClaState.Analogs.PhaseCur[N1];
+    SLessData.I[2] = ClaState.Analogs.PhaseCur[N2];
 
     Vn = ( ClaState.Analogs.PhaseVoltMeas[0] + ClaState.Analogs.PhaseVoltMeas[1] + ClaState.Analogs.PhaseVoltMeas[2]) * 0.333333333333333f;
 
     SLessData.V[0] = (float)ClaState.Analogs.PhaseVoltMeas[0] - Vn ;
-    SLessData.V[2] = (float)ClaState.Analogs.PhaseVoltMeas[1] - Vn ;
-    SLessData.V[1] = (float)ClaState.Analogs.PhaseVoltMeas[2] - Vn ;
+    SLessData.V[1] = (float)ClaState.Analogs.PhaseVoltMeas[N1] - Vn ;
+    SLessData.V[2] = (float)ClaState.Analogs.PhaseVoltMeas[N2] - Vn ;
 
     if (SLessState.On)
     {
@@ -172,7 +175,14 @@ __interrupt void AdcIsr(void)
     }
     else
     {
-        SLessState.ThetaEst = Commutation.ComAnglePu ; //  (float)(*ThtM)* SysPars.npp; //  FieldFilter.ThetaHat;
+        if (SysState.Mot.LoopClosureMode==E_LC_OpenLoopField_Mode)
+        {
+            SLessState.ThetaEst = __fracf32( SysState.StepperCurrent.StepperAngle  ) ; //  (float)(*ThtM)* SysPars.npp; //  FieldFilter.ThetaHat;
+        }
+        else
+        {
+            SLessState.ThetaEst = __fracf32( ClaState.QThetaElect - 0.25f ) ; //  (float)(*ThtM)* SysPars.npp; //  FieldFilter.ThetaHat;        }
+        }
     }
     PaicuPU();
 
@@ -247,7 +257,14 @@ __interrupt void AdcIsr(void)
     // Either motor on or motor off
     if ( ClaState.MotorOn)
     {
-        MotorOnSeq() ;
+        if ( ( Commutation.CommutationMode == COM_ENCODER_SENSORLESS) && ( SysState.Mot.LoopClosureMode == E_LC_Speed_Mode) )
+        {
+            MotorOnSeqAsSensorless() ;
+        }
+        else
+        {
+            MotorOnSeq() ;
+        }
     }
     if ( ClaState.MotorOn == 0 )
     {

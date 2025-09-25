@@ -108,7 +108,7 @@ enum E_LoopClosureMode
 #define SC_UNDERVOLTAGE_VOLTS 19.0f
 #define ABS_OVERVOLTAGE_VOLTS 60.0f
 
-#define PHASE_OVERCURRENT_AMP 35
+#define PHASE_OVERCURRENT_AMP 22
 
 #define TRUE 1
 #define FALSE 0

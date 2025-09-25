@@ -59,11 +59,22 @@
    {& SLPars.R, 115 , 0.0000001f,1.0e6f,0.13f} , // !<  Resistance
    {& SLPars.KiTheta, 116 , 0.0000001f,1.0e6f,7.8026e+03f} , // !<  Ki of the theta PLL
    {& SLPars.KpTheta, 117 , 0.0000001f,1.0e6f,149.0188f} , // !<Kp of the theta PLL
-   {& SLPars.KiFlux, 118 , 0.0000001f,1.0e6f,2.0f} , // !<KiFlux
-   {& SLPars.KpFlux, 119 , 0.0000001f,1.0e6f,30.0f} , // !<KpFlux
+   {& SLPars.KiFlux, 118 , 0.0000001f,1.0e6f,50.0f} , // !<KiFlux
+   {& SLPars.KpFlux, 119 , 0.0000001f,1.0e6f,500.0f} , // !<KpFlux
    {& SLPars.DInjectionFreqFac, 120 , 0.0000001f,1.0e6f,0.0f} , // !<Factor between D injection frequency and motor frequency
    {& SLPars.DInjectionAmp, 121 , 0.0000001f,1.0e6f,0.9f} , // !<D injection amplitude in Amp
+   {& SLPars.FomPars.CyclesForConvergenceApproval, 122 , 0.0000001f,1.0e6f,3.0f} ,// !< The number of cycles in open loop mode in which the observer must show convergence
+   {& SLPars.FomPars.ObserverConvergenceToleranceFrac, 123 , 0.0000001f,1.0e6f,0.1f} , // !< The acceptable fraction of deviation from the expected speed
+   {& SLPars.FomPars.MaximumSteadyStateFieldRetard, 124 , 0.000000f,1.0f,0.17f} ,  // !< The maximum field retard acceptable on steady state.
+   {& SLPars.FomPars.MinimumSteadyStateFieldRetard, 125 , -1.0f,1.0f,-0.05f} , // !< The minimum field retard acceptable on steady state.
+   {& SLPars.FomPars.FOMTakingStartSpeed, 126 , 0.0000001f,1.0e6f,4.0f} , // !< Speed following which FOM is taken
+   {& SLPars.FomPars.OpenLoopAcceleration, 127 , 0.0000001f,1.0e6f,1.0f} , // !< The acceleration rate to OpenLoopEndSpeed
+   {& SLPars.FomPars.FOMConvergenceTimeout, 128 , 0.0000001f,1.0e6f,3.0f} , // Timeout for FOM convergence decision
+   {& SLPars.FomPars.OmegaCommutationLoss, 130 , 0.0000001f,1.0e6f,3.0f} , // Speed that if you go below you consider commutation loss
+   {& SLPars.WorkAcceleration, 131 , 0.0000001f,1.0e6f,3.0f} , // Acceleration to working speed
+   {& SLPars.WorkSpeed, 132 , 0.0000001f,1.0e6f,6.0f} , // Working speed
    {& ClaMailIn.StoTholdScale,239, -1.5f,1.5f,1.0f} ,// !< Simulation voltage DC bus
+   {& ClaControlPars.DCurrentMaxDiDt,246, 0.000001f,99999999.0f,200.0f} ,// !< Maximum rate of D current commad change
    {& ClaControlPars.ExtCutCst,247, 0.000001f,0.99999999f,0.001666f} ,// !< Filter constant for torque report , about 30msec
    {& ControlPars.KGyroMerge,248, 0.00000f,0.99999999f,0.00125f} ,// !< Filter constant for gyro merge
    {& ControlPars.PosErrorExtRelGain,249, 0.00000f,9999.9999f,0.45f} , // Relative gain change when external pos error is applied

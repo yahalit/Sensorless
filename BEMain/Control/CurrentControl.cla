@@ -168,7 +168,9 @@ void  ClaCheckMotorOn(void)
 
         ClaState.CurrentControl.ExtCurrentCommandFiltered = 0 ;
         ClaState.CurrentControl.CurrentCommandFiltered = 0 ;
+        ClaState.CurrentControl.CurrentCommandDFiltered = 0 ;
         ClaState.CurrentControl.CurrentCommandSlopeLimited = 0 ;
+        ClaState.CurrentControl.CurrentCommandDSlopeLimited = 0 ;
         ClaState.CurrentControl.CurrentCmdFilterState0  = 0 ;
         ClaState.CurrentControl.CurrentCmdFilterState1  = 0 ;
     }
@@ -219,6 +221,11 @@ void ClaSinCosPu( float pu_arg_in )
 
     ClaState.q2v2 = -0.5f * (c.sqrt3 * ClaState.s + ClaState.c) ;
     ClaState.d2v2 =  0.5f * (c.sqrt3 * ClaState.c - ClaState.s) ;
+
+    /*
+    ClaState.q2v2 = -0.5f * (ClaState.c +  ClaState.s * c.sqrt3 ) ;  // C120
+    ClaState.d2v2 = -0.5f * (ClaState.s -  ClaState.c * c.sqrt3 ) ;  // S120
+    */
 }
 
 
@@ -351,10 +358,11 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 
 
         // Get the trigonometric functions for work
-        ClaSinCosPu( ClaMailIn.ThetaElect ) ; // + 0.25f ) ;
+        ClaSinCosPu( ClaState.QThetaElect ) ; // + 0.25f ) ;
 
         // Filter the reference
         ClaState.CurrentControl.CurrentCommand =  ClaState.CurrentControl.ExtCurrentCommand * ClaControlPars.CurrentCommandDir ;
+        maxDeltaCur = ClaControlPars.MaxCurCmdDdt * ClaMailIn.Ts ;
         if ( ClaMailIn.bNoCurrentPrefilter )
         {
             ClaState.CurrentControl.CurrentCommandSlopeLimited = ClaState.CurrentControl.CurrentCommand ;
@@ -362,8 +370,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
         }
         else
         {
-            maxDeltaCur = ClaControlPars.MaxCurCmdDdt * ClaMailIn.Ts ;
-            ClaState.CurrentControl.CurrentCommandSlopeLimited = ClaState.CurrentControl.CurrentCommandSlopeLimited +
+             ClaState.CurrentControl.CurrentCommandSlopeLimited = ClaState.CurrentControl.CurrentCommandSlopeLimited +
                     __mmaxf32 (__mminf32 (ClaState.CurrentControl.CurrentCommand - ClaState.CurrentControl.CurrentCommandSlopeLimited ,maxDeltaCur) , -maxDeltaCur) ;
 
 
@@ -377,8 +384,17 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
         ClaState.CurrentControl.ExtCurrentCommandFiltered = ClaState.CurrentControl.CurrentCommandFiltered * ClaControlPars.CurrentCommandDir ;
 
 
+        maxDeltaCur = ClaControlPars.DCurrentMaxDiDt * ClaMailIn.Ts ;
+        ClaState.CurrentControl.CurrentCommandDSlopeLimited = ClaState.CurrentControl.CurrentCommandDSlopeLimited +
+                __mmaxf32 (__mminf32 (ClaState.CurrentControl.CurrentDCommand - ClaState.CurrentControl.CurrentCommandDSlopeLimited ,maxDeltaCur) , -maxDeltaCur) ;
+        ClaState.CurrentControl.CurrentCommandDFiltered = ClaState.CurrentControl.CurrentCommandDSlopeLimited ;
+
+
         ClaState.CurrentControl.Iq = c.TwoThirds *
                 (ClaState.Analogs.PhaseCur[0] * ClaState.c + ClaState.Analogs.PhaseCur[1] * ClaState.c120 + ClaState.Analogs.PhaseCur[2] * ClaState.c240) ;
+
+        // Direction of Id is reversed so that positive rotation shall be from Alpha to Beta where IBeta = sqrt(1/3) (I[2]-I[1])
+        // Note the swapping so I[2] is actually Ib and I[1] is Ic
         ClaState.CurrentControl.Id = c.TwoThirds *
                 (ClaState.Analogs.PhaseCur[0] * ClaState.s + ClaState.Analogs.PhaseCur[1] * ClaState.s120 + ClaState.Analogs.PhaseCur[2] * ClaState.s240) ;
 
@@ -393,8 +409,8 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 
         if ( ClaState.MotorOn)
         {
-            ClaState.CurrentControl.Error_q = ClaState.CurrentControl.CurrentCommandFiltered - ClaState.CurrentControl.Iq ;
-            ClaState.CurrentControl.Error_d = -ClaState.CurrentControl.Id;
+            ClaState.CurrentControl.Error_q = ClaState.CurrentControl.CurrentCommandFiltered  - ClaState.CurrentControl.Iq ;
+            ClaState.CurrentControl.Error_d = ClaState.CurrentControl.CurrentCommandDFiltered - ClaState.CurrentControl.Id;
 
             ClaState.CurrentControl.vpre_q = ClaState.Encoder1.MotSpeedHz * ClaControlPars.KeHz  + ClaState.CurrentControl.Int_q ;
             ClaState.CurrentControl.vpre_d = ClaState.CurrentControl.Int_d ;
@@ -402,6 +418,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
             ClaState.vqd = ClaState.CurrentControl.vpre_q + ClaState.CurrentControl.Error_q * ClaControlPars.KpCur ;
             ClaState.vdd = ClaState.CurrentControl.vpre_d + ClaState.CurrentControl.Error_d * ClaControlPars.KpCur ;
 
+            // Special mode for current loop identification, insert the references directly as q/d voltages
             if ( ClaMailIn.IdMode )
             {
                 ClaState.vqd = ClaMailIn.Tref ;
@@ -428,6 +445,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
             {
                 ClaState.vqr = ClaState.vqd ;
             }
+
             ClaState.va = ClaState.PwmFac * ( ClaState.q2v1 * ClaState.vqr + ClaState.d2v1 * ClaState.vdr  ) ;
             ClaState.vb = ClaState.PwmFac * ( ClaState.q2v2 * ClaState.vqr + ClaState.d2v2 * ClaState.vdr  ) ;
             ClaState.vc = -ClaState.vb - ClaState.va ;
@@ -754,8 +772,26 @@ __attribute__((interrupt))  void Cla1Task3 ( void )
 // The CLA is triggered by ADC completion. It samples, then trigger new conversion
 // then interrupt the CPU
 //-----------------------------------------------------------------------------
+float IntD ;
 __attribute__((interrupt))  void Cla1Task4 ( void )
 {
+    IntD = ClaState.CurrentControl.Int_d ;
+    ClaState.CurrentControl.Int_d = IntD * ClaMailIn.CandidateElectAngleTxC +
+            ClaState.CurrentControl.Int_q * ClaMailIn.CandidateElectAngleTxS ;
+    ClaState.CurrentControl.Int_q = -IntD * ClaMailIn.CandidateElectAngleTxS +
+            ClaState.CurrentControl.Int_q * ClaMailIn.CandidateElectAngleTxC ;
+
+    ClaState.CurrentControl.vpre_q = ClaState.CurrentControl.Int_q ; // + ClaMailIn.CandidateMotorSpeedCompensationVoltage;
+    ClaState.CurrentControl.vpre_d = ClaState.CurrentControl.Int_d ;
+
+    ClaState.QThetaElect  = ClaMailIn.CandidateQElectAngle ;
+
+    ClaState.CurrentControl.CurrentCommandDSlopeLimited = ClaMailIn.CandidateId ;
+    ClaState.CurrentControl.CurrentDCommand = 0 ;
+    ClaState.CurrentControl.CurrentCommandDFiltered = ClaState.CurrentControl.CurrentCommandDSlopeLimited ;
+
+
+    ClaState.CommutationSyncDone  = 1 ;
 }
 
 //-----------------------------------------------------------------------------

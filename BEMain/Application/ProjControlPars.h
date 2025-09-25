@@ -66,6 +66,27 @@ struct  CProjSpecificCtl
     short HomingDirection ;
     short HomingMethod ;
     short HomingSwInUse ;
+    float PhiM ;
+    float Lq0 ;
+    float LqCorner2 ;
+    float Ld0 ;
+    float LdSlope;
+    float R ;
+    float KiTheta ;
+    float KpTheta ;
+    float KiFlux ;
+    float KpFlux ;
+    float CyclesForConvergenceApproval ;
+    float ObserverConvergenceToleranceFrac ;
+    float MaximumSteadyStateFieldRetard ;
+    float MinimumSteadyStateFieldRetard ;
+    float FOMTakingStartSpeed ;
+    float OpenLoopAcceleration ;
+    float FOMConvergenceTimeout ;
+    float OmegaCommutationLoss ;
+    float WorkAcceleration ;
+    float WorkSpeed ;
+    float DCurrentMaxDiDt ;
 };
 
 
@@ -123,7 +144,28 @@ struct  CProjSpecificCtl
       .LowDeadBandThold = 0 ,
       .LowAutoMotorOffThold = 0 ,
       .HiAutoMotorOffThold = 0 ,
-      .UseCase = 0
+      .UseCase = 0,
+      .PhiM  = 0.130f,
+      .Lq0 = 5.0e-4f ,
+      .LqCorner2 =  0,
+      .Ld0 = 5.0e-4f ,
+      .LdSlope = 0 ,
+      .R  =0.13f ,
+      .KiTheta = 7.8026e+03f,
+      .KpTheta = 149.0188f,
+      .KiFlux = 50.0f,
+      .KpFlux = 500.0f,
+      .CyclesForConvergenceApproval = 3.0f,
+      .ObserverConvergenceToleranceFrac = 0.1f,
+      .MaximumSteadyStateFieldRetard = 0.17f,
+      .MinimumSteadyStateFieldRetard = -0.05f,
+      .FOMTakingStartSpeed = 4.0f,
+      .OpenLoopAcceleration = 1.0f,
+      .FOMConvergenceTimeout = 3.0f,
+      .OmegaCommutationLoss = 3.0f,
+      .WorkAcceleration = 3.0f,
+      .WorkSpeed = 6.0f,
+      .DCurrentMaxDiDt = 200.0f
      } , // PROJ_UNDEFINED
 
      {
@@ -165,7 +207,28 @@ struct  CProjSpecificCtl
       .LowDeadBandThold = 0 ,
       .HiAutoMotorOffThold = 0.01 ,
       .LowAutoMotorOffThold = 0.005 ,
-      .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO | UC_SUPPORT_BRAKE | US_SUPPORT_AUTOBRAKE)
+      .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO | UC_SUPPORT_BRAKE | US_SUPPORT_AUTOBRAKE),
+      .PhiM  = 0.130f,
+      .Lq0 = 5.0e-4f ,
+      .LqCorner2 =  0,
+      .Ld0 = 5.0e-4f ,
+      .LdSlope = 0 ,
+      .R  =0.13f ,
+      .KiTheta = 7.8026e+03f,
+      .KpTheta = 149.0188f,
+      .KiFlux = 50.0f,
+      .KpFlux = 500.0f,
+      .CyclesForConvergenceApproval = 3.0f,
+      .ObserverConvergenceToleranceFrac = 0.1f,
+      .MaximumSteadyStateFieldRetard = 0.17f,
+      .MinimumSteadyStateFieldRetard = -0.05f,
+      .FOMTakingStartSpeed = 4.0f,
+      .OpenLoopAcceleration = 1.0f,
+      .FOMConvergenceTimeout = 3.0f,
+      .OmegaCommutationLoss = 3.0f,
+      .WorkAcceleration = 3.0f,
+      .WorkSpeed = 6.0f,
+      .DCurrentMaxDiDt = 200.0f
      } , // PROJ_TYPE_BESENSORLESS
 
      {
@@ -180,8 +243,8 @@ struct  CProjSpecificCtl
       .qf1ZXi   = 1.0f,
       .qf0Cfg   = 17 ,
       .qf1Cfg   = 17 ,
-      .SpeedKp   = 4.0f ,
-      .SpeedKi   = 400.0f ,
+      .SpeedKp   = 2.0f ,
+      .SpeedKi   = 40.0f ,
       .PosKp   = 58.03392625f,
       .MaxAcc   = 100.0f,
       .MinPositionCmd = -1.4e6f, // Minimum position command
@@ -207,7 +270,28 @@ struct  CProjSpecificCtl
       .LowDeadBandThold = 0 ,
       .HiAutoMotorOffThold = 0.01 ,
       .LowAutoMotorOffThold = 0.005 ,
-      .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO | UC_SUPPORT_BRAKE | US_SUPPORT_AUTOBRAKE)
+      .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO | UC_SUPPORT_BRAKE | US_SUPPORT_AUTOBRAKE),
+      .PhiM  = 0.130f,
+      .Lq0 = 5.0e-4f ,
+      .LqCorner2 =  0,
+      .Ld0 = 5.0e-4f ,
+      .LdSlope = 0 ,
+      .R  =0.13f ,
+      .KiTheta = 7.8026e+03f,
+      .KpTheta = 149.0188f,
+      .KiFlux = 50.0f,
+      .KpFlux = 500.0f,
+      .CyclesForConvergenceApproval = 3.0f,
+      .ObserverConvergenceToleranceFrac = 0.1f,
+      .MaximumSteadyStateFieldRetard = 0.17f,
+      .MinimumSteadyStateFieldRetard = -0.05f,
+      .FOMTakingStartSpeed = 4.0f,
+      .OpenLoopAcceleration = 1.0f,
+      .FOMConvergenceTimeout = 3.0f,
+      .OmegaCommutationLoss = 3.0f,
+      .WorkAcceleration = 3.0f,
+      .WorkSpeed = 6.0f,
+      .DCurrentMaxDiDt = 200.0f
      } , // PROJ_TYPE_ZOOZ_S
 
 

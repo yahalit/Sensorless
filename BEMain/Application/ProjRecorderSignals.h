@@ -84,6 +84,7 @@
         { 2 , (long unsigned *) & SLessData.I[0]}, //:SLessDataI0  [SensorLess] {Current A}
         { 2 , (long unsigned *) & SLessData.I[1]}, //:SLessDataI1  [SensorLess] {Current B}
         { 2 , (long unsigned *) & SLessData.I[2]}, //:SLessDataI2  [SensorLess] {Current C}
+        { 2 , (long unsigned *) & SysState.StepperCurrent.StepperAngle}, //:StepperAngle  [SensorLess] {StepperAngle}
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVload  [ClaRecsCopy] {FastVload }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVout  [ClaRecsCopy] {FastVout }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastIsense  [ClaRecsCopy] {FastIsense }

@@ -50,6 +50,7 @@ void SetClaAllSw(void)
         HWREGH(CLA1_BASE + CLA_O_MICLR) = 0xff ;
     }
 
+    CLA_setTriggerSource(CLA_TASK_4, CLA_TRIGGER_SOFTWARE);
     CLA_setTriggerSource(CLA_TASK_8, CLA_TRIGGER_SOFTWARE);
 }
 

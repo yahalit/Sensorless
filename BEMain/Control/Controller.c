@@ -221,10 +221,10 @@ float  RunBiquads(float CandR, float cursat)
 }
 
 
-float GetCurrentCmdForSpeedErr(  float CurrentFF   )
+float GetCurrentCmdForSpeedErr(  float CurrentFF , float SpeedFB   )
 {
     float Cand , CandR , out , cursat ;
-    SysState.SpeedControl.SpeedError =  SysState.SpeedControl.SpeedCommand - ClaState.Encoder1.UserSpeed ;
+    SysState.SpeedControl.SpeedError =  SysState.SpeedControl.SpeedCommand - SpeedFB ;
 
     SysState.SpeedControl.PIState = SysState.SpeedControl.PIState  +
             ControlPars.SpeedKi * ( SysState.Timing.Ts * SysState.SpeedControl.SpeedCommand -
@@ -290,7 +290,7 @@ void MotorOnSeq(void)
             if ( refmode == E_PosModeDebugGen )
             {
                 CurCmd = SysState.Debug.TRef.Out;
-                ClaMailIn.ThetaElect = __fracf32( __fracf32( SysState.Debug.GRef.Out ) + 1  );
+                ClaState.QThetaElect = __fracf32( __fracf32( SysState.Debug.GRef.Out ) + 1  );
             }
             else
             {
@@ -312,11 +312,10 @@ void MotorOnSeq(void)
                 }
 
                 acc = ( SysState.SpeedControl.SpeedReference - sr ) * SysState.Timing.OneOverTsTraj ;
-                CurCmd = fSatNanProt( SysState.StepperCurrent.StaticCurrent +
-                        fabsf(SysState.SpeedControl.SpeedReference) * SysState.StepperCurrent.SpeedCurrent +
-                        fabsf(acc) * SysState.StepperCurrent.AccelerationCurrent,
-                        CurMax ) ;
-                ClaMailIn.ThetaElect += ( SysState.SpeedControl.SpeedReference * SysState.Timing.TsTraj );
+                CurCmd = GetOpenLoopCurrentCmd( SysState.SpeedControl.SpeedReference, acc , CurMax) ;
+
+                SysState.StepperCurrent.StepperAngle  =  __fracf32(SysState.StepperCurrent.StepperAngle + SysState.SpeedControl.SpeedReference * SysState.Timing.TsTraj ) ;
+                ClaState.QThetaElect = __fracf32(SysState.StepperCurrent.StepperAngle+0.25f) ;
             }
 
         }
@@ -325,7 +324,7 @@ void MotorOnSeq(void)
             if ( ClosureMode <= E_LC_Voltage_Mode )
             {
                 CurCmd = 0 ; // Just for variables to be defined
-                ClaMailIn.ThetaElect = 0 ;
+                ClaState.QThetaElect = 0 ;
                 expmode = (short unsigned)ClaMailIn.ExperimentMode ;
                 switch (expmode)
                 {
@@ -363,7 +362,7 @@ void MotorOnSeq(void)
             {
                 return ;
             }
-            ClaMailIn.ThetaElect = Commutation.ComAnglePu + 0.25f ;
+            ClaState.QThetaElect = __fracf32(Commutation.ComAnglePu + 0.25f) ;
         }
 
 
@@ -425,7 +424,7 @@ void MotorOnSeq(void)
         // Speed Controller
         if ( ClosureMode >= E_LC_Speed_Mode )
         {
-            CurCmd = GetCurrentCmdForSpeedErr( CurCmd  );
+            CurCmd = GetCurrentCmdForSpeedErr( CurCmd  , ClaState.Encoder1.UserSpeed );
         }
 
     }
@@ -567,12 +566,311 @@ void MotorOnSeq(void)
     }
     else
     {
+        if ( ClosureMode >= E_LC_Torque_Mode )
+        {
+            SysState.PosControl.PosReference = SysState.PosControl.PosFeedBack ;
+            SysState.SpeedControl.SpeedReference = ClaState.Encoder1.UserSpeed ;
+        }
+        SysState.Mot.MotionConvergeCnt = 0  ;
+        SysState.Mot.MotionConverged   = 0  ;
+    }
+}
+
+/**
+ * @brief Minimal signed distance on a unit-modulus line (wrap at 1.0).
+ *
+ * Computes the difference between two scalars @p x and @p y, wrapped
+ * modulo 1.0 and mapped into the symmetric interval [-0.5, 0.5).
+ * In other words, it returns the shortest signed displacement from
+ * @p y to @p x when values are considered equivalent modulo 1.
+ * @param x First value
+ * @param y Second value
+ * @return float The wrapped signed distance from @p y to @p x in [-0.5, 0.5).
+ *
+ * @warning Requires `__fracf32()` semantics equivalent to frac(x)=x-floor(x)
+ */
+float Mod1Distance(float x, float y)
+{
+    return ( __fracf32(__fracf32(x-y)+ 2.5f ) - 0.5f )  ;
+}
+
+
+///////////////////////////////////////////////////////////
+/*
+ * This routine estimates if the observer converged in a good manner. To do so we verify on a given amount of cycles
+ * that the speed estimate correlates with the desired speed to within a tolerance, and also that the estimated field
+ * angle matches the set electrical angle to given precision.
+ * Note:
+ * The "Field angle" measures the location of the motor's Q axis, which is electrically 90deg advanced w.r.t. the D axis
+ * estimated by the observer. On no load, all the current is on the "D" so we expect the observer angle and the Electrical angle to coincide
+ */
+short EstimateSensorlessObserverFOM()
+{
+    float delta ;
+    if  ( fabsf( SLessState.OmegaHat / SLPars.FomPars.FOMTakingStartSpeed - 1 ) > SLPars.FomPars.ObserverConvergenceToleranceFrac )
+    {
+        SLessState.FOM.FOMConvergenceTimer = 0 ;
+        return 0 ;
+    }
+    delta = Mod1Distance (ClaState.QThetaElect,SLessState.ThetaHat) ;
+    if ( delta > SLPars.FomPars.MaximumSteadyStateFieldRetard || delta < delta > SLPars.FomPars.MinimumSteadyStateFieldRetard)
+    {
+        SLessState.FOM.FOMConvergenceTimer = 0 ;
+        return 0 ;
+    }
+    if ( SLessState.FOM.FOMConvergenceTimer >= SLPars.FomPars.CyclesForConvergenceApproval / __fmax( SLPars.FomPars.FOMTakingStartSpeed, 0.001f) )
+    {
+        return 1 ;
+    }
+    else
+    {
+        SLessState.FOM.FOMConvergenceTimer += SysState.Timing.TsTraj ;
+    }
+    return 0 ;
+}
+
+void InitSensorlessObserverFOM()
+{
+    SLessState.FOM.FOMConvergenceTimer = 0 ;
+    SLessState.FOM.FOMConvergenceGoodTimer = 0 ;
+}
+
+
+
+void InitSensorlessMode()
+{
+    SysState.Mot.ProfileConverged = 0 ;
+    SysState.SpeedControl.SpeedReference = 0 ;
+    SysState.SpeedControl.ProfileAcceleration= SLPars.FomPars.OpenLoopAcceleration  ;
+    SysState.SpeedControl.SpeedTarget = SLPars.FomPars.FOMTakingStartSpeed  ;
+    SLessState.FOM.bAcceleratingAsV2FState = E_PureF2FAcceleration ;
+    SysState.Mot.InAutoBrakeEngage = 0 ;
+    SysState.StepperCurrent.StepperAngle = 0 ;
+    InitSensorlessObserverFOM() ;
+}
+
+
+float GetOpenLoopCurrentCmd(float speed , float acc , float CurMax )
+{
+    return  fSatNanProt( SysState.StepperCurrent.StaticCurrent +
+            fabsf(speed) * SysState.StepperCurrent.SpeedCurrent +
+            fabsf(acc) * SysState.StepperCurrent.AccelerationCurrent,
+            CurMax ) ;
+}
+
+short ManageAccelerationToWorkZone(float CurMax)
+{
+    short RetVal ;
+    short unsigned excp ;
+    float CurCmd , sr , acc , arg , piOut ;
+    RetVal = 0 ;
+    excp = 0 ;
+    CurCmd = 0 ;
+
+    // If speed is still lower than threshold, than V/F mode
+    switch ( SLessState.FOM.bAcceleratingAsV2FState )
+    {
+    case E_AccelerationInit:
+        InitSensorlessMode() ;
+        break ;
+    case E_PureF2FAcceleration:
+        sr = SysState.SpeedControl.SpeedReference ;
+        // Synthesize pure V/F drive
+        SysState.Mot.ProfileConverged = SpeedProfiler() ;
+
+        acc = ( SysState.SpeedControl.SpeedReference - sr ) * SysState.Timing.OneOverTsTraj ;
+
+        CurCmd = GetOpenLoopCurrentCmd( SysState.SpeedControl.SpeedReference, acc , CurMax) ;
+        SysState.StepperCurrent.StepperAngle  =
+                __fracf32(SysState.StepperCurrent.StepperAngle +  SysState.SpeedControl.SpeedReference * SysState.Timing.TsTraj) ;
+        ClaState.QThetaElect = __fracf32(SysState.StepperCurrent.StepperAngle +0.25f) ;
+
+        if ( SysState.Mot.ProfileConverged)
+        {
+            InitSensorlessObserverFOM();
+            SLessState.FOM.bAcceleratingAsV2FState = E_TakingFOM ;
+        }
+
+        break ;
+    case E_TakingFOM:
+        SLessState.FOM.FOMConvergenceTimer += SysState.Timing.TsTraj ;
+        if ( SLessState.FOM.FOMConvergenceTimer > SLPars.FomPars.FOMConvergenceTimeout)
+        {
+            if ( SysState.Debug.DebugSLessCycle == 0 )
+            {
+                excp = exp_sensorless_no_initconverge  ;
+            }
+            break ;
+        }
+        CurCmd = GetOpenLoopCurrentCmd( SysState.SpeedControl.SpeedTarget, 0 , CurMax) ;
+
+        SysState.StepperCurrent.StepperAngle = __fracf32(SysState.StepperCurrent.StepperAngle +  SysState.SpeedControl.SpeedReference * SysState.Timing.TsTraj) ;
+        ClaState.QThetaElect = __fracf32(SysState.StepperCurrent.StepperAngle+0.25f) ;
+
+        if ( ( EstimateSensorlessObserverFOM( ) == 1 ) && ( ( SysState.Debug.DebugSLessCycle == 0 ) ))
+        {
+            SLessState.FOM.bAcceleratingAsV2FState  = E_EngagingAngleObserver ;
+            // At this stage we engage the speed controller.
+            // Because the speed is supposed to be stable with Iq, we assume that Iq is the current to continue with, so that it becomes the state of the speed integrator.
+            // We expect about 90deg difference between the stepper angle and the estimated observer angle.
+            // We transform the integrator states by [Co So;-So Co] * [Cs -Ss;Ss Cs] where the o subscript is for the observer and the s for the stepper.
+            // The commutation angle is set to this of the observer
+            ClaMailIn.CandidateMotorSpeedCompensationVoltage = SLPars.PhiM * SLessState.OmegaHat ;
+            // Angle difference in matches d-d frame
+            arg = __fracf32 ( SLessState.ThetaEst - (ClaState.QThetaElect - 0.25f) ) * PI2 ;
+            ClaMailIn.CandidateElectAngleTxC = __cos(arg) ;
+            ClaMailIn.CandidateElectAngleTxS = __sin(arg) ;
+            ClaMailIn.CandidateQElectAngle    = __fracf32(SLessState.ThetaEst+0.25f) ;
+            ClaMailIn.CandidateQElectAngle   = SLessState.Id ;
+            // Synchronize
+            ClaState.CommutationSyncDone  = 0 ;
+            CLA_enableTasks(CLA1_BASE, (CLA_TASKFLAG_3 | CLA_TASKFLAG_4));
+        }
+
+        break;
+    case E_EngagingAngleObserver:
+        if ( ClaState.CommutationSyncDone  )
+        {
+            SLessState.FOM.bAcceleratingAsV2FState  = E_EngagingSpeedControl ;
+            SetReferenceMode(E_RefModeSpeed)  ;
+            SetLoopClosureMode(E_LC_Speed_Mode) ;
+			ResetSpeedController() ; 
+			piOut = SLessState.Iq ;
+	        ControlPars.qf0.s0 = piOut ;
+	        ControlPars.qf0.s1 = piOut ;
+            ControlPars.qf1.s0 = piOut ;
+            ControlPars.qf1.s1 = piOut ;
+
+			SysState.SpeedControl.PIState = piOut  ;
+        }
+        break ;
+    case E_EngagingSpeedControl:
+        SysState.SpeedControl.ProfileAcceleration= SLPars.WorkAcceleration  ;
+        SysState.SpeedControl.SpeedTarget = SLPars.WorkSpeed  ;
+
+        RetVal = 1;
+        break ;
+    }
+
+    if (  excp  )
+    {
+        MotorOffSeq();
+        LogException(EXP_FATAL,excp  ) ;
+
+        ClaState.CurrentControl.ExtCurrentCommand = 0 ;
+        RetVal = -1 ;
+    }
+    else
+    {
+        if ( SLessState.FOM.bAcceleratingAsV2FState < E_EngagingAngleObserver)
+        {
+            ClaState.CurrentControl.ExtCurrentCommand = CurCmd  ;
+        }
+    }
+    return RetVal;
+}
+
+
+// Sequence of action to be taken while the motor is on.
+void MotorOnSeqAsSensorless(void)
+{
+    float CurCmd , CurMax   ;
+    short unsigned refmode , ClosureMode   ;
+
+    // Run reference generators
+    CurMax = ControlPars.MaxCurCmd ;
+    CurCmd = 0 ;
+
+    // if the mode is emergence, than simply shut off PWM
+    if ( (ClaState.SystemMode == E_SysMotionModeSafeFault) || ( SysState.Mot.ReferenceMode == E_PosModeStayInPlace ) || SysState.Mot.QuickStop    )
+    {
+        LogException(EXP_FATAL,exp_unexpected_sensorless_mode ) ;
+        MotorOffSeq() ;
+        return ;
+    }
+
+    if ( ManageAccelerationToWorkZone(CurMax) != 1 )
+    {
+        return ;
+    }
+
+    if ( SLessState.OmegaHat < SLPars.FomPars.OmegaCommutationLoss )
+    {
+        LogException( EXP_FATAL , exp_sensorless_underspeed )  ;
+        return  ;
+    }
+
+
+    refmode = E_RefModeSpeed ;
+    ClosureMode = E_LC_Speed_Mode ;
+
+    // Limit the speed reference
+    SysState.SpeedControl.SpeedCommand = fSatNanProt (SysState.SpeedControl.SpeedCommand , ControlPars.MaxSpeedCmd ) ;
+    CurCmd = GetCurrentCmdForSpeedErr( CurCmd  , SLessState.OmegaHat );
+
+    ClaState.CurrentControl.ExtCurrentCommand =  fSatNanProt( CurCmd , CurMax ) ;
+    ClaState.QThetaElect = __fracf32 ( SLessState.ThetaHat + 0.25f) ;
+
+
+    if ( fabsf(ClaState.CurrentControl.ExtCurrentCommand)  ==  CurMax )
+    {
+        if ( SysState.Mot.CurrentLimitCntr < 50 )
+        {
+            SysState.Mot.CurrentLimitCntr += 1 ;
+        }
+        else
+        {
+            SysState.Mot.CurrentLimitCntr = __max( SysState.Mot.CurrentLimitCntr - 3 , 0 );
+        }
+    }
+
+    if ( ClosureMode == E_LC_Speed_Mode )
+    { // Speed profiler
+        switch (refmode )
+        {
+        case E_PosModeDebugGen:
+             SysState.SpeedControl.SpeedReference = SysState.Debug.GRef.Out ;
+             SysState.Mot.ProfileConverged = 1 ;
+             break ;
+        case E_RefModeSpeed:
+            SysState.Mot.ProfileConverged = SpeedProfiler() ;
+            break ;
+        default: // case E_PosModeStayInPlace:
+            SysState.SpeedControl.SpeedTarget = 0 ;
+            SysState.Mot.ProfileConverged = SpeedProfiler() ;
+            break ;
+        }
+
+        // Test if motion converged
+        if (( SysState.Mot.ProfileConverged == 0 ) ||( fabsf(SysState.SpeedControl.SpeedError ) > ControlPars.SpeedConvergeWindow ))
+        {
+            SysState.Mot.MotionConverged  = 0  ;
+            SysState.Mot.MotionConvergeCnt = 0  ;
+        }
+        else
+        {
+            if ( SysState.Mot.MotionConvergeCnt * SysState.Timing.TsTraj < ControlPars.MotionConvergeTime  )
+            {
+                SysState.Mot.MotionConvergeCnt += 1 ;
+                SysState.Mot.MotionConverged  = 0  ;
+            }
+            else
+            {
+                SysState.Mot.MotionConverged  = 1  ;
+            }
+        }
+    }
+    else
+    {
         SysState.PosControl.PosReference = SysState.PosControl.PosFeedBack ;
         SysState.SpeedControl.SpeedReference = ClaState.Encoder1.UserSpeed ;
         SysState.Mot.MotionConvergeCnt = 0  ;
         SysState.Mot.MotionConverged   = 0  ;
     }
 }
+
+///////////////////////////////////////////////////////////
+
 
 void ResetSpeedController(void)
 {
@@ -607,7 +905,7 @@ void MotorHoldSeq(void)
     SysState.PosControl.PosError = SysState.PosControl.PosReference - SysState.PosControl.PosFeedBack  ;
 
     // Set something for commutation angle
-    ClaMailIn.ThetaElect = Commutation.ComAnglePu + 0.25f ;
+    ClaState.QThetaElect = Commutation.ComAnglePu + 0.25f ;
 
     SysState.SpeedControl.SpeedReference = 0 ;
     PosPrefilterMotorOff(SysState.PosControl.PosFeedBack );
@@ -632,6 +930,7 @@ void MotorOffSeq(void)
     ResetSpeedController() ;
 
     ClaState.CurrentControl.ExtCurrentCommand  = 0 ;
+    ClaState.CurrentControl.CurrentDCommand  = 0 ;
     SysState.Mot.CurrentLimitCntr = 0 ;
 
     ClaMailIn.v_dbg_amp = 0 ;
@@ -646,6 +945,8 @@ void MotorOffSeq(void)
 
     SysState.SpeedControl.SpeedTarget = 0   ;
     SysState.SpeedControl.SpeedReference = 0   ;
+
+    SysState.StepperCurrent.StepperAngle = 0 ;
 
 
     if ( fabsf( ClaState.Encoder1.UserSpeed ) < 1e-3 )
@@ -696,7 +997,7 @@ void MotorOffSeq(void)
         ResetRefGens() ;
     }
     // Set something for commutation angle
-    ClaMailIn.ThetaElect = Commutation.ComAnglePu + 0.25f ;
+    ClaState.QThetaElect = Commutation.ComAnglePu + 0.25f ;
 
 
     SysState.InterpolationPosRef = SysState.PosControl.PosFeedBack;
@@ -705,6 +1006,7 @@ void MotorOffSeq(void)
     SysState.Mot.ProfileConverged = 0 ;
     SysState.Mot.MotionConverged  = 0 ;
     SysState.Mot.MotionConvergeCnt = 0  ;
+
 
     Steering2WheelCorrection() ;
 
@@ -805,6 +1107,10 @@ short SetMotorOn( short OnCondition)
         return err_bad_proj_pars ;
     }
 
+    // Arm sensor less initialization algorithm
+    SLessState.FOM.bAcceleratingAsV2FState  = E_AccelerationInit ;
+
+
     // Kill temporary brake control
     SysState.Mot.BrakeControlOverride &= 0xfffd ;
 
@@ -843,7 +1149,7 @@ short SetMotorOn( short OnCondition)
 
     //Brake release delay is entered only if brake condition is automatic (and was thus engaged)
     SetSysTimerTargetSec ( TIMER_RELEASE_BRAKE     ,  ControlPars.BrakeReleaseDelay ,  &SysTimerStr  );
-    SysState.Mot.InBrakeReleaseDelay = 1 ;
+    SysState.Mot.InBrakeReleaseDelay = 0 ;
 
     InitControlParams() ;
     // Re - initialize commutation

@@ -96,7 +96,7 @@ short GetHallComm()
 
                 ChangeKey = HallDecode.OldKey  ^ HallDecode.HallKey ;
                 u.us[0] = ( HallDecode.HallKey & 7 ) | ( (HallDecode.OldKey & 7 ) << 3 ) | ((oldValue &7)<<6) | ( (HallDecode.HallValue & 7 ) << 9 )  ;
-                u.us[1] = (short)(__fracf32(ClaMailIn.ThetaElect) * 32767.5f );
+                u.us[1] = (short)(__fracf32(ClaState.QThetaElect) * 32767.5f );
                 SysState.Debug.HallCatch.KeyCatch       = u.ul ;
 
                 SysState.Debug.HallCatch.EncoderOnCatch = ClaState.Encoder1.Pos ;

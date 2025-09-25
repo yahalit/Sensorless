@@ -210,6 +210,8 @@ short IsResetBlocked(void) ;
 
 // Sensorless
 short PaicuPU(void);
+float GetOpenLoopCurrentCmd(float speed , float acc, float CurMax );
+void MotorOnSeqAsSensorless() ;
 
 // SpeedProfiler
 short SpeedProfiler( void ) ;
@@ -264,5 +266,7 @@ unsigned short Distance2Short (float f)
     u.l = (long) ( __fmax( __fmin( f ,2.5f ) , -2.5f ) * 13000.0f ) ;
     return u.us[0] ;
 }
+
+
 
 #endif /* APPLICATION_FUNCTIONS_H_ */

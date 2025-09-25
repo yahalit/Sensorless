@@ -246,7 +246,6 @@ void InitAppData(void)
     UM2S.M2S.CpuClockHz = (long unsigned) CPU_CLK_HZ ;
     SLPars.dT = UM2S.M2S.ControlTs ;
 
-
     Commutation.CommutationMode = COM_ENCODER_SENSORLESS ;
     SLessState.On = 1 ;
 
@@ -336,7 +335,7 @@ void main(void)
     ERTM;  // Enable Global realtime interrupt DBGM
 
 
-
+// Debug flags
 
 //
 // IDLE loop. Just sit and loop forever (optional):
@@ -451,6 +450,29 @@ short SetProjectSpecificData( short unsigned proj )
 
     SysState.OuterSensor.OuterMergeCst = pProjCtl->OuterMergeCst ;
     ControlPars.UseCase = pProjCtl->UseCase ;
+
+    SLPars.PhiM = pProjCtl->PhiM ;
+    SLPars.Lq0        = pProjCtl->Lq0 ;
+    SLPars.LqCorner2        = pProjCtl->LqCorner2 ;
+    SLPars.Ld0        = pProjCtl->Ld0 ;
+    SLPars.LdSlope        = pProjCtl->LdSlope ;
+    SLPars.R        = pProjCtl->R ;
+    SLPars.KiTheta        = pProjCtl->KiTheta ;
+    SLPars.KpTheta        = pProjCtl->KpTheta ;
+    SLPars.KiFlux        = pProjCtl->KiFlux ;
+    SLPars.KpFlux        = pProjCtl->KpFlux ;
+    SLPars.FomPars.CyclesForConvergenceApproval        = pProjCtl->CyclesForConvergenceApproval ;
+    SLPars.FomPars.ObserverConvergenceToleranceFrac        = pProjCtl->ObserverConvergenceToleranceFrac ;
+    SLPars.FomPars.MaximumSteadyStateFieldRetard        = pProjCtl->MaximumSteadyStateFieldRetard ;
+    SLPars.FomPars.MinimumSteadyStateFieldRetard        = pProjCtl->MinimumSteadyStateFieldRetard ;
+    SLPars.FomPars.FOMTakingStartSpeed        = pProjCtl->FOMTakingStartSpeed ;
+    SLPars.FomPars.OpenLoopAcceleration        = pProjCtl->OpenLoopAcceleration ;
+    SLPars.FomPars.FOMConvergenceTimeout        = pProjCtl->FOMConvergenceTimeout ;
+    SLPars.FomPars.OmegaCommutationLoss        = pProjCtl->OmegaCommutationLoss ;
+    SLPars.WorkAcceleration        = pProjCtl->WorkAcceleration ;
+    SLPars.WorkSpeed        = pProjCtl->WorkSpeed ;
+    ClaControlPars.DCurrentMaxDiDt = pProjCtl->DCurrentMaxDiDt ;
+
 
     return 0 ;
 }

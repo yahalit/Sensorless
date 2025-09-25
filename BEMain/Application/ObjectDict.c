@@ -939,7 +939,9 @@ const struct CShortDataItem ShortDataItem[]={
                                { (short*)&SysState.WTF, 0 ,5,0 } ,  //7
                                {(short*)  &SysState.Debug.bDisablePotEncoderMatchTest,0,1,0} , // 8
                                {(short*)  &SysState.SteerCorrection.bSteeringComprensation ,0, 1 , 0},   // 9
-                               {(short*)  &SysState.CLMeas.Fault ,0, 1 , 0}   // 10
+                               {(short*)  &SysState.CLMeas.Fault ,0, 1 , 0}  , // 10
+                               {(short*)  &SLessState.On ,0, 1 , 0}  , // 11
+                               {(short*)  &SysState.Debug.DebugSLessCycle , 0,1,0} //12
 };
 
 
@@ -1053,10 +1055,23 @@ const float  * pFloatData[] =  {
                              & SysState.Profiler.vmax , //38
                              & SysState.StepperCurrent.StaticCurrent, //39
                              & SysState.StepperCurrent.SpeedCurrent, //40
-                             & SysState.StepperCurrent.AccelerationCurrent //41
+                             & SysState.StepperCurrent.AccelerationCurrent, //41
+                             & SysState.SpeedControl.SpeedTarget, //42
+                             & SysState.SpeedControl.ProfileAcceleration , //43
+                             & SLPars.FomPars.CyclesForConvergenceApproval  , //44
+                             & SLPars.FomPars.ObserverConvergenceToleranceFrac  , //45
+                             & SLPars.FomPars.MaximumSteadyStateFieldRetard  , //46
+                             & SLPars.FomPars.MinimumSteadyStateFieldRetard  , //47
+                             & SLPars.FomPars.FOMTakingStartSpeed  , //48
+                             & SLPars.FomPars.OpenLoopAcceleration  , //49
+                             & SLPars.FomPars.FOMConvergenceTimeout  , //50
+                             & SLPars.FomPars.OmegaCommutationLoss  , //51
+                             & SLPars.WorkAcceleration  , //52
+                             & SLPars.WorkSpeed  , //53
+                             & ControlPars.SpeedKp  , //54
+                             & ControlPars.SpeedKi  , //55
+                             & ClaControlPars.DCurrentMaxDiDt //56
                              };
-
-
 
 const unsigned short nFloatData = sizeof(pFloatData) / sizeof(float *) ;
 
@@ -1272,7 +1287,7 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
         {
             return General_parameter_incompatibility_reason ;
         }
-        ClaMailIn.ThetaElect = f ;
+        ClaState.QThetaElect = f ;
         break ;
 
     case 10 :

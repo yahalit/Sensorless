@@ -45,7 +45,6 @@ struct CClaConst
 struct CClaMailIn
 {
     float arg ;
-    float ThetaElect ;
     float IaOffset ;
     float IbOffset ;
     float IcOffset ;
@@ -64,6 +63,11 @@ struct CClaMailIn
     float StoTholdScale ; // Scaes the threshold voltage of STO
     float ExperimentCurrentThold ;
     float ExperimentMode ;
+    float CandidateElectAngleTxC ;
+    float CandidateElectAngleTxS ;
+    float CandidateQElectAngle ;
+    float CandidateId ;
+    float CandidateMotorSpeedCompensationVoltage ;
 #ifndef SIMULATION_MODE
     float vOpenLoopTestA ;
     float vOpenLoopTestB ;
@@ -123,6 +127,7 @@ struct CClaControlPars
     float ExtCutCst ; // Filtering constant for reported current on PDO
     float VoltageDacGain ; // DAC gain for integrating phase voltage
     float DcCurrentDacGain ;  // DAC gain for integrating DC current
+    float DCurrentMaxDiDt ; // Maximum rate of change for D current command
 };
 
 
@@ -207,11 +212,13 @@ struct CClaCurrentControl
     float CurrentReference ; // !< Reference to the current controller
     float ExtCurrentCommand   ; // !< External Command to the current controller composed of Reference and of speed corrections
     float CurrentCommand      ; // !< Direction of command to the current controller composed of Reference and of speed corrections
+    float CurrentDCommand      ; // !< D axis current command
     float CurrentCommandSlopeLimited   ; // !< Command to the current controller after slope limiting
+    float CurrentCommandDSlopeLimited ;
     float CurrentCmdFilterState0 ;
     float CurrentCmdFilterState1 ;
     float CurrentCommandFiltered  ; // !< Command to the current controller after slope limiting and filtering
-    float CurrentCommandDInjection  ; // !< Command to the current controller d as injection
+    float CurrentCommandDFiltered  ; // !< Command to the current controller after slope limiting and filtering
     float ExtCurrentCommandFiltered  ; // !< Command to the current controller after slope limiting and filtering
     float Int_q ; // Integrals of the Q and the D axes
     float Int_d ;
@@ -315,6 +322,8 @@ struct CClaState
     float ExperimentCtr;
     float ExperimentCtrMax;
     float ExperimentDir ;
+    float QThetaElect ; // < Electrical angle of the Q axis. The more stand angle (of the d axis w.r.t Alpha) is QThetaElect - 0.25
+    float CommutationSyncDone ;
 };
 EXTERN_CLA volatile struct CClaState ClaState ;
 
