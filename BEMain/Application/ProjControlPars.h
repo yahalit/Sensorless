@@ -86,6 +86,7 @@ struct  CProjSpecificCtl
     float OmegaCommutationLoss ;
     float WorkAcceleration ;
     float WorkSpeed ;
+    float InitiallStabilizationTime ;
     float DCurrentMaxDiDt ;
 };
 
@@ -153,18 +154,19 @@ struct  CProjSpecificCtl
       .R  =0.13f ,
       .KiTheta = 7.8026e+03f,
       .KpTheta = 149.0188f,
-      .KiFlux = 50.0f,
-      .KpFlux = 500.0f,
+      .KiFlux = 10.0f,
+      .KpFlux = 100.0f,
       .CyclesForConvergenceApproval = 3.0f,
-      .ObserverConvergenceToleranceFrac = 0.1f,
-      .MaximumSteadyStateFieldRetard = 0.17f,
-      .MinimumSteadyStateFieldRetard = -0.05f,
-      .FOMTakingStartSpeed = 4.0f,
+      .ObserverConvergenceToleranceFrac = 0.22f,
+      .MaximumSteadyStateFieldRetard = 0.5f,
+      .MinimumSteadyStateFieldRetard = -0.2f,
+      .FOMTakingStartSpeed = 5.0f,
       .OpenLoopAcceleration = 1.0f,
-      .FOMConvergenceTimeout = 3.0f,
+      .FOMConvergenceTimeout = 8.0f,
       .OmegaCommutationLoss = 3.0f,
       .WorkAcceleration = 3.0f,
       .WorkSpeed = 6.0f,
+      .InitiallStabilizationTime = 3.0f ,
       .DCurrentMaxDiDt = 200.0f
      } , // PROJ_UNDEFINED
 
@@ -216,18 +218,19 @@ struct  CProjSpecificCtl
       .R  =0.13f ,
       .KiTheta = 7.8026e+03f,
       .KpTheta = 149.0188f,
-      .KiFlux = 50.0f,
-      .KpFlux = 500.0f,
+      .KiFlux = 10.0f,
+      .KpFlux = 100.0f,
       .CyclesForConvergenceApproval = 3.0f,
-      .ObserverConvergenceToleranceFrac = 0.1f,
-      .MaximumSteadyStateFieldRetard = 0.17f,
-      .MinimumSteadyStateFieldRetard = -0.05f,
-      .FOMTakingStartSpeed = 4.0f,
+      .ObserverConvergenceToleranceFrac = 0.22f,
+      .MaximumSteadyStateFieldRetard = 0.5f,
+      .MinimumSteadyStateFieldRetard = -0.2f,
+      .FOMTakingStartSpeed = 5.0f,
       .OpenLoopAcceleration = 1.0f,
-      .FOMConvergenceTimeout = 3.0f,
+      .FOMConvergenceTimeout = 8.0f,
       .OmegaCommutationLoss = 3.0f,
       .WorkAcceleration = 3.0f,
       .WorkSpeed = 6.0f,
+      .InitiallStabilizationTime = 3.0f ,
       .DCurrentMaxDiDt = 200.0f
      } , // PROJ_TYPE_BESENSORLESS
 
@@ -243,8 +246,8 @@ struct  CProjSpecificCtl
       .qf1ZXi   = 1.0f,
       .qf0Cfg   = 17 ,
       .qf1Cfg   = 17 ,
-      .SpeedKp   = 2.0f ,
-      .SpeedKi   = 40.0f ,
+      .SpeedKp   = 5.0f ,
+      .SpeedKi   = 100.0f ,
       .PosKp   = 58.03392625f,
       .MaxAcc   = 100.0f,
       .MinPositionCmd = -1.4e6f, // Minimum position command
@@ -279,18 +282,19 @@ struct  CProjSpecificCtl
       .R  =0.13f ,
       .KiTheta = 7.8026e+03f,
       .KpTheta = 149.0188f,
-      .KiFlux = 50.0f,
-      .KpFlux = 500.0f,
+      .KiFlux = 10.0f,
+      .KpFlux = 100.0f,
       .CyclesForConvergenceApproval = 3.0f,
-      .ObserverConvergenceToleranceFrac = 0.1f,
-      .MaximumSteadyStateFieldRetard = 0.17f,
-      .MinimumSteadyStateFieldRetard = -0.05f,
-      .FOMTakingStartSpeed = 4.0f,
+      .ObserverConvergenceToleranceFrac = 0.22f,
+      .MaximumSteadyStateFieldRetard = 0.5f,
+      .MinimumSteadyStateFieldRetard = -0.2f,
+      .FOMTakingStartSpeed = 5.0f,
       .OpenLoopAcceleration = 1.0f,
-      .FOMConvergenceTimeout = 3.0f,
+      .FOMConvergenceTimeout = 8.0f,
       .OmegaCommutationLoss = 3.0f,
       .WorkAcceleration = 3.0f,
       .WorkSpeed = 6.0f,
+      .InitiallStabilizationTime = 3.0f ,
       .DCurrentMaxDiDt = 200.0f
      } , // PROJ_TYPE_ZOOZ_S
 

@@ -1070,7 +1070,8 @@ const float  * pFloatData[] =  {
                              & SLPars.WorkSpeed  , //53
                              & ControlPars.SpeedKp  , //54
                              & ControlPars.SpeedKi  , //55
-                             & ClaControlPars.DCurrentMaxDiDt //56
+                             & ClaControlPars.DCurrentMaxDiDt, //56
+                             & SLPars.FomPars.InitiallStabilizationTime // 57
                              };
 
 const unsigned short nFloatData = sizeof(pFloatData) / sizeof(float *) ;

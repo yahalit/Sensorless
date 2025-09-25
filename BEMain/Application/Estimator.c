@@ -51,8 +51,8 @@ short PaicuPU(void)
     // Expected A flux: LA * Ia + SLessState.Phida * c (projection of d on A)
     // Expected B flux: LB * Ib + SLessState.Phida * s (projection of d on B)
     // This should equal the flux for that axis: V-IR = d phi/ dt so int( V-IR) = LI + Phida
-    SLessState.FluxErrA =   -SLessState.Phida * c + SLessState.Lq * SLessState.IAlpha - SLessState.FluxIntA;
-    SLessState.FluxErrB =   -SLessState.Phida * s + SLessState.Lq * SLessState.IBeta  - SLessState.FluxIntB;
+    SLessState.FluxErrA =   SLessState.Phida * c + SLessState.Lq * SLessState.IAlpha - SLessState.FluxIntA;
+    SLessState.FluxErrB =   SLessState.Phida * s + SLessState.Lq * SLessState.IBeta  - SLessState.FluxIntB;
 
     // For loop closure: Integral of error
     SLessState.FluxErrIntA = SLessState.FluxErrIntA + SLessState.FluxErrA * SLPars.KiFlux * SLPars.dT;
@@ -66,7 +66,7 @@ short PaicuPU(void)
     SLessState.FluxIntB = SLessState.FluxIntB + SLPars.dT * (SLessState.VBeta  - SLPars.R * SLessState.IBeta + SLessState.VcompB);
 
     // Get the angle based on flux estimates
-    a = __atan2puf32(-(SLessState.FluxIntB - SLessState.Lq * SLessState.IBeta), -(SLessState.FluxIntA - SLessState.Lq * SLessState.IAlpha));
+    a = __atan2puf32((SLessState.FluxIntB - SLessState.Lq * SLessState.IBeta), (SLessState.FluxIntA - SLessState.Lq * SLessState.IAlpha));
 
     // Update flux angle. We keep track of full cycles, otherwise we will crash on low errors
     SLessState.ThetaPsi += __SignedFrac(a - SLessState.ThetaPsi);

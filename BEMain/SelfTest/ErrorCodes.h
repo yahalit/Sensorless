@@ -49,6 +49,8 @@
 #define exp_unexpected_sensorless_mode 0x949 // [Drive:Fatal] {Unexpected sensorless mode }
 #define exp_sensorless_no_initconverge 0x94a  // [Drive:Fatal] {Sensorless estimator never converged }
 #define exp_sensorless_underspeed 0x94b  // [Drive:Fatal] {Sensorless estimator went underspeed }
+#define exp_sensorless_underspeed_whileFOM 0x94c  // [Drive:Fatal] {Sensorless estimator went underspeed on FOM estimate}
+#define exp_sensorless_underspeed_whileFOM2 0x94d  // [Drive:Fatal] {Sensorless estimator went underspeed on FOM estimate}
 
 
 #define ERR_RECORDER_BUF_USED 0x70 // [Interpreter:Error] {Recorder buffer is used for FW programming}

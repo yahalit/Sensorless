@@ -226,9 +226,17 @@ float GetCurrentCmdForSpeedErr(  float CurrentFF , float SpeedFB   )
     float Cand , CandR , out , cursat ;
     SysState.SpeedControl.SpeedError =  SysState.SpeedControl.SpeedCommand - SpeedFB ;
 
-    SysState.SpeedControl.PIState = SysState.SpeedControl.PIState  +
-            ControlPars.SpeedKi * ( SysState.Timing.Ts * SysState.SpeedControl.SpeedCommand -
-                    ClaState.Encoder1.UserPosDelta ) ;
+    if ( Commutation.CommutationMode == COM_ENCODER_SENSORLESS)
+    {
+        SysState.SpeedControl.PIState = SysState.SpeedControl.PIState  +
+                ControlPars.SpeedKi * SysState.Timing.Ts * ( SysState.SpeedControl.SpeedCommand -  SpeedFB ) ;
+    }
+    else
+    {
+        SysState.SpeedControl.PIState = SysState.SpeedControl.PIState  +
+                ControlPars.SpeedKi * ( SysState.Timing.Ts * SysState.SpeedControl.SpeedCommand -
+                        ClaState.Encoder1.UserPosDelta ) ;
+    }
 
     Cand  = ControlPars.SpeedKp * SysState.SpeedControl.SpeedError + SysState.SpeedControl.PIState + CurrentFF ;
     cursat = ControlPars.MaxCurCmd * SysState.Mot.CurrentLimitFactor ;
@@ -606,33 +614,35 @@ float Mod1Distance(float x, float y)
  */
 short EstimateSensorlessObserverFOM()
 {
-    float delta ;
+    //float delta ;
+    SLessState.FOM.FOMRetardAngleDistance = Mod1Distance (ClaState.QThetaElect,SLessState.ThetaHat) ;
     if  ( fabsf( SLessState.OmegaHat / SLPars.FomPars.FOMTakingStartSpeed - 1 ) > SLPars.FomPars.ObserverConvergenceToleranceFrac )
     {
-        SLessState.FOM.FOMConvergenceTimer = 0 ;
+        SLessState.FOM.FOMConvergenceGoodTimer = 0 ;
         return 0 ;
     }
-    delta = Mod1Distance (ClaState.QThetaElect,SLessState.ThetaHat) ;
-    if ( delta > SLPars.FomPars.MaximumSteadyStateFieldRetard || delta < delta > SLPars.FomPars.MinimumSteadyStateFieldRetard)
+    if ( (SLessState.FOM.FOMRetardAngleDistance > SLPars.FomPars.MaximumSteadyStateFieldRetard) ||
+            (SLessState.FOM.FOMRetardAngleDistance < SLPars.FomPars.MinimumSteadyStateFieldRetard) )
     {
-        SLessState.FOM.FOMConvergenceTimer = 0 ;
+        SLessState.FOM.FOMConvergenceGoodTimer = 0 ;
         return 0 ;
     }
-    if ( SLessState.FOM.FOMConvergenceTimer >= SLPars.FomPars.CyclesForConvergenceApproval / __fmax( SLPars.FomPars.FOMTakingStartSpeed, 0.001f) )
+    if ( SLessState.FOM.FOMConvergenceGoodTimer >= SLPars.FomPars.CyclesForConvergenceApproval / __fmax( SLPars.FomPars.FOMTakingStartSpeed, 0.001f) )
     {
         return 1 ;
     }
     else
     {
-        SLessState.FOM.FOMConvergenceTimer += SysState.Timing.TsTraj ;
+        SLessState.FOM.FOMConvergenceGoodTimer += SysState.Timing.TsTraj ;
     }
     return 0 ;
 }
 
 void InitSensorlessObserverFOM()
 {
-    SLessState.FOM.FOMConvergenceTimer = 0 ;
+    SLessState.FOM.FOMConvergenceTotalTimer = 0 ;
     SLessState.FOM.FOMConvergenceGoodTimer = 0 ;
+    SLessState.FOM.FOMFirstStabilizationTimer = 0;
 }
 
 
@@ -674,11 +684,20 @@ short ManageAccelerationToWorkZone(float CurMax)
         InitSensorlessMode() ;
         break ;
     case E_PureF2FAcceleration:
-        sr = SysState.SpeedControl.SpeedReference ;
-        // Synthesize pure V/F drive
-        SysState.Mot.ProfileConverged = SpeedProfiler() ;
 
-        acc = ( SysState.SpeedControl.SpeedReference - sr ) * SysState.Timing.OneOverTsTraj ;
+        if ( SLessState.FOM.FOMFirstStabilizationTimer <  SLPars.FomPars.InitiallStabilizationTime)
+        {
+            SLessState.FOM.FOMFirstStabilizationTimer += SysState.Timing.TsTraj ;
+            acc = 0 ;
+        }
+        else
+        {
+            sr = SysState.SpeedControl.SpeedReference ;
+            // Synthesize pure V/F drive
+            SysState.Mot.ProfileConverged = SpeedProfiler() ;
+
+            acc = ( SysState.SpeedControl.SpeedReference - sr ) * SysState.Timing.OneOverTsTraj ;
+        }
 
         CurCmd = GetOpenLoopCurrentCmd( SysState.SpeedControl.SpeedReference, acc , CurMax) ;
         SysState.StepperCurrent.StepperAngle  =
@@ -693,14 +712,14 @@ short ManageAccelerationToWorkZone(float CurMax)
 
         break ;
     case E_TakingFOM:
-        SLessState.FOM.FOMConvergenceTimer += SysState.Timing.TsTraj ;
-        if ( SLessState.FOM.FOMConvergenceTimer > SLPars.FomPars.FOMConvergenceTimeout)
+        SLessState.FOM.FOMConvergenceTotalTimer += SysState.Timing.TsTraj ;
+        if ( SLessState.FOM.FOMConvergenceTotalTimer > SLPars.FomPars.FOMConvergenceTimeout)
         {
             if ( SysState.Debug.DebugSLessCycle == 0 )
             {
                 excp = exp_sensorless_no_initconverge  ;
+                break ;
             }
-            break ;
         }
         CurCmd = GetOpenLoopCurrentCmd( SysState.SpeedControl.SpeedTarget, 0 , CurMax) ;
 
@@ -721,10 +740,15 @@ short ManageAccelerationToWorkZone(float CurMax)
             ClaMailIn.CandidateElectAngleTxC = __cos(arg) ;
             ClaMailIn.CandidateElectAngleTxS = __sin(arg) ;
             ClaMailIn.CandidateQElectAngle    = __fracf32(SLessState.ThetaEst+0.25f) ;
-            ClaMailIn.CandidateQElectAngle   = SLessState.Id ;
+            ClaMailIn.CandidateId   = SLessState.Id ;
             // Synchronize
             ClaState.CommutationSyncDone  = 0 ;
-            CLA_enableTasks(CLA1_BASE, (CLA_TASKFLAG_3 | CLA_TASKFLAG_4));
+            CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_4);
+        }
+
+        if ( SLessState.OmegaHat < SLPars.FomPars.OmegaCommutationLoss )
+        {
+            excp = exp_sensorless_underspeed_whileFOM  ;
         }
 
         break;
@@ -735,18 +759,23 @@ short ManageAccelerationToWorkZone(float CurMax)
             SetReferenceMode(E_RefModeSpeed)  ;
             SetLoopClosureMode(E_LC_Speed_Mode) ;
 			ResetSpeedController() ; 
-			piOut = SLessState.Iq ;
+			piOut = __fmin( __fmax( SLessState.Iq , 0.0f) , CurMax * 0.75f ) ;
 	        ControlPars.qf0.s0 = piOut ;
 	        ControlPars.qf0.s1 = piOut ;
             ControlPars.qf1.s0 = piOut ;
             ControlPars.qf1.s1 = piOut ;
 
+            SysState.SpeedControl.ProfileAcceleration= SLPars.WorkAcceleration  ;
+            SysState.SpeedControl.SpeedTarget = SLPars.WorkSpeed  ;
+            SysState.SpeedControl.SpeedReference = SLessState.OmegaHat ;
 			SysState.SpeedControl.PIState = piOut  ;
+        }
+        if ( SLessState.OmegaHat < SLPars.FomPars.OmegaCommutationLoss )
+        {
+            excp = exp_sensorless_underspeed_whileFOM2  ;
         }
         break ;
     case E_EngagingSpeedControl:
-        SysState.SpeedControl.ProfileAcceleration= SLPars.WorkAcceleration  ;
-        SysState.SpeedControl.SpeedTarget = SLPars.WorkSpeed  ;
 
         RetVal = 1;
         break ;
@@ -782,7 +811,7 @@ void MotorOnSeqAsSensorless(void)
     CurCmd = 0 ;
 
     // if the mode is emergence, than simply shut off PWM
-    if ( (ClaState.SystemMode == E_SysMotionModeSafeFault) || ( SysState.Mot.ReferenceMode == E_PosModeStayInPlace ) || SysState.Mot.QuickStop    )
+    if ( (ClaState.SystemMode == E_SysMotionModeSafeFault) || SysState.Mot.QuickStop    )
     {
         LogException(EXP_FATAL,exp_unexpected_sensorless_mode ) ;
         MotorOffSeq() ;
@@ -805,7 +834,7 @@ void MotorOnSeqAsSensorless(void)
     ClosureMode = E_LC_Speed_Mode ;
 
     // Limit the speed reference
-    SysState.SpeedControl.SpeedCommand = fSatNanProt (SysState.SpeedControl.SpeedCommand , ControlPars.MaxSpeedCmd ) ;
+    SysState.SpeedControl.SpeedCommand = fSatNanProt (SysState.SpeedControl.SpeedReference , ControlPars.MaxSpeedCmd ) ;
     CurCmd = GetCurrentCmdForSpeedErr( CurCmd  , SLessState.OmegaHat );
 
     ClaState.CurrentControl.ExtCurrentCommand =  fSatNanProt( CurCmd , CurMax ) ;
@@ -1195,6 +1224,7 @@ short SetMotorOn( short OnCondition)
     SetGateDriveEnable(1) ;
 
     mask = BlockInts() ;
+    SysState.Mot.QuickStop  = 0 ;
     SysState.Mot.MotorFault = 0 ; // Clear fault BIT and request motor on
     ClaState.MotorOnRequest  = 1 ;
     RestoreInts(mask) ;

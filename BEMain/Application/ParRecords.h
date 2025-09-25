@@ -73,6 +73,7 @@
    {& SLPars.FomPars.OmegaCommutationLoss, 130 , 0.0000001f,1.0e6f,3.0f} , // Speed that if you go below you consider commutation loss
    {& SLPars.WorkAcceleration, 131 , 0.0000001f,1.0e6f,3.0f} , // Acceleration to working speed
    {& SLPars.WorkSpeed, 132 , 0.0000001f,1.0e6f,6.0f} , // Working speed
+   {& SLPars.FomPars.InitiallStabilizationTime,133, 0.0000001f,1.0e6f,1.5f} , // Time for initial rotor stabilization
    {& ClaMailIn.StoTholdScale,239, -1.5f,1.5f,1.0f} ,// !< Simulation voltage DC bus
    {& ClaControlPars.DCurrentMaxDiDt,246, 0.000001f,99999999.0f,200.0f} ,// !< Maximum rate of D current commad change
    {& ClaControlPars.ExtCutCst,247, 0.000001f,0.99999999f,0.001666f} ,// !< Filter constant for torque report , about 30msec

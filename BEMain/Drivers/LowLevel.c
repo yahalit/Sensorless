@@ -254,6 +254,9 @@ void SetupIsr(void)
     EPWM_clearEventTriggerInterruptFlag(PWM_SCD_BASE);
     EPWM_clearADCTriggerFlag(PWM_SCD_BASE, EPWM_SOC_A);
 
+
+    CLA_enableTasks(CLA1_BASE, CLA_TASKFLAG_4);
+    CLA_setTriggerSource(CLA_TASK_4, CLA_TRIGGER_SOFTWARE);
     CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_7); // Initialize current filter
     CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_8); // Initialize CLA counters
 

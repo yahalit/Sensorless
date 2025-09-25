@@ -39,8 +39,10 @@ typedef struct
 {
     short bBeforeTakingEstimatorFOM ; // 1 when not yet started FOM estimation
     short bAcceleratingAsV2FState ;
-    float FOMConvergenceTimer ; // Timer for timeouting FOM convergence
+    float FOMConvergenceTotalTimer ; // Timer for timeouting FOM convergence
     float FOMConvergenceGoodTimer ; //Timer for establishing FOM convergence
+    float FOMRetardAngleDistance ;
+    float FOMFirstStabilizationTimer ;
 } FomState_T ;
 
 struct CSLState
@@ -90,6 +92,7 @@ typedef struct
     float OpenLoopAcceleration ; // !< The acceleration rate to OpenLoopEndSpeed
     float FOMConvergenceTimeout ; // Timeout for FOM convergence decision
     float OmegaCommutationLoss  ; // Speed that if you go below you consider commutation loss
+    float InitiallStabilizationTime ; // Time for initial stabilization
 }FomEstimatePars_T;
 
 

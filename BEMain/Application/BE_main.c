@@ -336,6 +336,8 @@ void main(void)
 
 
 // Debug flags
+    //SysState.Debug.DebugSLessCycle = 1 ;
+    SetLoopClosureMode(E_LC_Speed_Mode) ;
 
 //
 // IDLE loop. Just sit and loop forever (optional):
@@ -469,6 +471,7 @@ short SetProjectSpecificData( short unsigned proj )
     SLPars.FomPars.OpenLoopAcceleration        = pProjCtl->OpenLoopAcceleration ;
     SLPars.FomPars.FOMConvergenceTimeout        = pProjCtl->FOMConvergenceTimeout ;
     SLPars.FomPars.OmegaCommutationLoss        = pProjCtl->OmegaCommutationLoss ;
+    SLPars.FomPars.InitiallStabilizationTime = pProjCtl->InitiallStabilizationTime ;
     SLPars.WorkAcceleration        = pProjCtl->WorkAcceleration ;
     SLPars.WorkSpeed        = pProjCtl->WorkSpeed ;
     ClaControlPars.DCurrentMaxDiDt = pProjCtl->DCurrentMaxDiDt ;

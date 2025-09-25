@@ -84,7 +84,14 @@
         { 2 , (long unsigned *) & SLessData.I[0]}, //:SLessDataI0  [SensorLess] {Current A}
         { 2 , (long unsigned *) & SLessData.I[1]}, //:SLessDataI1  [SensorLess] {Current B}
         { 2 , (long unsigned *) & SLessData.I[2]}, //:SLessDataI2  [SensorLess] {Current C}
+        { 2 , (long unsigned *) & SLessState.FOM.FOMRetardAngleDistance}, //:FOMRetardAngleDistance  [SensorLessFOM] {FOMRetardAngleDistance}
+        { 2 , (long unsigned *) & SLessState.FOM.FOMConvergenceGoodTimer}, //:FOMConvergenceGoodTimer  [SensorLessFOM] {FOMConvergenceGoodTimer}
+        { 2 , (long unsigned *) & SLessState.FOM.FOMFirstStabilizationTimer}, //:FOMFirstStabilizationTimer  [SensorLessFOM] {FOMFirstStabilizationTimer}
+        { 8 , (long unsigned *) & SLessState.FOM.bAcceleratingAsV2FState}, //:bAcceleratingAsV2FState  [SensorLessFOM] {bAcceleratingAsV2FState}
         { 2 , (long unsigned *) & SysState.StepperCurrent.StepperAngle}, //:StepperAngle  [SensorLess] {StepperAngle}
+        { 2 , (long unsigned *) & SysState.SpeedControl.SpeedCommand}, //:SpeedCommand  [SpeedCtl] {SpeedCommand}
+        { 2 , (long unsigned *) & SysState.SpeedControl.PIState}, //:SpeedPIState  [SpeedCtl] {SpeedPIState}
+        { 2 , (long unsigned *) & SysState.SpeedControl.SpeedReference}, //:SpeedSpeedReference  [SpeedCtl] {SpeedSpeedReference}
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVload  [ClaRecsCopy] {FastVload }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVout  [ClaRecsCopy] {FastVout }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastIsense  [ClaRecsCopy] {FastIsense }
