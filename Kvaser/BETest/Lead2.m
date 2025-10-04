@@ -1,4 +1,5 @@
 function tf2 = Lead2(Ts,F1,F2,maxangle,Xi2,SimpleZ) 
+% function tf2 = Lead2(Ts,F1,F2,maxangle,Xi2,SimpleZ) : Generate an order 2 lead by parameters
 den = disc2(F1,Xi1,Ts); 
 if IsSimplezero
     if isfinite(SimpleZ) 

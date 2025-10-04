@@ -1,4 +1,5 @@
 classdef STimerManagerObj < handle
+% classdef STimerManagerObj < handle: Class to manage the timing of periodoc-update GUI
     properties
         TimerCnt  
         ServiceTrackCnt 

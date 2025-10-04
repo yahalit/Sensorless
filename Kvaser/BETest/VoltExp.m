@@ -1,5 +1,4 @@
-% Make  a "Volt experiment" - identification of motor parameters without
-% any movement 
+% VoltExp: Make  a "Volt experiment" - identification of motor parameters without any movement 
 CanId = TargetCanId  ; 
 CurrentLevel = 10 ; 
 % Direction = 6 ; 

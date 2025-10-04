@@ -1,4 +1,7 @@
 function [pf,pdb,pdeg] = GetPlantFromXls(fname,sname) 
+% function [pf,pdb,pdeg] = GetPlantFromXls(fname,sname) Read the results of plant identification from an Excel file
+% fname: Name of Excel file 
+% sname: sheet within Excel file 
     if nargin < 1 
         error ('First parameter must be file name '); 
     end 

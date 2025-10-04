@@ -1,4 +1,5 @@
 function srcver = GetSourceVersion(fname) 
+% function srcver = GetSourceVersion(fname) : Get the source version code out of a .hex file name
 
 h = fopen(fname) ; 
 miss = [1,1,1,1,1,1];

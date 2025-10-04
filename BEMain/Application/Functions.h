@@ -49,7 +49,7 @@ void setupGpioCAN(void);
 #endif
 
 // AdcDrv
-void ConfigureADC(void);
+void SetupADC(void);
 void SetupADCEpwm(Uint16 channel);
 
 // ClaDrv

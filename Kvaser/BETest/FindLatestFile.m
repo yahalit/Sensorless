@@ -1,4 +1,5 @@
 function largestYFile = FindLatestFile(folderPath, Initials)
+% function largestYFile = FindLatestFile(folderPath, Initials) - Find the latest version of hex file based on its version code
 
     % Get all .MAT files in the specified folder
     rule = [Initials, '*.hex'];

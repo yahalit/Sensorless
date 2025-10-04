@@ -1,4 +1,5 @@
 function ViewNic(nFig,pf,fInterp,org_db, org_deg ,int_db,int_deg,M) 
+% function ViewNic(nFig,pf,fInterp,org_db, org_deg ,int_db,int_deg,M) View a Nichols chart
 
 cM = M/(M^2-1) ; 
 scM = cM ; 

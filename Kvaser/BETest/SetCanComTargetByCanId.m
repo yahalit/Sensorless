@@ -1,5 +1,5 @@
 function [TargetCanId,RecStruct,GetStateList,CalibTable] = SetCanComTargetByCanId(CanId) 
-% function SetCanComTargetByCanId(CanId)
+% function SetCanComTargetByCanId(CanId) 
 % CanId: CAN ID of target 
 % Returns: 
 % TargetCanId: CAN ID for selected target 

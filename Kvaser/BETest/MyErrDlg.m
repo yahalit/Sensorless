@@ -1,4 +1,5 @@
 function MyErrDlg(str)
+% function MyErrDlg(str) Error dialog with given string and enlarged font
 if ~iscell(str)
     str = {str} ; 
 end

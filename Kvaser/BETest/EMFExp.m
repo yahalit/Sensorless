@@ -1,5 +1,4 @@
-% Make  a "EMF experiment" - identification of motor parameters without
-% any movement 
+% EMFExp : Record stator voltages 
 CanId = TargetCanId  ; 
 
 RecStruct.Sync2C = 1 ; 

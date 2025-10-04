@@ -1,4 +1,5 @@
 function p = WRegression(xin,yin,Nbin) 
+% function p = WRegression(xin,yin,Nbin) Weighted linear Regression, with per-bin equilization weighting
 
 x = xin(:) ; 
 y = yin(:) ; 

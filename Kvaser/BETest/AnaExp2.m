@@ -1,4 +1,4 @@
-
+%AnaExp2 : Estimate L from V experiment, given R 
 % R 
 %     V = Vvec{seq};
 %     Cur = Cvec{seq};

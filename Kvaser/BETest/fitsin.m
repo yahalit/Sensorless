@@ -1,4 +1,5 @@
 function [g , a,p] = fitsin( f , t , u , y , nfig)
+% function [g , a,p] = fitsin( f , t , u , y , nfig) - Fit a sine of known frequency to data
 u = u(:) ; 
 y = y(:) ; 
 z = 0* u ; 

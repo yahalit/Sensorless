@@ -1,4 +1,6 @@
 function tf2 = Get2ndOrder(Ts,IsSimplepole,IsSimplezero,F1,F2,Xi1,Xi2,SimpleP,SimpleZ) 
+% function tf2 = Get2ndOrder(Ts,IsSimplepole,IsSimplezero,F1,F2,Xi1,Xi2,SimpleP,SimpleZ) Get a 2nd order filter based on ts
+% parameters
 if IsSimplepole
     if isfinite(SimpleP) 
         den = [1 , -exp(-SimpleP*2*pi*Ts), 0 ]   ; 

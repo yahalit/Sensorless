@@ -1,4 +1,5 @@
 function [str,IsOperational] = GetProjTypeString( ProjType) 
+% function [str,IsOperational] = GetProjTypeString( ProjType) : Get project name and if in boot state by ProjType number
 
 % NeckDrvBootProjId   = hex2dec('92f0') ;
 % NeckDrvOpProjId   = hex2dec('9300') ;

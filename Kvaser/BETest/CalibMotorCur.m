@@ -1,4 +1,4 @@
-% Calibrate motor parameters
+% CalibMotorCur: Calibrate motor parameters = obsolete
 
 
 TGenStr = struct('Gen','T','Type',RecStruct.Enums.SigRefTypes.E_S_Sine,'On',1,...

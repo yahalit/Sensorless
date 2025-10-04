@@ -1,3 +1,5 @@
+% Prefilt: Example , Design a prefilter with maximal smoothness 
+
 wnfac = 0.5 ; 
 wn = 50*2*pi * wnfac; 
 Ts = 50e-6 ; 

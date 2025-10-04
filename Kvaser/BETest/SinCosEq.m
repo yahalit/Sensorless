@@ -1,3 +1,4 @@
+% Junk calculation 
 tht1 = 2 ; 
 tht  = 4 ; 
 A = 7 ;

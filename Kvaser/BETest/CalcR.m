@@ -1,3 +1,5 @@
+% CalcR(fname,seq,Deg30,doplot,VdcOverRide)  - Get motor resistance from V experiment results
+
 function [R,Cur,v,r] = CalcR(fname,seq,Deg30,doplot,VdcOverRide)  
 x = load(fname); 
 r = x.r ; 

@@ -49,6 +49,7 @@ enum E_LoopClosureMode
     //#define PWM_B_LUTBASE EPWM2MINDBLUT_BASE
     #define PWM_C_BASE EPWM1_BASE
     //#define PWM_C_LUTBASE EPWM1MINDBLUT_BASE
+    #define PWM_OVERSAMP  EPWM10_BASE
 
     //#define PWM_PACER_BASE EPWM1_BASE
     //#define CUR_SAMP_PACER_MULT 1

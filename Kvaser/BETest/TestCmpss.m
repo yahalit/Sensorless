@@ -1,5 +1,6 @@
 % global DataType 
 % global TargetCanId 
+% TestCmpss: Test the voltage trip limits 
 
 SetFloatPar('ClaControlPars.VDcMax',75); 
 SetFloatPar('ClaControlPars.VDcMin',17); 

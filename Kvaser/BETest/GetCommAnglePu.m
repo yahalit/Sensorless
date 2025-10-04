@@ -1,5 +1,5 @@
 function Commutation_out = GetCommAnglePu(Encoder,Commutation,ClaControlPars,ind)
-
+%GetCommAnglePu
 global gstr 
 %    e1 = Commutation.OldEncoder ;
    delta = Encoder - Commutation.OldEncoder ;

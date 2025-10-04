@@ -1,4 +1,5 @@
 function motor(state,CanId)
+% function motor(state,CanId) : Motor enable or disable 
 DataType = GetDataType() ;
 if nargin < 2
     SendObj([hex2dec('2220'),4],double( logical(state)) ,DataType.long,'Set motor enable/disable') ;

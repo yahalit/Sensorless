@@ -1,4 +1,5 @@
 function  base = GetSignalsByList(proto) 
+% function  base = GetSignalsByList(proto) : Get the project specific signals for project's "GetState"
 
     base = proto.out ; 
     nbase = length(proto.str) ; 

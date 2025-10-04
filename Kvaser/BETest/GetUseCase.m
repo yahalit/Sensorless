@@ -1,4 +1,6 @@
 function U = GetUseCase() 
+% function U = GetUseCase() : Get the use case of a project 
+
 DataType = GetDataType();
 u = GetCfgPar('UseCase') ; 
 HomeDirection = FetchObj([hex2dec('2223'),0],DataType.long,'HomeDirection') ;

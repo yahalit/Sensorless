@@ -1,4 +1,5 @@
 function str = GetFwString( nver) 
+%function str = GetFwString( nver)  Generate description string from version code
 % #define SubverPatch ( ((FIRM_YR-2000) << 24 ) + (FIRM_MONTH<<20) + (FIRM_DAY <<15) +(SRV_VER << 8) + (SRV_SUBVER<<4) + SRV_PATCH ) ;
 Yr  = bitand( nver , 2^24 * 127 ) / 2^24 + 2000; 
 Mon = bitand( nver , 2^20 * 15 ) / 2^20  ; 

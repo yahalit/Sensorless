@@ -1,4 +1,5 @@
 function RecStr = GetSnap(RecNames,TypeFlags,CanId) 
+% function RecStr = GetSnap(RecNames,TypeFlags,CanId) : Get a snapped short of programmed recorder signals 
 global TargetCanId %#ok<GVMIS> 
 global DataType ; %#ok<GVMIS> 
 global AtpCfg ; %#ok<GVMIS> 

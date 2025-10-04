@@ -1,4 +1,5 @@
 function msgBox(str)
+% function msgBox(str) - Message box with enlarged text 
 if ~iscell(str)
     str = {str} ; 
 end

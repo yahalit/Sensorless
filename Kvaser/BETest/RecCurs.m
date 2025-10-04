@@ -1,3 +1,5 @@
+% RecCurs Experiment to record current loop variables
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup the recorder 
 RecTime = 3 ; 
 MaxRecLen = 500 ; 

@@ -1,4 +1,6 @@
 function str = DecodeHallStat(x) 
+% function str = DecodeHallStat(x) 
+% Decompose the fileds of HallDecode.ComStat.fields.HallStat for Hall sensor analysis
 
 str = struct( ); 
 x = x + 2^32 ; 

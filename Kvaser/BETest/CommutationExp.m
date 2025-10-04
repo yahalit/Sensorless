@@ -1,7 +1,7 @@
 global RecStruct %#ok<GVMIS> 
 DataType = GetDataType(); 
 
-% Make a commutation experiment 
+% CommutationExp: Make a commutation tuning experiment 
 % assume that the communication target has been setup before (see AtpStart) 
 
 CreateStruct =  struct('Interpreter','tex','WindowStyle' , 'modal') ; 

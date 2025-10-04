@@ -1,4 +1,5 @@
 function x = GetSignalIndex( list , cpu , recstruct )
+% function x = GetSignalIndex( list , cpu , recstruct ): Get the signal indices and type info out of signal names
 n = length(list) ; 
 x = cell(1, n) ; 
 z = cell(1, n) ; 

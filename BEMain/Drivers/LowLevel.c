@@ -116,7 +116,7 @@ void InitPeripherals(void)
 
     SetupTimers();
 
-    ConfigureADC() ;
+    SetupADC() ;
 
     // If identity is specified by user data, take it
     SetProjectId()  ;
@@ -161,6 +161,9 @@ void InitPeripherals(void)
     setupPWMForDacEna(EPWM4_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
     setupPWMForDacEna(EPWM5_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
 
+    // That is for the over sampling
+    setupPWMForDacEna(PWM_OVERSAMP,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,DAC_PWM_PERIOD_NSEC) ;
+
     // Just for main CPU interrupt
     setupPWMForDacEna(EPWM6_BASE,DAC_SET_NSEC,DAC_DISABLE_PERIOD_NSEC,CONTROL_PERIOD_NSEC) ;
 
@@ -168,7 +171,7 @@ void InitPeripherals(void)
 
     setupEcap(); // Setup ECAPs as timers
 
-    SetupDMA();     // Setup DMA to be triggered on SPI-A
+    SetupDMA();     // Setup DMA
 
     setupGpio() ;
 
@@ -226,9 +229,11 @@ void SetupIsr(void)
 
 
     // Channel 4 EOC will trigger interrupt
-    HWREGH(ADCA_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 4 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+    HWREGH(ADCA_BASE+ADC_O_INTSEL1N2) = ( (3<<13) |(0xE<<8) | (1<<6) | (1 << 5) | 4 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
     // Channel 5 EOC will trigger interrupt
-    HWREGH(ADCC_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 5 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+    HWREGH(ADCC_BASE+ADC_O_INTSEL1N2) = ((3<<13) |(0xE<<8) | (1<<6) | (1 << 5) | 5 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+
+    HWREGH(ADCB_BASE+ADC_O_INTSEL1N2) = ((3<<13) |(0xE<<8)) ;
 
     Interrupt_register(INT_EPWM6, &AdcIsr);
 
@@ -246,13 +251,29 @@ void SetupIsr(void)
 
     EPWM_setADCTriggerSource(PWM_SCD_BASE,EPWM_SOC_A, EPWM_SOC_TBCTR_U_CMPC);
 
-    EPWM_enableADCTrigger(PWM_SCD_BASE, EPWM_SOC_A);
-    EPWM_setInterruptEventCount(PWM_SCD_BASE, 1);
-    EPWM_setADCTriggerEventPrescale(PWM_SCD_BASE, EPWM_SOC_A,1);
+    // Compares and ADC trigger will be halfway between PWM_SCD_BASE-induced samples.
+    HWREGH(PWM_OVERSAMP+EPWM_O_CMPC) = HWREGH(PWM_OVERSAMP+EPWM_O_TBPRD)  - 1 - ADC_BEFORE_PWM0_nsec / CPU_CLK_NSEC - DAC_PWM_PERIOD_NSEC / 3 / CPU_CLK_NSEC;
+    HWREGH(PWM_OVERSAMP+EPWM_O_CMPD) = HWREGH(PWM_OVERSAMP+EPWM_O_TBPRD)  - 1 - ADC_BEFORE_PWM0_nsec / CPU_CLK_NSEC - DAC_PWM_PERIOD_NSEC * 2 / 3 / CPU_CLK_NSEC;
+    EPWM_setADCTriggerSource(PWM_OVERSAMP,EPWM_SOC_A, EPWM_SOC_TBCTR_U_CMPC);
+    EPWM_setADCTriggerSource(PWM_OVERSAMP,EPWM_SOC_B, EPWM_SOC_TBCTR_U_CMPD);
 
-    // setup the Event Trigger Clear Register (ETCLR)
+    EPWM_enableADCTrigger(PWM_SCD_BASE, EPWM_SOC_A);
+    EPWM_enableADCTrigger(PWM_OVERSAMP, EPWM_SOC_A);
+    EPWM_enableADCTrigger(PWM_OVERSAMP, EPWM_SOC_B);
+
+
+    EPWM_setInterruptEventCount(PWM_SCD_BASE, 1);
+    //EPWM_setInterruptEventCount(PWM_OVERSAMP, 1);
+    EPWM_setADCTriggerEventPrescale(PWM_SCD_BASE, EPWM_SOC_A,1);
+    EPWM_setADCTriggerEventPrescale(PWM_OVERSAMP, EPWM_SOC_A,1);
+    EPWM_setADCTriggerEventPrescale(PWM_OVERSAMP, EPWM_SOC_B,1);
+
+    // Setup the Event Trigger Clear Register (ETCLR)
     EPWM_clearEventTriggerInterruptFlag(PWM_SCD_BASE);
+    //EPWM_clearEventTriggerInterruptFlag(PWM_OVERSAMP);
     EPWM_clearADCTriggerFlag(PWM_SCD_BASE, EPWM_SOC_A);
+    EPWM_clearADCTriggerFlag(PWM_OVERSAMP, EPWM_SOC_A);
+    EPWM_clearADCTriggerFlag(PWM_OVERSAMP, EPWM_SOC_B);
 
 
     CLA_enableTasks(CLA1_BASE, CLA_TASKFLAG_4);
@@ -292,9 +313,18 @@ void SetupIsrLMeas(void)
 
     EALLOW ;
     // Channel 4 EOC will trigger interrupt
-    HWREGH(ADCA_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 4 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+    //HWREGH(ADCA_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 4 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
     // Channel 5 EOC will trigger interrupt
-    HWREGH(ADCC_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 5 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+    //HWREGH(ADCC_BASE+ADC_O_INTSEL1N2) = ( (1<<6) | (1 << 5) | 5 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+
+    // Channel 4 EOC will trigger interrupt
+    HWREGH(ADCA_BASE+ADC_O_INTSEL1N2) = ( (3<<13) |(0xE<<8) | (1<<6) | (1 << 5) | 4 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+    // Channel 5 EOC will trigger interrupt
+    HWREGH(ADCC_BASE+ADC_O_INTSEL1N2) = ((3<<13) |(0xE<<8) | (1<<6) | (1 << 5) | 5 )  ; // Enable interrupt , Make the interrupt continuous, no need to reset ADC interrupt source
+
+    HWREGH(ADCB_BASE+ADC_O_INTSEL1N2) = ((3<<13) |(0xE<<8)) ;
+
+
 
     Interrupt_register(INT_ADCA1, &AdcIsrLMeas);
 

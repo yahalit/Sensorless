@@ -1,6 +1,6 @@
 function  Cfg = ProgCfg(fname, CfgTable , CanIdIn  )
 % function  Cfg = ProgCfg(fname) 
-% Read a Cfgration file (jsn) and optionally program it to the robot
+% Read a Configuration file (jsn) and optionally program it to the robot
 % fname: name of jsn file ([] to open a dialog box) 
 % Returns
 % Cfg: The contents of the Cfgration

@@ -295,7 +295,7 @@ void main(void)
     // Write the controller select setting into the appropriate field.
     //
     EALLOW;
-        MemCfgRegs.GSxMSEL.all |= 0x1fU  ; // Abduct all GS memories
+        MemCfgRegs.GSxMSEL.all |= 0x1eU  ; // Abduct all GS memories but GS1
         DevCfgRegs.MCUCNF1.all |= 0x3c ; // D2 to D5 go to CPU2
 
         //DevCfgRegs.BANKMUXSEL.bit.BANK3 = 3U;
@@ -509,74 +509,154 @@ void SetProjectId(void)
 
 
 
-//
-// InitEPwm1 - Function to Initialize EPWM1
-//
-void InitEPwm1(void)
-{
-    EPwm1Regs.TBPRD = 6000;                        // Set timer period
-    EPwm1Regs.TBPHS.bit.TBPHS = 0x0000;            // Phase is 0
-    EPwm1Regs.TBCTR = 0x0000;                      // Clear counter
 
-    //
-    // Setup TBCLK
-    //
-    EPwm1Regs.TBCTL.bit.CTRMODE = TB_COUNT_UPDOWN; // Count up
-    EPwm1Regs.TBCTL.bit.PHSEN = TB_DISABLE;        // Disable phase loading
-    EPwm1Regs.TBCTL.bit.HSPCLKDIV = TB_DIV4;       // Clock ratio to SYSCLKOUT
-    EPwm1Regs.TBCTL.bit.CLKDIV = TB_DIV4;
 
-    EPwm1Regs.CMPCTL.bit.SHDWAMODE = CC_SHADOW;    // Load registers every ZERO
-    EPwm1Regs.CMPCTL.bit.SHDWBMODE = CC_SHADOW;
-    EPwm1Regs.CMPCTL.bit.LOADAMODE = CC_CTR_ZERO;
-    EPwm1Regs.CMPCTL.bit.LOADBMODE = CC_CTR_ZERO;
 
-    //
-    // Setup compare
-    //
-    EPwm1Regs.CMPA.bit.CMPA = 3000;
 
-    //
-    // Set actions
-    //
-    EPwm1Regs.AQCTLA.bit.CAU = AQ_SET;             // Set PWM1A on Zero
-    EPwm1Regs.AQCTLA.bit.CAD = AQ_CLEAR;
+#define ADC_DMA_RESULTS_BUFFER_SIZE 64
+#define ADC_DMA_SINGLE_BUF 16
 
-    EPwm1Regs.AQCTLB.bit.CAU = AQ_CLEAR;           // Set PWM1A on Zero
-    EPwm1Regs.AQCTLB.bit.CAD = AQ_SET;
-}
+#pragma DATA_SECTION(adcData0, "ramgs0");
+#pragma DATA_SECTION(adcData1, "ramgs0");
+#pragma DATA_SECTION(adcData2, "ramgs0");
+
+Uint16 adcData0[ADC_DMA_RESULTS_BUFFER_SIZE];
+Uint16 adcData1[ADC_DMA_RESULTS_BUFFER_SIZE];
+Uint16 adcData2[ADC_DMA_RESULTS_BUFFER_SIZE];
 
 //
 // SetupDMA - Function to Setup DMA
 //
 void SetupDMA(void)
 {
-    volatile Uint16 *destination;
-    volatile Uint16 *DMADest, *DMASource;
-
+    short resultsIndex ;
     //
-    // Initialize the DMA
+    // Initialize DMA
     //
     DMAInitialize();
 
-    destination = (volatile Uint16 *)&EPwm1Regs.CMPA + 1 ;
-    DMADest = (volatile Uint16 *)destination;
-    DMASource = (volatile Uint16 *)0xE000;  // Location of CMPA value from CPU2
+    for(resultsIndex = 0; resultsIndex < ADC_DMA_RESULTS_BUFFER_SIZE; resultsIndex++)
+    {
+        adcData0[resultsIndex] = 0;
+        adcData1[resultsIndex] = 0;
+        adcData2[resultsIndex] = 0;
+    }
+
 
     //
-    // Setup DMA to transfer a single 16-bit word.  The DMA is setup to run
-    // continuously so that an interrupt is not required to restart the RUN
-    // bit. The DMA trigger is SPIA-FFTX.
-    // These functions are found in f28p65x_dma.c.
+    // DMA set up for first ADC
     //
-    DMACH5AddrConfig(DMADest,DMASource);  // Config DMA source and dest address
-    DMACH5BurstConfig(1,1,1);             // Setup burst registers
-    DMACH5TransferConfig(1,1,1);          // Setup Transfer registers
-    DMACH5WrapConfig(0xFFFF,0,0xFFFF,0);
-    DMACH5ModeConfig(109, PERINT_ENABLE,ONESHOT_ENABLE,CONT_ENABLE,
-                     SYNC_DISABLE,SYNC_SRC,OVRFLOW_DISABLE,SIXTEEN_BIT,
-                     CHINT_END,CHINT_ENABLE);
-    StartDMACH5();
+    DMACH1AddrConfig(adcData0, &AdcaResultRegs.ADCRESULT1);
+
+    //
+    // Perform enough 16-word bursts to fill the results buffer. Data will be
+    // transferred 16 bits at a time
+    //
+    // There are 16 ADC readings in a burst (dont read ADC0, it is Hall current, not required)
+    //
+    DMACH1BurstConfig(ADC_DMA_SINGLE_BUF-1, 1, 1);
+
+    // The buffer is transfers * burst. End of burst sends the source pointer to the start does not step the destination
+    DMACH1TransferConfig(ADC_DMA_RESULTS_BUFFER_SIZE/ADC_DMA_SINGLE_BUF-1, -ADC_DMA_SINGLE_BUF, 0);
+
+    // No wrap expected
+    //DMACH1WrapConfig(0 , 0, 0,-ADC_DMA_RESULTS_BUFFER_SIZE) ;
+
+    DMACH1ModeConfig(
+                        DMA_ADCAINT2,
+                        PERINT_ENABLE,
+                        ONESHOT_DISABLE,
+                        CONT_ENABLE,
+                        SYNC_DISABLE,
+                        SYNC_SRC,
+                        OVRFLOW_DISABLE,
+                        SIXTEEN_BIT,
+                        CHINT_END,
+                        CHINT_DISABLE
+                    );
+
+
+    //
+    // DMA set up for first ADC
+    //
+    DMACH2AddrConfig(adcData1, &AdcbResultRegs.ADCRESULT1);
+
+    //
+    // Perform enough 16-word bursts to fill the results buffer. Data will be
+    // transferred 16 bits at a time
+    //
+    // There are 4 ADC readings in a burst (dont read ADC0, it is Hall current, not required)
+    //
+    DMACH2BurstConfig(ADC_DMA_SINGLE_BUF-1, 1, 1);
+
+    DMACH2TransferConfig(ADC_DMA_RESULTS_BUFFER_SIZE/ADC_DMA_SINGLE_BUF-1, -ADC_DMA_SINGLE_BUF, 0);
+
+    //DMACH2WrapConfig(ADC_DMA_RESULTS_BUFFER_SIZE/ADC_DMA_SINGLE_BUF-1, 0, 0,-ADC_DMA_RESULTS_BUFFER_SIZE) ;
+
+    DMACH2ModeConfig(
+                        DMA_ADCBINT2,
+                        PERINT_ENABLE,
+                        ONESHOT_DISABLE,
+                        CONT_ENABLE,
+                        SYNC_DISABLE,
+                        SYNC_SRC,
+                        OVRFLOW_DISABLE,
+                        SIXTEEN_BIT,
+                        CHINT_END,
+                        CHINT_DISABLE
+                    );
+
+
+
+    DMACH3AddrConfig(adcData2, &AdccResultRegs.ADCRESULT1);
+    //
+    // Perform enough 16-word bursts to fill the results buffer. Data will be
+    // transferred 16 bits at a time
+    //
+    // There are 4 ADC readings in a burst (dont read ADC0, it is Hall current, not required)
+    //
+    DMACH3BurstConfig(ADC_DMA_SINGLE_BUF-1, 1, 1);
+
+    DMACH3TransferConfig(ADC_DMA_RESULTS_BUFFER_SIZE/ADC_DMA_SINGLE_BUF-1, -ADC_DMA_SINGLE_BUF, 0);
+
+    //DMACH3WrapConfig(ADC_DMA_RESULTS_BUFFER_SIZE/ADC_DMA_SINGLE_BUF-1, 0, 0,-ADC_DMA_RESULTS_BUFFER_SIZE) ;
+
+    DMACH3ModeConfig(
+                        DMA_ADCCINT2,
+                        PERINT_ENABLE,
+                        ONESHOT_DISABLE,
+                        CONT_ENABLE,
+                        SYNC_DISABLE,
+                        SYNC_SRC,
+                        OVRFLOW_DISABLE,
+                        SIXTEEN_BIT,
+                        CHINT_END,
+                        CHINT_DISABLE
+                    );
+
+    //
+    // Clearing all pending interrupt flags
+    //
+        EALLOW;
+
+        DmaRegs.CH1.CONTROL.bit.PERINTCLR = 1;
+        DmaRegs.CH2.CONTROL.bit.PERINTCLR = 1;
+        DmaRegs.CH3.CONTROL.bit.PERINTCLR = 1;
+        AdcaRegs.ADCINTFLGCLR.all = 0x3;
+        AdcbRegs.ADCINTFLGCLR.all = 0x3;
+        AdccRegs.ADCINTFLGCLR.all = 0x3;
+
+        EDIS;
+
+    //
+    // Start DMA
+    //
+        StartDMACH1();
+        StartDMACH2();
+        StartDMACH3();
+
+
+
 }
 
 

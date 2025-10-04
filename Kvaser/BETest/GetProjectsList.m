@@ -1,4 +1,5 @@
 function list = GetProjectsList( srcDir) 
+%function list = GetProjectsList( srcDir) : Get the list of supported projects from constDef.h file 
 
 srcFile = [srcDir,'ConstDef.h']; 
 f = fopen(srcFile,'r') ; 

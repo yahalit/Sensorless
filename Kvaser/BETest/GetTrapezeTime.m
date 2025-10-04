@@ -1,4 +1,6 @@
 function [t,x1,x2,x3] = GetTrapezeTime( s , v , a , d) 
+% function [t,x1,x2,x3] = GetTrapezeTime( s , v , a , d) 
+% Get timing information for a trapeze trajectory with given distance (s), speed (v) , acceleration (a) and deceleration (d) 
 v = abs(v) ; 
 a = abs(a) ; 
 d = abs(d) ; 

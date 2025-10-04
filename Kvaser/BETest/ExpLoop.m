@@ -1,3 +1,4 @@
+% ExpLoop: Run V experiments in a loop, with various initial rotor angles
 for AnglePu = 0:1/30:1/3 
     disp("AnglePU=" +  num2str(AnglePu) + "   Wait 20 seconds for angle stabilization") ; 
     

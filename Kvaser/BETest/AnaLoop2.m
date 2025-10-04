@@ -1,3 +1,4 @@
+% AnaLoop2 : Analysis loop for R/L in v experiment, using AnaExp and AnaExp2, All-legs conducting version
 Deg30 = 1 ; 
 
 eind = [6,2,4,3,5,1] ; 

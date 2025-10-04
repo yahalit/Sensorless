@@ -1,4 +1,5 @@
 function DefTable = ReadDefFile(fname,WhoIsThisProject) 
+% function DefTable = ReadDefFile(fname,WhoIsThisProject) Get project #define variables from source h file
 
 DefTable  = struct( 'Name' ,[],'Value',[])  ;  
 DefSize  = 0 ; 

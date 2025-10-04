@@ -1,3 +1,5 @@
+% SetAngleExp: Set the field angle of a motor to a static per-unit value (AnglePu)
+
 % global RecStruct %#ok<GVMIS> 
 DataType = GetDataType(); 
 

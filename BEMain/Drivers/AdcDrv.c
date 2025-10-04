@@ -59,19 +59,21 @@ void ADC_init(uint32_t base){
     //      Continuous Mode : disabled
     //
     //
+    ADC_disableInterrupt(base, ADC_INT_NUMBER1);
     ADC_setInterruptSource(base, ADC_INT_NUMBER1, ADC_INT_TRIGGER_EOC4);
     ADC_clearInterruptStatus(base, ADC_INT_NUMBER1);
     ADC_enableContinuousMode(base, ADC_INT_NUMBER1);
-    ADC_disableInterrupt(base, ADC_INT_NUMBER1);
 }
 
 
 void SetAdcMux(ADC_Trigger trigger);
+void SetAdcMuxThird(ADC_Trigger trigger);
+void SetAdcMux2Third(ADC_Trigger trigger);
 //
-// ConfigureADC - Write ADC configurations and power up the ADC for both
+// SetupADC - Write ADC configurations and power up the ADC for both
 //                ADC A and ADC B
 //
-void ConfigureADC(void)
+void SetupADC(void)
 {
     //
     // Disables the temperature sensor output to the ADC.
@@ -134,6 +136,8 @@ void ConfigureADC(void)
 */
 
     SetAdcMux(ADC_SOC_EVENT) ;
+    SetAdcMuxThird(ADC_SOC_EVENT_THIRD) ;
+    SetAdcMux2Third(ADC_SOC_EVENT_2THIRD) ;
 }
 
 
@@ -166,10 +170,157 @@ void MyADC_setupSOC(uint32_t base, ADC_SOCNumber socNumber, ADC_Trigger trigger,
 }
 
 
+void SetAdcMux2Third(ADC_Trigger trigger)
+{
+    // Each sample will take about 280nsec (@200MHz), so interrupt will be 1.4usec after sampling starts
+    // Next CLA interrupt will be at about 1.7u
+// ADCA
+////////////////////
+    // ok Phase C Hall current
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER10, trigger,
+                 ADC_CH_ADCIN15);
+
+    // ok Phase C AMC current
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER11, trigger,
+                 ADC_CH_ADCIN10);
+
+    // ok Phase C voltage
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER12, trigger,
+                 ADC_CH_ADCIN5);
+
+    // ok again Phase C Hall current
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER13, trigger,
+                 ADC_CH_ADCIN15);
+
+    // ok DC link voltage
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER14, trigger,
+                 ADC_CH_ADCIN4);
+
+// ADCB
+////////////////////
+    // ok Phase A Hall current
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER10, trigger,
+                 ADC_CH_ADCIN6);
+
+    // ok Phase A AMC current
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER11, trigger,
+                 ADC_CH_ADCIN4);
+    // ok Phase A voltage
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER12, trigger,
+                 ADC_CH_ADCIN0);
+
+    // Again Phase A Hall current
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER13, trigger,
+                 ADC_CH_ADCIN6);
+
+    // Hall current ,DC link
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER14, trigger,
+                 ADC_CH_ADCIN7);
+
+
+// ADCC
+////////////////////
+
+    // Phase B Hall current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER10, trigger,
+                 ADC_CH_ADCIN6);
+
+    // ok Phase B AMC current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER11, trigger,
+                 ADC_CH_ADCIN7);
+
+    // ok Phase B voltage
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER12, trigger,
+                 ADC_CH_ADCIN0);
+
+    // Again Phase B Hall current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER13, trigger,
+                 ADC_CH_ADCIN6);
+
+    // AMC current , DC link
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER14, trigger,
+                 ADC_CH_ADCIN1);
+
+}
+
+
+
+void SetAdcMuxThird(ADC_Trigger trigger)
+{
+    // Each sample will take about 280nsec (@200MHz), so interrupt will be 1.4usec after sampling starts
+    // Next CLA interrupt will be at about 1.7u
+// ADCA
+////////////////////
+    // ok Phase C Hall current
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER5, trigger,
+                 ADC_CH_ADCIN15);
+
+    // ok Phase C AMC current
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER6, trigger,
+                 ADC_CH_ADCIN10);
+
+    // ok Phase C voltage
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER7, trigger,
+                 ADC_CH_ADCIN5);
+
+    // ok again Phase C Hall current
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER8, trigger,
+                 ADC_CH_ADCIN15);
+
+    // ok DC link voltage
+    MyADC_setupSOC(ADCA_BASE, ADC_SOC_NUMBER9, trigger,
+                 ADC_CH_ADCIN4);
+
+// ADCB
+////////////////////
+    // ok Phase A Hall current
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER5, trigger,
+                 ADC_CH_ADCIN6);
+
+    // ok Phase A AMC current
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER6, trigger,
+                 ADC_CH_ADCIN4);
+    // ok Phase A voltage
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER7, trigger,
+                 ADC_CH_ADCIN0);
+
+    // Again Phase A Hall current
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER8, trigger,
+                 ADC_CH_ADCIN6);
+
+    // Hall current ,DC link
+    MyADC_setupSOC(ADCB_BASE, ADC_SOC_NUMBER9, trigger,
+                 ADC_CH_ADCIN7);
+
+
+// ADCC
+////////////////////
+
+    // Phase B Hall current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER6, trigger,
+                 ADC_CH_ADCIN6);
+
+    // ok Phase B AMC current
+    // MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER6, trigger,
+    //             ADC_CH_ADCIN7);
+
+    // ok Phase B voltage
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER7, trigger,
+                 ADC_CH_ADCIN0);
+
+    // Again Phase B Hall current
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER8, trigger,
+                 ADC_CH_ADCIN6);
+
+    // AMC current , DC link
+    MyADC_setupSOC(ADCC_BASE, ADC_SOC_NUMBER9, trigger,
+                 ADC_CH_ADCIN1);
+
+}
 
 void SetAdcMux(ADC_Trigger trigger)
 {
-    // Each sample will take about 280nsec, so interrupt will be 1.4usec after sampling starts
+    // Each sample will take about 280nsec (@200MHz), so interrupt will be 1.4usec after sampling starts
     // Next CLA interrupt will be at about 1.7u
 // ADCA
 ////////////////////

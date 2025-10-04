@@ -1,3 +1,4 @@
+% SpeedIdentificationExp: manage a speed plant odentification experiment
 global RecStruct %#ok<GVMIS> 
 CreateStruct =  struct('Interpreter','tex','WindowStyle' , 'modal') ; 
 

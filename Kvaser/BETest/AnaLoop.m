@@ -1,3 +1,4 @@
+% AnaLoop: Analysis loop for R/L in v experiment, using AnaExp and AnaExp2
 Deg30 = 0 ; 
 
 eind = [6,2,4,3,5,1] ; 

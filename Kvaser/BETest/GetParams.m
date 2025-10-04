@@ -1,4 +1,5 @@
 function [ClaPars,MainPars,SimPars]=GetParams(tab) 
+% function [ClaPars,MainPars,SimPars]=GetParams(tab) Get (sorted) parameters to fill the parameters table
 
 global DataType 
     nPars = length(tab) ; 

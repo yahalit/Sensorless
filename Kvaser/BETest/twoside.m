@@ -1,4 +1,5 @@
 function y = twoside ( x , z ) 
+% function y = twoside ( x , z ) : Two sided symmetric (delayless) filtering of a signal
 nx = length(x) ; 
 x1 = x ; 
 for cnt = 2:nx 

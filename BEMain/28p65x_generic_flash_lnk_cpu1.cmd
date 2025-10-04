@@ -29,7 +29,7 @@ MEMORY
    // RAMLS8_CLA    : origin = 0x004000, length = 0x002000  // Use only if configured as CLA program memory
    // RAMLS9_CLA    : origin = 0x006000, length = 0x002000  // Use only if configured as CLA program memory
 
-   //RAMGS0           : origin = 0x010000, length = 0x002000
+   RAMGS0           : origin = 0x010000, length = 0x002000
    //RAMGS1to4           : origin = 0x012000, length = 0x008000
    //RAMGS2           : origin = 0x014000, length = 0x002000
    //RAMGS3           : origin = 0x016000, length = 0x002000
@@ -87,7 +87,7 @@ SECTIONS
 
 	.statistics		: > FLASH_STATISTIC, ALIGN(8)
 
-   //ramgs0 : > RAMGS0, type=NOINIT
+   ramgs0 : > RAMGS0, type=NOINIT
    //ramgs1 : > RAMGS1, type=NOINIT
    //amgs2 : > RAMGS2, type=NOINIT
 

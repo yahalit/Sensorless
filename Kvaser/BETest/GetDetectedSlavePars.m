@@ -1,5 +1,5 @@
 function [pars,misfit] = GetDetectedSlavePars(DetectedSlaves) 
-%function [pars,misfit]  = GetDetectedSlavePars() 
+%function [pars,misfit]  = GetDetectedSlavePars(DetectedSlaves) 
 %Decode parameters of detected slaves through the contents of their extended identity messages
 % pars(:,1) : Proj type (software) , pars(:,2) : Proj Id (hardware) ,pars(:,3) : CAN ID, pars(:,4) : SW version
 % SW version structure: 

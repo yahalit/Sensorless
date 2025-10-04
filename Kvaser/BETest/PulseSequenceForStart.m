@@ -1,3 +1,4 @@
+% PulseSequenceForStart - Generate a voltage pulse sequence that takes a stationary motor back to same position, zero speed
 xx = ones(1,100) ; 
 xxg = zeros(1,50) ; 
 xxgg = zeros(1,25) ; 

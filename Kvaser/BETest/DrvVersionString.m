@@ -1,4 +1,6 @@
 function str = DrvVersionString( vr )
+% function str = DrvVersionString( vr )
+% Decompose the version parameters from the version code number
 if vr ==0 
 	str = 'Unknown' ; 
     return ;

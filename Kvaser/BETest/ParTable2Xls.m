@@ -1,4 +1,5 @@
 function ParTable2Xls(ParFullTable,fname,Sheet)
+% function ParTable2Xls(ParFullTable,fname,Sheet): Store a parameters table in an excel file
     m       = length(ParFullTable) ; 
     fields  = fieldnames(ParFullTable(1)) ; 
     n = length(fields); 

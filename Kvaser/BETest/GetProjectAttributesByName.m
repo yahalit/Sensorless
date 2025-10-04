@@ -1,4 +1,6 @@
 function str = GetProjectAttributesByName(strin)
+% function str = GetProjectAttributesByName(strin) Get project decriptor from its name
+
     strin = lower(strin) ; 
     if contains( strin , 'wheel')
         str = struct( 'Card' , 'Servo' ,'Axis','Wheel','Proj','Dual') ;  

@@ -1,4 +1,5 @@
 function THISCARD = ReadWhoIsThisProject(fname) 
+% function THISCARD = ReadWhoIsThisProject(fname) : Read project identifier from a source file 
 
 fh = fopen(fname,'r') ; 
 if isequal( fh , -1)

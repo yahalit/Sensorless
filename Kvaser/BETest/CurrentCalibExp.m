@@ -1,3 +1,4 @@
+% CurrentCalibExp: Calibrate the current sensors against scope measurements
 global RecStruct %#ok<GVMIS> 
 
 DataType = GetDataType() ; 

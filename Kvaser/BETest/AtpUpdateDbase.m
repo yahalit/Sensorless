@@ -1,5 +1,5 @@
 function AtpUpdateDbase() 
-
+%AtpUpdateDbase : Build parameter recorder and other databases on the basis of source project files
 
 
 KvaserLibRoot = '..\SW3\Kvaser'; 

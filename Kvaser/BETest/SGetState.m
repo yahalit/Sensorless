@@ -1,4 +1,5 @@
 function s = SGetState(CanId) 
+% function s = SGetState(CanId) Get the state of a controller
     global GetStateList    %#ok<*GVMIS> 
     global TargetCanId ; 
 

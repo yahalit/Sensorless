@@ -1,6 +1,7 @@
 function [fout,InsertIdx] = InsertF(pfInterp,pf) 
-% Assume start and end points are equal 
-%   also pf length > 3 , pfInterp longer than pf is log spaced 
+% [fout,InsertIdx] = InsertF(pfInterp,pf): Help generate a frequency vector which can have integer amount sampling times in multiple periods 
+% Assume start and end points remain,  
+% also pf length > 3 , pfInterp longer than pf is log spaced 
 nInterp = length(pfInterp) ; 
 
 orgind  = 2 ; 
