@@ -30,7 +30,7 @@ MEMORY
    // RAMLS9_CLA    : origin = 0x006000, length = 0x002000  // Use only if configured as CLA program memory
 
    RAMGS0           : origin = 0x010000, length = 0x002000
-   //RAMGS1to4           : origin = 0x012000, length = 0x008000
+   RAMGS1to4           : origin = 0x012000, length = 0x008000
    //RAMGS2           : origin = 0x014000, length = 0x002000
    //RAMGS3           : origin = 0x016000, length = 0x002000
    //RAMGS4           : origin = 0x018000, length = 0x002000
@@ -76,7 +76,9 @@ SECTIONS
    .bss:output      : > RAMLS4to7
    .init_array      : > FLASH_BANK0, ALIGN(8)
    .const           : > FLASH_BANK0, ALIGN(8)
-   .data            : > RAMLS4to7
+   .data 			: > RAMLS4to7
+   .recorderdata    : > RAMGS1to4
+   .dmarange 			: > RAMGS0, type=NOINIT
    .sysmem          : > RAMLS4to7
 #else
    .pinit           : > FLASH_BANK0, ALIGN(8)
@@ -87,7 +89,7 @@ SECTIONS
 
 	.statistics		: > FLASH_STATISTIC, ALIGN(8)
 
-   ramgs0 : > RAMGS0, type=NOINIT
+   //.ramsg0 : > RAMGS0, type=NOINIT
    //ramgs1 : > RAMGS1, type=NOINIT
    //amgs2 : > RAMGS2, type=NOINIT
 

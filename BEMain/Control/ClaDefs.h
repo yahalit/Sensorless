@@ -75,6 +75,7 @@ struct CClaMailIn
 #endif
     short PhaseIndexIn   ;
     short PhaseIndexOut  ;
+    short SixStepCommutation ;
 };
 
 
@@ -128,6 +129,12 @@ struct CClaControlPars
     float VoltageDacGain ; // DAC gain for integrating phase voltage
     float DcCurrentDacGain ;  // DAC gain for integrating DC current
     float DCurrentMaxDiDt ; // Maximum rate of change for D current command
+    float VoltageAddAmp;
+    float VoltageAddStartA ;
+    float VoltageAddStartB ;
+    float VoltageAddEndA ;
+    float VoltageAddEndB ;
+    float VoltageAddCountMax ;
 };
 
 
@@ -324,6 +331,9 @@ struct CClaState
     float ExperimentDir ;
     float QThetaElect ; // < Electrical angle of the Q axis. The more stand angle (of the d axis w.r.t Alpha) is QThetaElect - 0.25
     float CommutationSyncDone ;
+    float VoltageAddA ;
+    float VoltageAddB ;
+    float VoltageAddCount ;
 };
 EXTERN_CLA volatile struct CClaState ClaState ;
 
@@ -366,15 +376,25 @@ const struct CClaConst  c = { .piOver32 = 9.817477042468103e-02f , .Halfsqrt3 = 
 };
 */
 // Vandal
-
+#ifndef ZUZMOTOR
 const struct CClaConst  c = { .piOver32 = 9.817477042468103e-02f , .Halfsqrt3 = 8.660254037844386e-01f  ,
                               .sqrt3 = 1.732050807568877f , .OneOver3GoodBehavior = 3.333333333333333e-01f ,
                               .OneOverTwoPi = 1.591549430918953e-01f , .TwoPi = 6.283185307179586e+00f , .TwoThirds = 0.666666666666667f,
                               .Num2048 = 2048.0f  , .Num2732 = 2732.0f , .Num3072 = 3072.0f , .Num4096 = 4096.0f , .Num1p65 = 1.65f ,
                               .Num3p3 = 3.3f ,
                               .UnsignedLong1 = 1 , .UnsignedLong2 = 2,.UnsignedLong3 = 3 , .UnsignedLong4 = 4 ,
-                              .Adc2Volt = 8.056640625000000e-04f, .Volt2Adc = 1.241212121212121e+03f , .Vres2Vphase = 88.851f,
+                              .Adc2Volt = 8.056640625000000e-04f, .Volt2Adc = 1.241212121212121e+03f , .Vres2Vphase =  201.6895f,
                               .Amc2Amp  =  0.024485798237023f ,.Hall2Amp =  ADC_Hall2Amp
+#else
+                              const struct CClaConst  c = { .piOver32 = 9.817477042468103e-02f , .Halfsqrt3 = 8.660254037844386e-01f  ,
+                                                            .sqrt3 = 1.732050807568877f , .OneOver3GoodBehavior = 3.333333333333333e-01f ,
+                                                            .OneOverTwoPi = 1.591549430918953e-01f , .TwoPi = 6.283185307179586e+00f , .TwoThirds = 0.666666666666667f,
+                                                            .Num2048 = 2048.0f  , .Num2732 = 2732.0f , .Num3072 = 3072.0f , .Num4096 = 4096.0f , .Num1p65 = 1.65f ,
+                                                            .Num3p3 = 3.3f ,
+                                                            .UnsignedLong1 = 1 , .UnsignedLong2 = 2,.UnsignedLong3 = 3 , .UnsignedLong4 = 4 ,
+                                                            .Adc2Volt = 8.056640625000000e-04f, .Volt2Adc = 1.241212121212121e+03f , .Vres2Vphase = 88.851f,
+                                                            .Amc2Amp  =  0.024485798237023f ,.Hall2Amp =  ADC_Hall2Amp
+#endif
 };
 
 #endif

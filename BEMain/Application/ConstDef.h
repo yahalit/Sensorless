@@ -90,7 +90,7 @@
 
 //#define SIG_TABLE_SIZE SIG_TABLE_SIZE_BASIC
 #define N_RECS_MAX  16 // Maximum amount of recorded signals
-#define REC_BUF_LEN  8192 // Number of bins in recorder
+#define REC_BUF_LEN  16384 // Number of bins in recorder
 #define N_FDEBUG 8
 #define N_LDEBUG 8
 

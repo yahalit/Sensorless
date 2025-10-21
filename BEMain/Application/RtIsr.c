@@ -66,14 +66,14 @@ void inline FillLoggerStruct(void)
 {
     if (( HWREG(UARTA_BASE + UART_O_FR) & UART_FR_TXFE)== UART_FR_TXFE)
     {
-        HSLogger.LoggerData.Current[0] = (short)(ClaState.Analogs.PhaseCur[0] * 128.0f) ;
-        HSLogger.LoggerData.Current[1] = (short)(ClaState.Analogs.PhaseCur[1] * 128.0f) ;
-        HSLogger.LoggerData.Current[2] = (short)(ClaState.Analogs.PhaseCur[2] * 128.0f) ;
-        HSLogger.LoggerData.PhaseVolt[0] = (short)(ClaState.Analogs.PhaseVoltMeas[0] * 16.0f ) ;
-        HSLogger.LoggerData.PhaseVolt[1] = (short)(ClaState.Analogs.PhaseVoltMeas[1] * 16.0f ) ;
-        HSLogger.LoggerData.PhaseVolt[2] = (short)(ClaState.Analogs.PhaseVoltMeas[2] * 16.0f ) ;
-        HSLogger.LoggerData.DcBusVolt = (short)(ClaState.Analogs.Vdc * 16.0f ) ;
-        HSLogger.LoggerData.CurrentIn = (short)(ClaState.Analogs.DcCur * 128.0f ) ;
+        HSLogger.LoggerData.Current[0] = (short)(ClaState.Analogs.PhaseCur[0] * 256.0f) ;
+        HSLogger.LoggerData.Current[1] = (short)(ClaState.Analogs.PhaseCur[1] * 256.0f) ;
+        HSLogger.LoggerData.Current[2] = (short)(ClaState.Analogs.PhaseCur[2] * 256.0f) ;
+        HSLogger.LoggerData.PhaseVolt[0] = (short)(ClaState.Analogs.PhaseVoltMeas[0] * 64.0f ) ;
+        HSLogger.LoggerData.PhaseVolt[1] = (short)(ClaState.Analogs.PhaseVoltMeas[1] * 64.0f ) ;
+        HSLogger.LoggerData.PhaseVolt[2] = (short)(ClaState.Analogs.PhaseVoltMeas[2] * 64.0f ) ;
+        HSLogger.LoggerData.DcBusVolt = (short)(ClaState.Analogs.Vdc * 64.0f ) ;
+        HSLogger.LoggerData.CurrentIn = (short)(ClaState.ThetaPuInUse * 2048.0f ) ;
 
         // Put it all to the UART
         HWREG(UARTA_BASE + UART_O_DR) = HSLogger.us[0] | 0x80;
@@ -153,6 +153,7 @@ __interrupt void AdcIsr(void)
 
     Commutation.Status = GetCommAnglePu(ClaState.Encoder1.Pos ) ;
 
+    // Apply logger. Note that the logger works unconditionally - bombs repeatedly the UART port
     FillLoggerStruct();
 
 #define N1 2

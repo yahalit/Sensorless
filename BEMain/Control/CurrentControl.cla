@@ -202,9 +202,16 @@ void ClaSinCosPu( float pu_arg_in )
     t4 = SinTable[pu_ind+9] ;
 
 
-    delta = __mmaxf32(__mminf32( __mfracf32 ( pu_arg_in - ClaState.ThetaPuInUse+2.5f) - 0.5f ,ClaControlPars.MaxThetaPuDelta) , -ClaControlPars.MaxThetaPuDelta) ;
 
-    ClaState.ThetaPuInUse = __mfracf32(ClaState.ThetaPuInUse + delta + 1.0f)   ;
+    if ( ClaMailIn.SixStepCommutation )
+    { //Take quantization to 6 steps
+        ClaState.ThetaPuInUse = __mfracf32( __mfracf32( pu_arg_in * 6.0f + 0.5f ) + 1.0f ) * 0.166666666666667f ;
+    }
+    else
+    {
+        delta = __mmaxf32(__mminf32( __mfracf32 ( pu_arg_in - ClaState.ThetaPuInUse+2.5f) - 0.5f ,ClaControlPars.MaxThetaPuDelta) , -ClaControlPars.MaxThetaPuDelta) ;
+        ClaState.ThetaPuInUse = __mfracf32(ClaState.ThetaPuInUse + delta + 1.0f)   ;
+    }
 
     ClaState.s = (t1 + t3 * pu_arg * c.piOver32 ) * (1-pu_arg)
         + (t2 - t4 *( (1 - pu_arg) * c.piOver32) ) * pu_arg ;
@@ -299,7 +306,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 {
     float   f1 , dd ;
     float delta , er , maxcur  ;
-    float wa , wb , wc ;
+    float wa , wb , wc , theta ;
     long t  ;
     long pa , pb  ;
 
@@ -358,7 +365,8 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 
 
         // Get the trigonometric functions for work
-        ClaSinCosPu( ClaState.QThetaElect ) ; // + 0.25f ) ;
+        theta = ( ClaMailIn.IdMode == 2  ) ? ClaState.vqd = ClaMailIn.vOpenLoopTestC : ClaState.QThetaElect ;
+        ClaSinCosPu( theta ) ; // + 0.25f ) ;
 
         // Filter the reference
         ClaState.CurrentControl.CurrentCommand =  ClaState.CurrentControl.ExtCurrentCommand * ClaControlPars.CurrentCommandDir ;
@@ -419,8 +427,9 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
             ClaState.vdd = ClaState.CurrentControl.vpre_d + ClaState.CurrentControl.Error_d * ClaControlPars.KpCur ;
 
             // Special mode for current loop identification, insert the references directly as q/d voltages
-            if ( ClaMailIn.IdMode )
+            if ( ClaMailIn.IdMode == 1  )
             {
+
                 ClaState.vqd = ClaMailIn.Tref ;
                 ClaState.vdd = ClaMailIn.Gref ;
 
@@ -432,6 +441,12 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 
                 ClaState.q2v2 = -0.5f * (c.sqrt3 * ClaState.s + ClaState.c) ;
                 ClaState.d2v2 =  0.5f * (c.sqrt3 * ClaState.c - ClaState.s) ;
+            }
+            if ( ClaMailIn.IdMode == 2  )
+            {
+
+                ClaState.vqd = ClaMailIn.vOpenLoopTestA ;
+                ClaState.vdd = ClaMailIn.vOpenLoopTestB ;
             }
 
             // Vfac = Let (Vsat = alpha * Vbus) , then Vsat * TBPRD / Vbus = alpha * Tbprd
@@ -450,7 +465,64 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
             ClaState.vb = ClaState.PwmFac * ( ClaState.q2v2 * ClaState.vqr + ClaState.d2v2 * ClaState.vdr  ) ;
             ClaState.vc = -ClaState.vb - ClaState.va ;
 
-    /*
+
+            // Manage voltage additions
+            if ( ( ClaState.VoltageAddCount - ClaControlPars.VoltageAddStartA ) *
+                            ( ClaState.VoltageAddCount - ClaControlPars.VoltageAddEndA ) <= 0 )
+            {
+                ClaState.VoltageAddA = ClaControlPars.VoltageAddAmp ;
+            }
+            else
+            {
+                if ( ( ClaState.VoltageAddCount - ClaControlPars.VoltageAddEndA-1 ) *
+                                ( ClaState.VoltageAddCount - (2 * ClaControlPars.VoltageAddEndA - ClaControlPars.VoltageAddStartA + 1) ) <= 0 )
+                {
+                    ClaState.VoltageAddA = -ClaControlPars.VoltageAddAmp ;
+
+                }
+                else
+                {
+                    ClaState.VoltageAddA = 0 ;
+                }
+            }
+
+            if ( ( ClaState.VoltageAddCount - ClaControlPars.VoltageAddStartB ) *
+                            ( ClaState.VoltageAddCount - ClaControlPars.VoltageAddEndB ) <= 0 )
+            {
+                ClaState.VoltageAddB = ClaControlPars.VoltageAddAmp ;
+            }
+            else
+            {
+                if ( ( ClaState.VoltageAddCount - ClaControlPars.VoltageAddEndB-1 ) *
+                                ( ClaState.VoltageAddCount - (2 * ClaControlPars.VoltageAddEndB - ClaControlPars.VoltageAddStartB + 1) ) <= 0 )
+                {
+                    ClaState.VoltageAddB = -ClaControlPars.VoltageAddAmp ;
+
+                }
+                else
+                {
+                    ClaState.VoltageAddB = 0 ;
+                }
+            }
+
+            ClaState.VoltageAddCount = ( ClaState.VoltageAddCount >= ClaControlPars.VoltageAddCountMax ) ? 0 : ClaState.VoltageAddCount+1.0f  ;
+
+            //  Add inductance identification
+            ClaState.va += ClaState.VoltageAddA * 2 ;
+            ClaState.vb  = ClaState.vb - ClaState.VoltageAddA + c.sqrt3 * ClaState.VoltageAddB ;
+            ClaState.vc  = ClaState.vc - ClaState.VoltageAddA - c.sqrt3 * ClaState.VoltageAddB ;
+
+
+            if ( ClaMailIn.IdMode == 3 )
+            {
+                ClaState.va = __mminf32(__mmaxf32(ClaMailIn.vOpenLoopTestA,-1000.0f),1000.0f) ;
+                ClaState.vb = __mminf32(__mmaxf32(ClaMailIn.vOpenLoopTestB,-1000.0f),1000.0f) ;
+                ClaState.vc = __mminf32(__mmaxf32(ClaMailIn.vOpenLoopTestC,-1000.0f),1000.0f) ;   ;
+            }
+
+
+
+            /*
             f1 =  ClaState.vqd * ClaState.vqd + ClaState.vdd * ClaState.vdd ;
             if ( f1 > ClaState.Vsat * ClaState.Vsat )
             {
@@ -480,6 +552,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
             ClaState.va = 0 ;
             ClaState.vb = 0 ;
             ClaState.vb = 0 ;
+            ClaState.VoltageAddCount = 0 ;
         }
 
         ClaState.vn =  ClaState.PwmOffset - 0.5f * (  __mmaxf32(__mmaxf32(ClaState.va,ClaState.vb),ClaState.vc) + __mminf32(__mminf32(ClaState.va,ClaState.vb),ClaState.vc)) ;
@@ -534,19 +607,19 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
 
 
         delta = ClaState.vqr -  ClaState.vqd ;
-        er    = ClaState.CurrentControl.Error_q + delta * ClaControlPars.KAWUCur ;
+        er    = ClaState.CurrentControl.Error_q + delta * ClaControlPars.KAWUCur * __meinvf32(ClaControlPars.KpCur)  ;
         ClaState.CurrentControl.Int_q =  ClaState.CurrentControl.Int_q + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
 
         delta = ClaState.vdr -ClaState.vdd ;
-        er    = ClaState.CurrentControl.Error_d + delta * ClaControlPars.KAWUCur ;
+        er    = ClaState.CurrentControl.Error_d + delta * ClaControlPars.KAWUCur * __meinvf32(ClaControlPars.KpCur)  ;
         ClaState.CurrentControl.Int_d =  ClaState.CurrentControl.Int_d + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
     /*
         delta = (ClaState.SaturationFac4AWU - 1.0) *  ClaState.vqd ;
-        er    = ClaState.CurrentControl.Error_q + delta * ClaControlPars.KAWUCur ;
+        er    = ClaState.CurrentControl.Error_q + delta * ClaControlPars.KAWUCur * __meinvf32(ClaControlPars.KpCur) ;
         ClaState.CurrentControl.Int_q =  ClaState.CurrentControl.Int_q + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
 
         delta = (ClaState.SaturationFac4AWU - 1.0) *  ClaState.vdd ;
-        er    = ClaState.CurrentControl.Error_d + delta * ClaControlPars.KAWUCur ;
+        er    = ClaState.CurrentControl.Error_d + delta * ClaControlPars.KAWUCur * __meinvf32(ClaControlPars.KpCur) ;
         ClaState.CurrentControl.Int_d =  ClaState.CurrentControl.Int_d + ClaControlPars.KiCur * ClaMailIn.Ts * er ;
     */
         ClaState.tTask = (HWREG(ECAP3_BASE + ECAP_O_TSCTR) - t) * (1.0f / CPU_CLK_MHZ ) ;

@@ -43,7 +43,7 @@ for cnt = 1:length(SigNamesBESensorLess) , SigNamesBESensorLess{cnt} = SigTableB
 ErrCodesBESensorLess = ParseErrorCodes( [BESensorLessRoot,'SelfTest\ErrorCodes.h']) ; 
 
 
-BaseSignalsBESensorLess = {'LongException','Vdc','UserPos','ThetaElect','Iq','UserSpeed'} ;
+BaseSignalsBESensorLess = {'LongException','Vdc','UserPos','ThetaElect','Iq','UserSpeed','SlessOmegaHat'} ;
 
 LoopClosureModes  = ParseEnum( [BESensorLessRoot,'Application\HwConfig.h'],'E_LoopClosureMode') ; 
 SysModes  = ParseEnum( [BESensorLessRoot,'Control\ClaDefs.h'],'E_SysMode') ; 

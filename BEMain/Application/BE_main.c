@@ -135,6 +135,7 @@ void InitAppData(void)
     ClearMemRpt((short unsigned *) &FlashProg,sizeof( FlashProg) );
 
     ClearMemRpt((short unsigned *) &ClaState,sizeof( ClaState) );
+    ClearMemRpt((short unsigned *) &ClaControlPars,sizeof( ClaControlPars) );
     ClearMemRpt((short unsigned *) &ClaMailIn,sizeof( ClaMailIn) );
     ClearMemRpt((short unsigned *) &SLessState,sizeof( SLessState) );
     ClearMemRpt((short unsigned *) &SLessData,sizeof( SLessData) );
@@ -295,7 +296,7 @@ void main(void)
     // Write the controller select setting into the appropriate field.
     //
     EALLOW;
-        MemCfgRegs.GSxMSEL.all |= 0x1eU  ; // Abduct all GS memories but GS1
+        MemCfgRegs.GSxMSEL.all = 0 ; // All for CPU1 |= 0x1eU  ; // Abduct all GS memories but GS1
         DevCfgRegs.MCUCNF1.all |= 0x3c ; // D2 to D5 go to CPU2
 
         //DevCfgRegs.BANKMUXSEL.bit.BANK3 = 3U;
@@ -373,6 +374,10 @@ short SetProjectSpecificData( short unsigned proj )
     {
         return -1 ;
     }
+
+    ClaControlPars.VoltageAddCountMax  = 100 ; // Stam , a setting never to activate
+    ClaControlPars.VoltageAddEndA = ClaControlPars.VoltageAddCountMax * 2 ;
+    ClaControlPars.VoltageAddEndB = ClaControlPars.VoltageAddCountMax * 2 ;
 
     ControlPars.I2tCurLevel  = pProjData->I2tCurLevel ;
     ControlPars.I2tCurTime   = pProjData->I2tCurTime  ;
@@ -485,7 +490,7 @@ void SetProjectId(void)
 {
     //if ( DBaseConf.IsValidDatabase  )
     {
-        ProjId =   PROJ_TYPE_ZOOZ_S ; // PROJ_TYPE_BESENSORLESS ;
+        ProjId =  PROJ_TYPE_BESENSORLESS    ; // PROJ_TYPE_ZOOZ_S ;
     }
 
     CanId = ProjSpecificData[ProjId].CanId ;
@@ -516,9 +521,9 @@ void SetProjectId(void)
 #define ADC_DMA_RESULTS_BUFFER_SIZE 64
 #define ADC_DMA_SINGLE_BUF 16
 
-#pragma DATA_SECTION(adcData0, "ramgs0");
-#pragma DATA_SECTION(adcData1, "ramgs0");
-#pragma DATA_SECTION(adcData2, "ramgs0");
+#pragma DATA_SECTION(adcData0, ".dmarange");
+#pragma DATA_SECTION(adcData1, ".dmarange");
+#pragma DATA_SECTION(adcData2, ".dmarange");
 
 Uint16 adcData0[ADC_DMA_RESULTS_BUFFER_SIZE];
 Uint16 adcData1[ADC_DMA_RESULTS_BUFFER_SIZE];

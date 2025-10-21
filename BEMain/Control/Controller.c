@@ -1037,6 +1037,12 @@ void MotorOffSeq(void)
     SysState.Mot.MotionConvergeCnt = 0  ;
 
 
+    ClaMailIn.vOpenLoopTestA = 0 ;
+    ClaMailIn.vOpenLoopTestB = 0 ;
+    ClaMailIn.vOpenLoopTestC = 0 ;
+
+
+
     Steering2WheelCorrection() ;
 
 

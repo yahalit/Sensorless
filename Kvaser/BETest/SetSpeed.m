@@ -8,7 +8,7 @@
 
 % SetSpeed: Set acceleration to speed in open loop mode, and activate sensorless estimator 
 
-Profiler = struct('accel',1,'vmax',6,'StaticCurrent',6,'SpeedCurrent',0.25,'AccelerationCurrent',2) ;
+Profiler = struct('accel',0.5,'vmax',7,'StaticCurrent',14.5,'SpeedCurrent',0,'AccelerationCurrent',2) ;
 Profiler.dec = Profiler.accel ;
 
 % Set to manual mode

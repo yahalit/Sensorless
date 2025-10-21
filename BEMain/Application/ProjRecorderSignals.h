@@ -42,13 +42,21 @@
         { 2 , (long unsigned *) & ClaState.Analogs.PhaseVoltMeas[2]}, //:PhaseVoltMeas2 [Analogs] {PhaseVoltMeas2}
         { 2 , (long unsigned *) & ClaState.MotorOn}, //:MotorOn [System] {MotorOn}
         { 2 , (long unsigned *) & ClaState.MotorOnRequest}, //:MotorOnRequest [System] {MotorOnRequest}
-        { 2 , (long unsigned *) & ClaState.vqd }, //:vqd [Current] {Vq output of q controller }
+        { 2 , (long unsigned *) & ClaState.vqd }, //:vqd [Current] {Vq output demand of q controller }
+        { 2 , (long unsigned *) & ClaState.vdd }, //:vdd [Current] {Vd output demand of d controller }
+        { 2 , (long unsigned *) & ClaState.vqr }, //:vqr [Current] {Vq output realized of q controller }
+        { 2 , (long unsigned *) & ClaState.vdr }, //:vdr [Current] {Vd output realized of d controller }
+        { 2 , (long unsigned *) & ClaState.CurrentControl.Int_q }, //:Int_q [Current] {Integrator of q controller }
+        { 2 , (long unsigned *) & ClaState.CurrentControl.Int_d }, //:Int_d [Current] {Integrator of d controller }
+        { 2 , (long unsigned *) & ClaState.CurrentControl.vpre_q }, //:vpre_q [Current] {Integrator + EMF correction of d controller }
+        { 2 , (long unsigned *) & ClaState.CurrentControl.Error_q }, //:Error_q [Current] {Error of q controller }
+        { 2 , (long unsigned *) & ClaState.CurrentControl.Error_d }, //:Error_d [Current] {Error of d controller }
         { 2 , (long unsigned *) & ClaState.CurrentControl.CurrentCommand }, //:InternalCurrentCommand [Current] {Directional current command: speed correction + FF}
         { 2 , (long unsigned *) & ClaState.CurrentControl.ExtCurrentCommand }, //:CurrentCommand [Current] {Composite current command: speed correction + FF}
         { 2 , (long unsigned *) & ClaState.CurrentControl.CurrentCommandSlopeLimited }, //:CurrentCommandSlopeLimited [Current] {Limited Reference to current control}
         { 2 , (long unsigned *) & ClaState.CurrentControl.CurrentCmdFilterState0 }, //:CurrentCmdFilterState0 [Current] {Reference filter state 0 to current control}
         { 2 , (long unsigned *) & ClaState.CurrentControl.CurrentCmdFilterState1 }, //:CurrentCmdFilterState1 [Current] {Reference filter state 1 to current control}
-        { 2 , (long unsigned *) & ClaState.CurrentControl.ExtCurrentCommandFiltered }, //:CurrentCommandFiltered [Current] {Reference to current control - final filtered}
+        { 2 , (long unsigned *) & ClaState.CurrentControl.ExtCurrentCommandFiltered }, //:CurrentCommandFiltered [Current] {Reference to current control - final filtered, with direction}
         { 2 , (long unsigned *) & ClaState.CurrentControl.CurrentCommandFiltered }, //:InternalCurrentCommandFiltered [Current] {Reference to current control - final filtered}
         { 0 , (long unsigned *) & SysState.Timing.LmeasClocksOfInt }, //:LmeasClocksOfInt [LMeasure] {Max number of clocks in an interrupt}
         { 2 , (long unsigned *) & SLessState.ThetaEst}, //:SlessThetaEst  [SensorLess] {Sensorless ThetaEst}

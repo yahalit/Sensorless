@@ -256,6 +256,7 @@ void SetupPWM_Phase(uint32_t base,unsigned long pwmPeriod_nsec)
     HWREGH(base + EPWM_O_DBCTL ) = 0x2002 ;
     HWREGH(base + EPWM_O_DBCTL2) = 0x4 ; // Load DBCTL from shadow on counter = 0
     HWREGH(base + EPWM_O_DBCTL ) = 0x2002 ;
+    HWREGH(base + EPWM_O_DBCTL2) = 0x0 ; // Load DBCTL immediate
 
     // setup the Trip Zone Select Register (TZSEL)
     HWREGH(base + EPWM_O_TZSEL) = 0xc000 ; // One shot disablers, events A1 and B1
@@ -280,7 +281,7 @@ void SetupPWM_Phase(uint32_t base,unsigned long pwmPeriod_nsec)
     HWREGH(base + EPWM_O_SYNCINSEL) = PWM_SYNCSEL ;
 
     HWREG(LUT_BASE+EPWM_O_MINDBCFG) = 0x00090009 ; // Each block selects its mate as its blocking source , enabled
-    HWREG(LUT_BASE+EPWM_O_MINDBDLY) = 0x000c000c ; // Set 80nsec as minimum delay
+    HWREG(LUT_BASE+EPWM_O_MINDBDLY) = 0x00180018 ; // Set 120nsec as minimum delay
     HWREG(LUT_BASE+EPWM_O_LUTCTLA) = 0x00aa0000  ; // Set equal to in1
     HWREG(LUT_BASE+EPWM_O_LUTCTLB) = 0x00aa0000  ; // Set equal to in1
 

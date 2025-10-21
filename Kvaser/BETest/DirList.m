@@ -1,5 +1,9 @@
 % Directory of BetEl 
 
+% Applications
+% WheelDrv : Operation GUI 
+
+% M files 
 % VoltExp: Make  a "Volt experiment" - identification of motor parameters without any movement 
 % AnaAll    Analyze the results of L by angle determination
 % AnaExp: Analyze resistance out ov V-experiment results
@@ -13,19 +17,26 @@
 % ExpLoop: Run V experiments in a loop, with various initial rotor angles
 % PulseSequenceForStart - Generate a voltage pulse sequence that takes a stationary motor back to same position, zero speed
 % function s = SGetState(CanId) Get the state of a controller
-% SetSpeed: Set acceleration to speed in open loop mode, and activate sensorless estimator 
 % motor(state,CanId) : Motor enable or disable 
 
 % Temporary tests: 
-% munk,  Untitled3,zzz, ViewEst
+%%%%%%%%%%%%%%%%%%
+% munk,  Untitled3,zzz, ViewEst, FindEsraDir UnitTestBE1
 
+%% Unit tests
+%%%%%%%%%%%%%
+% UnitTestBE1: Currents Alpha and Beta are sinusoidal, and PWM and voltage measurements yield acceptable similarity
+% UnitTestBE2: Test flux equations 
 
-% Recording and Operation experiments
+%% Recording and Operation experiments
 %%%%%%%%%%%%%%%%%%%%%%%
 % RecCurs Experiment to record current loop variables
 % EMFExp : Record stator voltages 
 % SetAngleExp: Set the field angle of a motor to a static per-unit value (AnglePu)
-
+% Collect: Collect measurement of runtime via serial port
+% SetSpeed: Set acceleration to speed in open loop mode, and activate sensorless estimator 
+% MakePulsing: Add voltage pulses to the PWM
+% StartSensorless : Start sensorless action to speed control 
 % TestCmpss: Test the voltage trip limits 
 
 % Utility 
@@ -61,7 +72,7 @@
 % function grstam(varargin) Handler for the ViewNic mouse, displays frequency + cursor data
 % function msgBox(str) - Message box with enlarged text 
 
-% Math & general 
+%% Math & general 
 %%%%%%%%%%%%%%%%%%
 % function x = h2s(str) : get a number out of exadecimal string, that may include 0x and may be negative
 % function x = h2d(str) get number from a string that may include 0x, always unsigned
@@ -69,9 +80,10 @@
 % function y = twoside ( x , z ) : Two sided symmetric (delayless) filtering of a signal
 % function [g , a,p] = fitsin( f , t , u , y , nfig) - Fit a sine of known frequency to data
 % function rslt = thd ( vec , tht) :  Total harmonic distortion of a signal, given the angle 
+% Els : Calculate LL and L- (LL) impedances given branch impedances and couplings
+% function F = findFrq(vec,T) : Find the frequency of a recorded signal with good THD
 
-
-% Sensored motor only
+%% Sensored motor only
 % CommutationExp: Make a commutation tuning experiment 
 % CurrentIdentificationExp  Identify the current loop plant
 % function str = DecodeHallStat(x) - Decompose the fileds of HallDecode.ComStat.fields.HallStat for Hall sensor analysis

@@ -14,7 +14,7 @@
 
 #ifdef VARS_OWNER
 #define EXTERN_TAG
-#pragma DATA_SECTION(ClaRecsCopy, ".data"); // Assure in DMA-accesible RAM
+//#pragma DATA_SECTION(ClaRecsCopy, "ramsg0"); // Assure in DMA-accesible RAM
 #else
 #define EXTERN_TAG extern
 #endif
@@ -100,7 +100,7 @@ struct CSLPars
 {
     float PhiM; // Flux of magnet
     float Lq0;  // Nominal inductance for q
-    float LqCorner2; // Saturation current for q field
+    float LqCorner2; // Squared saturation current for q field
     float Ld0;       // Nominal inductance for d
     float LdSlope;   // Linear dependence of D inductance in d current
     float R;         // Resistance

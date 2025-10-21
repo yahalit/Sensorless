@@ -18,7 +18,7 @@
 
 #ifdef VARS_OWNER
 #define EXTERN_TAG
-#pragma DATA_SECTION(ClaRecsCopy, ".data"); // Assure in DMA-accesible RAM
+#pragma DATA_SECTION(ClaRecsCopy, ".dmarange"); // Assure in DMA-accesible RAM
 #else
 #define EXTERN_TAG extern
 #endif

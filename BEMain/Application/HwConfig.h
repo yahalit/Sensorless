@@ -62,11 +62,19 @@ enum E_LoopClosureMode
 #endif
 
 #define ADC_READ_CUR1_H1  (4096-HWREGH(ADCBRESULT_BASE+ADC_O_RESULT0))
-#define ADC_READ_CUR2_H1  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT0))
-#define ADC_READ_CUR3_H1  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT0))
 #define ADC_READ_CUR1_H2  (4096-HWREGH(ADCBRESULT_BASE+ADC_O_RESULT3))
+#define ADC_READ_CUR2_H1  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT0))
 #define ADC_READ_CUR2_H2  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT3))
+#define ADC_READ_CUR3_H1  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT0))
 #define ADC_READ_CUR3_H2  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT3))
+
+
+//#define ADC_READ_CUR2_H1  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT0))
+//#define ADC_READ_CUR2_H2  (4096-HWREGH(ADCARESULT_BASE+ADC_O_RESULT3))
+//#define ADC_READ_CUR3_H1  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT0))
+//#define ADC_READ_CUR3_H2  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT3))
+
+
 
 #define ADC_READ_CUR1_A  (4096-HWREGH(ADCBRESULT_BASE+ADC_O_RESULT1))
 #define ADC_READ_CUR2_A  (4096-HWREGH(ADCCRESULT_BASE+ADC_O_RESULT1))
@@ -92,8 +100,11 @@ enum E_LoopClosureMode
 #define ISC_CMPHP_MUX 2
 #define ISC_CMPLP_MUX 2
 
+#ifndef ZUZMOTOR
+#define VDC_2_BIT_VOLTS_R2 0.4118f
+#else
 #define VDC_2_BIT_VOLTS_R2 0.079229629629630  // Vandal 0.4202f
-
+#endif
 
 #define ASYSCTL_CMPHPMUX_SELECT_VB ASYSCTL_CMPHPMUX_SELECT_2
 #define ASYSCTL_CMPLPMUX_SELECT_VB ASYSCTL_CMPLPMUX_SELECT_2
@@ -210,15 +221,15 @@ struct CProjSpecificData
      {.ProjIndex = 1 ,// PROJ_TYPE_BESENSORLESS
       .ProjSpecificDataRevision = HwConfigRevision,
          .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = WHEEL_REV2POS  , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
-         .KpCur = 10.0f , .KiCur = 20000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
-         .MaxCurCmdDdt = 10000.0f , .CurrentFilterBWHz = 3000.0f ,
+         .KpCur = 30.0f , .KiCur = 40000 , .PhaseOverCurrent = 23 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 18.0f ,
+         .MaxCurCmdDdt = 30000.0f , .CurrentFilterBWHz = 3000.0f ,
         .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
         .BrakeReleaseVolts = 23.0f,
         .Pot1RatRad  = 3.1415926f  ,
         .Pot2RatRad  = 3.1415926f  ,
         .Pot1CenterRat = 0.5f,
         .Pot2CenterRat = 0.5f,
-        .I2tCurLevel  = 24.0f ,
+        .I2tCurLevel  = 20.0f ,
         .I2tCurTime   = 24.0f ,
         .CurrentCommandDir = 1.0f ,
         .CanId = 44

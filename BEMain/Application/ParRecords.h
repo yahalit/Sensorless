@@ -10,7 +10,7 @@
    {& ClaControlPars.KpCur,16, 1.0e-6f,4.0e1f,1.5f} ,// !< Kp for current control
    {& ClaControlPars.KiCur,17, 1.0e-6f,6.0e4f,6000.0f} ,// !< Ki for current control
    {& ClaControlPars.VectorSatFac,18, 0.1f,1.0f,0.63f} ,// !< Vector saturation factor
-   {& ClaControlPars.KAWUCur,19, 0.0000001f,1.0e6f,0.88f} ,// !< Anti windup for current control
+   {& ClaControlPars.KAWUCur,19, 0.0000001f,1.0e6f,0.95f} ,// !< Anti windup scale for current control
    {& ClaControlPars.VDcMax,20, 0.0000001f,1.0e6f,680.0f} ,// !< Maximum for VDC
    {& ClaControlPars.VDcMin,21, 0.0000001f,1.0e6f,17.0f} ,// !< Minimum for VDC
    {& ControlPars.I2tCurLevel,22, 0.0000001f,1.0e6f,20.0f} ,//// !< Level for I2C current protection
@@ -48,7 +48,7 @@
    {& ControlPars.MotionConvergeTime ,100, 0.001f,15.0f,0.1f}, // Time required for within window error to declare motion convergence
    {& ControlPars.SpeedConvergeWindow ,101, 0.0001f,15.0f,0.05f}, // Required maximal error for consecutive MotionConvergeTime to declare motion convergence
    {& ControlPars.PositionConvergeWindow,102, 0.0000001f,1.0e6f,0.1f} , // !< Required maximal position error for consecutive MotionConvergeTime to declare motion convergence
-   {& SysState.StepperCurrent.StaticCurrent, 105 , 0.0f,1.0e1f,6.0f} , // !<  Static Current for stepper mode
+   {& SysState.StepperCurrent.StaticCurrent, 105 , 0.0f,18.0f,14.0f} , // !<  Static Current for stepper mode
    {& SysState.StepperCurrent.SpeedCurrent , 106 , 0.0f,1.0e1f,1.0f} , // !<   Speed dependent Current for stepper mode
    {& SysState.StepperCurrent.AccelerationCurrent, 107 , 0.0f,1.0e2f,2.0f} , // !<  Acceleration dependent Current for stepper mode
    {& SLPars.PhiM, 110 , 0.0000001f,1.0e6f,0.130f} , // !<  Flux of magnet

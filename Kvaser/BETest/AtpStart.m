@@ -150,8 +150,12 @@ RecStruct = struct('Gap',1,'Len',300,'TrigSigName','UsecTimer','TrigSig',26,'Tri
     'Card',card,'Axis',axis,'Side',side,'Proj',proj) ; % , ... %'SigList' ,{SigTable}, 'SigNames' , {SigNames} , ...
 
 % Get the card versions , just for now 
-EntityTableBESensorless = GetEntityByVersion('BESensorless',besensorless_srcver,EntityDir,pwd) ; 
-
+try 
+    EntityTableBESensorless = GetEntityByVersion('BESensorless',besensorless_srcver,EntityDir,pwd) ; 
+catch me 
+    disp( me.msgtext) ; 
+    disp( 'Cannot complete the setting (hint: run AtpUpdateDbase' ) ; 
+end
 BERecStruct  = struct('Proj','Single','Card', 'Servo','Axis','Wheel','Side','Right')  ; 
 [~,BERecStruct,BEGetStateList,BECalibTable] = SetCanComTarget(BERecStruct.Card,BERecStruct.Side,BERecStruct.Axis,BERecStruct.Proj,BERecStruct,44);
 

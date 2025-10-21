@@ -147,7 +147,7 @@ struct CNavInfo
 //unsigned long RecorderBuffer[REC_BUF_LEN]; //<! Recorder buffer
 
 unsigned long volatile RecorderBuffer[REC_BUF_LEN]; //<! Recorder buffer
-#pragma DATA_SECTION(RecorderBuffer, ".data"); // Assure in DMA-accesible RAM
+#pragma DATA_SECTION(RecorderBuffer, ".recorderdata"); // Assure in DMA-accesible RAM
 
 #else
 extern const struct CRecorderSig RecorderSigRaw[] ;

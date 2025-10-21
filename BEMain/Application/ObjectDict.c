@@ -701,6 +701,10 @@ long unsigned  GetMiscTest( struct CSdo * pSdo ,short unsigned *nData)
         u.us[0] = HWREGH(DACC_BASE + DAC_O_VALA);
         break ;
 
+    case 50:
+        u.us[0] = SysState.Timing.PwmFrame ;
+        break ;
+
     case 98:
         u.ul = HallDecode.ComStat.ul ; // ComStat.fields.HallStat ;
         break ;
@@ -1071,8 +1075,16 @@ const float  * pFloatData[] =  {
                              & ControlPars.SpeedKp  , //54
                              & ControlPars.SpeedKi  , //55
                              & ClaControlPars.DCurrentMaxDiDt, //56
-                             & SLPars.FomPars.InitiallStabilizationTime // 57
+                             & SLPars.FomPars.InitiallStabilizationTime, // 57
+                             & ClaControlPars.VoltageAddAmp, //58
+                             & ClaControlPars.VoltageAddStartA, //59
+                             & ClaControlPars.VoltageAddEndA, //60
+                             & ClaControlPars.VoltageAddStartB, //61
+                             & ClaControlPars.VoltageAddEndB,   //62
+                             & ClaControlPars.VoltageAddCountMax//63
                              };
+
+
 
 const unsigned short nFloatData = sizeof(pFloatData) / sizeof(float *) ;
 
@@ -1630,7 +1642,7 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
     case 204:
         ClaMailIn.bNoCurrentPrefilter = us ? 1 : 0 ;
         break ;
-#ifdef SIMULATION_MODE
+
     case 240:
         ClaMailIn.vOpenLoopTestA = f ;
         break ;
@@ -1640,7 +1652,7 @@ long unsigned  SetMiscTest( struct CSdo * pSdo ,short unsigned nData)
     case 242:
         ClaMailIn.vOpenLoopTestC = f ;
         break ;
-#endif
+
 
     default:
         return Sub_index_does_not_exist ;
