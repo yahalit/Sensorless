@@ -185,7 +185,19 @@ __interrupt void AdcIsr(void)
             SLessState.ThetaEst = __fracf32( ClaState.QThetaElect - 0.25f ) ; //  (float)(*ThtM)* SysPars.npp; //  FieldFilter.ThetaHat;        }
         }
     }
-    PaicuPU();
+
+
+    if ( ( Commutation.CommutationMode == COM_ENCODER_SENSORLESS) && ( SysState.Mot.LoopClosureMode == E_LC_Speed_Mode) )
+    {
+        if ( ClaMailIn.SixStepCommutation)
+        {
+
+        }
+        else
+        {
+            PaicuPU();
+        }
+    }
 
 
     if ( SysState.Mot.ReferenceMode == E_PosModeDebugGen)
@@ -260,7 +272,14 @@ __interrupt void AdcIsr(void)
     {
         if ( ( Commutation.CommutationMode == COM_ENCODER_SENSORLESS) && ( SysState.Mot.LoopClosureMode == E_LC_Speed_Mode) )
         {
-            MotorOnSeqAsSensorless() ;
+            if ( ClaMailIn.SixStepCommutation)
+            {
+                MotorOnSeqAsSensorless6Step() ;
+            }
+            else
+            {
+                MotorOnSeqAsSensorless() ;
+            }
         }
         else
         {

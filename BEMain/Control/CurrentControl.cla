@@ -182,7 +182,12 @@ void  ClaCheckMotorOn(void)
 
 void ProcAnalogSamples(void)
 {
-    ClaState.Analogs.Vdc = (( c.Num2048 - ADC_READ_VOLTDC - Calib.VdcOffset) * ClaControlPars.Vdc2Bit2Volt) * ( 1 + Calib.VdcGain ) ;
+    ClaState.Analogs.VdcRaw[2] = ClaState.Analogs.VdcRaw[1];
+    ClaState.Analogs.VdcRaw[1] = ClaState.Analogs.VdcRaw[0];
+    ClaState.Analogs.VdcRaw[0] = (( c.Num2048 - ADC_READ_VOLTDC - Calib.VdcOffset) * ClaControlPars.Vdc2Bit2Volt) * ( 1 + Calib.VdcGain ) ;
+    ClaState.Analogs.Vdc = __mminf32 ( __mminf32 ( __mmaxf32(ClaState.Analogs.VdcRaw[0],ClaState.Analogs.VdcRaw[1] ),
+         __mmaxf32(ClaState.Analogs.VdcRaw[0],ClaState.Analogs.VdcRaw[2] )) ,
+         __mmaxf32(ClaState.Analogs.VdcRaw[2],ClaState.Analogs.VdcRaw[1] ) ) ;
     ClaState.Analogs.BusCurrentAMC = ADC_READ_CURDC_AMC * ClaControlPars.Adc2BusAmps;
     ClaState.AdcRaw.Temperature = ADC_READ_TEMPERATURE;
 }
@@ -191,9 +196,25 @@ void ProcAnalogSamples(void)
 inline
 void ClaSinCosPu( float pu_arg_in )
 {
-    float t1 , t2 , t3 , t4 , delta ;
+    float t1 , t2 , t3 , t4 , delta ; //, tht ;
     int pu_ind ;
-    float pu_arg = __mfracf32(__mfracf32(pu_arg_in+1))* 32.0f ;
+    float pu_arg ;
+
+    if ( ClaMailIn.SixStepCommutation  )
+    { //Take quantization to 6 steps
+        delta = ( __mfracf32( pu_arg_in) + 1 )  * 6.0f + 1.0f ;
+        delta = delta - __mfracf32(delta) ;
+        //tht = ClaState.ThetaPuInUse ;
+        ClaState.ThetaPuInUse = __mfracf32((delta-0.5f) * 0.166666666666667f) ;
+    }
+    else
+    {
+        delta = __mmaxf32(__mminf32( __mfracf32 ( pu_arg_in - ClaState.ThetaPuInUse+2.5f) - 0.5f ,ClaControlPars.MaxThetaPuDelta) , -ClaControlPars.MaxThetaPuDelta) ;
+        ClaState.ThetaPuInUse = __mfracf32(ClaState.ThetaPuInUse + delta + 1.0f)   ;
+    }
+
+
+    pu_arg = __mfracf32(__mfracf32(ClaState.ThetaPuInUse+1))* 32.0f ;
     pu_ind = (int) ( pu_arg )  ; // Get modulo to the 0-1 range
     pu_arg = __mfracf32(pu_arg) ;
     t1 = SinTable[pu_ind] ;
@@ -203,15 +224,6 @@ void ClaSinCosPu( float pu_arg_in )
 
 
 
-    if ( ClaMailIn.SixStepCommutation )
-    { //Take quantization to 6 steps
-        ClaState.ThetaPuInUse = __mfracf32( __mfracf32( pu_arg_in * 6.0f + 0.5f ) + 1.0f ) * 0.166666666666667f ;
-    }
-    else
-    {
-        delta = __mmaxf32(__mminf32( __mfracf32 ( pu_arg_in - ClaState.ThetaPuInUse+2.5f) - 0.5f ,ClaControlPars.MaxThetaPuDelta) , -ClaControlPars.MaxThetaPuDelta) ;
-        ClaState.ThetaPuInUse = __mfracf32(ClaState.ThetaPuInUse + delta + 1.0f)   ;
-    }
 
     ClaState.s = (t1 + t3 * pu_arg * c.piOver32 ) * (1-pu_arg)
         + (t2 - t4 *( (1 - pu_arg) * c.piOver32) ) * pu_arg ;
@@ -304,7 +316,7 @@ float maxDeltaCur     ;
 
 __attribute__((interrupt)) void Cla1Task1 ( void )
 {
-    float   f1 , dd ;
+    float   f1 , dd , f2 ;
     float delta , er , maxcur  ;
     float wa , wb , wc , theta ;
     long t  ;
@@ -454,7 +466,8 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
             f1 =  ClaState.vqd * ClaState.vqd + ClaState.vdr * ClaState.vdr ;
             if ( f1 > ClaState.Vsat * ClaState.Vsat )
             {
-                ClaState.vqr = ClaState.vqd * ClaState.Vsat * __meisqrtf32(__mmaxf32(f1, 1.0f ));
+                f2 = __mmaxf32 (ClaState.Vsat * ClaState.Vsat - ClaState.vdr * ClaState.vdr , 0.1f ) ;
+                ClaState.vqr = f2 * __meisqrtf32(f2) * ( ( ClaState.vqd >= 0) ? 1 : -1 ) ;
             }
             else
             {
@@ -672,6 +685,21 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
         IntegrateVolts1() ;
     }
     ClaState.InterruptCtr += c.UnsignedLong1;
+
+    // Coherent updating
+    ClaMailOut.UpdateFlag +=1 ;
+    ClaMailOut.Ia = ClaState.Analogs.PhaseCur[0] ;
+    ClaMailOut.Ib = ClaState.Analogs.PhaseCur[1] ;
+    ClaMailOut.Ic = ClaState.Analogs.PhaseCur[2] ;
+
+    ClaMailOut.Va = ClaState.Analogs.PhaseVoltMeas[0] ;
+    ClaMailOut.Vb = ClaState.Analogs.PhaseVoltMeas[1] ;
+    ClaMailOut.Vc = ClaState.Analogs.PhaseVoltMeas[2] ;
+
+    ClaMailOut.QThetaPU = ClaState.ThetaPuInUse ;
+    ClaMailOut.UpdateFlag += 1 ;
+
+
     HWREGH(GPIODATA_BASE + GPIO_O_GPDCLEAR) = 128 ; // GPIO103
 }
 /*-----------------------------------------------------------------------------

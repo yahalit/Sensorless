@@ -5,10 +5,13 @@
 %                              & SysState.StepperCurrent.SpeedCurrent, //40
 %                              & SysState.StepperCurrent.AccelerationCurrent //41
 % object 0x2225 GetFloatData
-
+SixStep = 1 ; DisableBldc = 1; 
 % SetSpeed: Set acceleration to speed in open loop mode, and activate sensorless estimator 
+SendObj([hex2dec('2225'),64],SixStep,DataType.float,'SixStep mode') ;
+SendObj([hex2dec('2223'),12],DisableBldc,DataType.long,'DisableBldc') ;
 
-Profiler = struct('accel',0.5,'vmax',7,'StaticCurrent',14.5,'SpeedCurrent',0,'AccelerationCurrent',2) ;
+
+Profiler = struct('accel',0.5,'vmax',7,'StaticCurrent',12.5,'SpeedCurrent',0,'AccelerationCurrent',0) ;
 Profiler.dec = Profiler.accel ;
 
 % Set to manual mode

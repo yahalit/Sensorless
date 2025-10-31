@@ -31,6 +31,8 @@ void IdleLoop(void)
 
     CanSlave();
 
+    AnalyzeR6Step() ; // Analyze sensorless R
+
     //UartService() ;
 
     // Test mode switch to automatic

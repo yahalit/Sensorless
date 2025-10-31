@@ -45,6 +45,37 @@ typedef struct
     float FOMFirstStabilizationTimer ;
 } FomState_T ;
 
+
+
+typedef struct
+{
+    short Step    ;
+    short OldStep ;
+    short TransitionTimeOut ;
+    short SumCountLen  ;
+    short TransitionTimeOutCnt ;
+    short bUpdateBuf ;
+    short bProcREstimate ;
+    float sumCurPreA[64] ;
+    float sumCurPreB[64] ;
+    float sumCurPreC[64] ;
+    float sumVPreA[64] ;
+    float sumVPreB[64] ;
+    float sumVPreC[64] ;
+    float sumCurPostA[64] ;
+    float sumCurPostB[64] ;
+    float sumCurPostC[64] ;
+    float sumVPostA[64] ;
+    float sumVPostB[64] ;
+    float sumVPostC[64] ;
+    float RawR[2] ;
+    float FilteredR ;
+    short AnaPreStep ;
+    short AnaPostStep ;
+    short PutPtr ;
+    short PostPutPtr ;
+}SixStepObs_T;
+
 struct CSLState
 {
     float ThetaEst;
@@ -78,6 +109,7 @@ struct CSLState
     short On; // 1: Algorithm is active 0: Observing only
     short DInjectionOn; // 1: Inject D "noise"
     FomState_T FOM ;
+    SixStepObs_T SixStepObs;
 };
 
 
@@ -94,6 +126,17 @@ typedef struct
     float OmegaCommutationLoss  ; // Speed that if you go below you consider commutation loss
     float InitiallStabilizationTime ; // Time for initial stabilization
 }FomEstimatePars_T;
+
+
+
+typedef struct
+{
+    float TransitionTime ;
+    float SummingTime    ;
+    short nTransitionTime ;
+    short nSummingTime    ;
+}CSLPars6Step_T;
+
 
 
 struct CSLPars
@@ -114,6 +157,7 @@ struct CSLPars
     float WorkAcceleration  ;
     float WorkSpeed  ;
     FomEstimatePars_T FomPars  ; // Parameters for initial FO estimate
+    CSLPars6Step_T Pars6Step ;
 };
 
 EXTERN_TAG struct CSLessData SLessData;

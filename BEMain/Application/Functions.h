@@ -213,6 +213,10 @@ short PaicuPU(void);
 float GetOpenLoopCurrentCmd(float speed , float acc, float CurMax );
 void MotorOnSeqAsSensorless() ;
 
+// Six step
+void AnalyzeR6Step(void);
+void MotorOnSeqAsSensorless6Step(void);
+
 // SpeedProfiler
 short SpeedProfiler( void ) ;
 

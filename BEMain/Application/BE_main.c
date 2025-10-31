@@ -490,7 +490,7 @@ void SetProjectId(void)
 {
     //if ( DBaseConf.IsValidDatabase  )
     {
-        ProjId =  PROJ_TYPE_BESENSORLESS    ; // PROJ_TYPE_ZOOZ_S ;
+        ProjId =  PROJ_TYPE_ZOOZ_S ; // PROJ_TYPE_BESENSORLESS    ; //  ;
     }
 
     CanId = ProjSpecificData[ProjId].CanId ;

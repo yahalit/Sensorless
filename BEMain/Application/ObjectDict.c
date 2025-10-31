@@ -945,7 +945,7 @@ const struct CShortDataItem ShortDataItem[]={
                                {(short*)  &SysState.SteerCorrection.bSteeringComprensation ,0, 1 , 0},   // 9
                                {(short*)  &SysState.CLMeas.Fault ,0, 1 , 0}  , // 10
                                {(short*)  &SLessState.On ,0, 1 , 0}  , // 11
-                               {(short*)  &SysState.Debug.DebugSLessCycle , 0,1,0} //12
+                               {(short*)  &SysState.Debug.DebugSLessCycle , 0,2,0} //12
 };
 
 
@@ -1081,7 +1081,8 @@ const float  * pFloatData[] =  {
                              & ClaControlPars.VoltageAddEndA, //60
                              & ClaControlPars.VoltageAddStartB, //61
                              & ClaControlPars.VoltageAddEndB,   //62
-                             & ClaControlPars.VoltageAddCountMax//63
+                             & ClaControlPars.VoltageAddCountMax,//63
+                             & ClaMailIn.SixStepCommutation //64
                              };
 
 

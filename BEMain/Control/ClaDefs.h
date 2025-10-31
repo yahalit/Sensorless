@@ -73,9 +73,7 @@ struct CClaMailIn
     float vOpenLoopTestB ;
     float vOpenLoopTestC ;
 #endif
-    short PhaseIndexIn   ;
-    short PhaseIndexOut  ;
-    short SixStepCommutation ;
+    float SixStepCommutation ;
 };
 
 
@@ -92,6 +90,15 @@ struct CClaMailOut
     float PwmB ;
     float PwmC ;
     float vq_and_d  ;
+    // Section for coherent updates
+    long  UpdateFlag ;
+    float Ia       ;
+    float Ib       ;
+    float Ic       ;
+    float Va       ;
+    float Vb       ;
+    float Vc       ;
+    float QThetaPU ;
 };
 
 struct CClaControlPars
@@ -204,6 +211,7 @@ struct CAnalogs
     float DcCurUncalibSum ;
     float DcCur        ;
     float Vdc ;
+    float VdcRaw[3] ;
     float BusCurrentAMC ;
 };
 
