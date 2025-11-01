@@ -70,10 +70,18 @@ typedef struct
     float sumVPostC[64] ;
     float RawR[2] ;
     float FilteredR ;
+    float ThetaRawPU  ;
+    float ETheta; // Estimator error for theta
+    float ThetaPsi ;
+    float OmegaHat;   // Estimated Omega
+    float OmegaState; // PLL state of Omega
+    float ThetaHat;
     short AnaPreStep ;
     short AnaPostStep ;
     short PutPtr ;
+    long  AbsPutPtr ; // Counts total available samples
     short PostPutPtr ;
+    short SetSpeedCtl ; // Flag to activate speed controller
 }SixStepObs_T;
 
 struct CSLState
@@ -99,7 +107,7 @@ struct CSLState
     float VcompB;
     float ETheta; // Estimator error for theta
     float OmegaHat;   // Estimated Omega
-    float OmegaState; // PLL state of Omega
+    float OmegaState; // PLL state of Omega, Integrator state
     float ThetaHat;
     float IdDemandPhase;
     float IdDisturbancePhase;
@@ -135,6 +143,8 @@ typedef struct
     float SummingTime    ;
     short nTransitionTime ;
     short nSummingTime    ;
+    float InvnSummingTime ;
+    float MinimumCur4RCalc ;
 }CSLPars6Step_T;
 
 

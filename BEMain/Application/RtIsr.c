@@ -191,7 +191,7 @@ __interrupt void AdcIsr(void)
     {
         if ( ClaMailIn.SixStepCommutation)
         {
-
+            SixStepEstimatePU();
         }
         else
         {

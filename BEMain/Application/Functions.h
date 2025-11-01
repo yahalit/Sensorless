@@ -216,6 +216,7 @@ void MotorOnSeqAsSensorless() ;
 // Six step
 void AnalyzeR6Step(void);
 void MotorOnSeqAsSensorless6Step(void);
+void SixStepEstimatePU(void);
 
 // SpeedProfiler
 short SpeedProfiler( void ) ;

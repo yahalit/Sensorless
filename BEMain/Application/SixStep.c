@@ -12,6 +12,7 @@ extern float Mod1Distance(float x, float y);
 
 static float mat[3][3];
 static float bm[3] ;
+#define R_MINIMUM 0.01f
 
 typedef struct
 {
@@ -24,6 +25,13 @@ typedef struct
     float QThetaPU ;
 } VarMirror_T ;
 VarMirror_T VarMirror ;
+
+
+inline float __SignedFrac(float x)
+{// Return always positive fraction
+    return __fracf32(__fracf32(x)+1.5f) - 0.5f;
+}
+
 
 static short TryUpdateClaMailOut()
 {
@@ -55,25 +63,44 @@ static void SixStepsRObserver( void )
 // Read the CLA vars
     short oldstep ;
 
+    while(TryUpdateClaMailOut() == 0) ;
+    SLessState.SixStepObs.Step = (short) (VarMirror.QThetaPU * 6 ) ;
+    oldstep = SLessState.SixStepObs.OldStep ;
+    SLessState.SixStepObs.OldStep  = SLessState.SixStepObs.Step ;
+    if (SLessState.SixStepObs.Step != oldstep  )
+    {// Identify commutation step transition
+        SLessState.SixStepObs.TransitionTimeOut = 0 ;
+    }
+    if ( SLessState.SixStepObs.TransitionTimeOut < SLPars.Pars6Step.nTransitionTime + SLPars.Pars6Step.nSummingTime)
+    {
+        SLessState.SixStepObs.TransitionTimeOut += 1  ;
+        if ( SLessState.SixStepObs.TransitionTimeOut == SLPars.Pars6Step.nTransitionTime + SLPars.Pars6Step.nSummingTime )
+        {
+            SLessState.SixStepObs.SetSpeedCtl = 1 ;
+        }
+    }
+
     // Buffer is not updated when given to background processing
     if ( SLessState.SixStepObs.bUpdateBuf )
     {
-        while(TryUpdateClaMailOut() == 0) ;
-        SLessState.SixStepObs.Step = (short) (VarMirror.QThetaPU * 6 ) ;
-        oldstep = SLessState.SixStepObs.OldStep ;
-        SLessState.SixStepObs.OldStep  = SLessState.SixStepObs.Step ;
 
         if ( SLessState.SixStepObs.bUpdateBuf  == 1 )
         { // Pre stage
             xx[0] += 1 ;
             if (SLessState.SixStepObs.Step != oldstep  )
-            {
-                xx[1] += 1 ;
-                SLessState.SixStepObs.TransitionTimeOut = 1 ;
-                SLessState.SixStepObs.bUpdateBuf = 2 ;
-                SLessState.SixStepObs.AnaPreStep = oldstep ;
-                SLessState.SixStepObs.AnaPostStep = SLessState.SixStepObs.Step ;
-
+            {// Identify commutation step transition
+                if ( SLessState.SixStepObs.AbsPutPtr < SLPars.Pars6Step.nSummingTime)
+                {
+                    // We have a transition, yet we cant exploit it as we did not accumulate enough data
+                    SLessState.SixStepObs.AbsPutPtr = -SLPars.Pars6Step.nTransitionTime ;
+                    SLessState.SixStepObs.PutPtr = ( 64 - SLPars.Pars6Step.nTransitionTime)  ;
+                }
+                else
+                {
+                    SLessState.SixStepObs.bUpdateBuf = 2 ;
+                    SLessState.SixStepObs.AnaPreStep = oldstep ;
+                    SLessState.SixStepObs.AnaPostStep = SLessState.SixStepObs.Step ;
+                }
             }
             else
             {
@@ -84,14 +111,15 @@ static void SixStepsRObserver( void )
                 SLessState.SixStepObs.sumVPreB[SLessState.SixStepObs.PutPtr] = VarMirror.Vb;
                 SLessState.SixStepObs.sumVPreC[SLessState.SixStepObs.PutPtr] = VarMirror.Vc;
                 SLessState.SixStepObs.PutPtr = ( SLessState.SixStepObs.PutPtr + 1 ) & 63 ;
+                SLessState.SixStepObs.AbsPutPtr += 1 ;
             }
         }
         else
         {
             if ( SLessState.SixStepObs.bUpdateBuf  == 2 )
             {
-                xx[2] += 1 ;
-                SLessState.SixStepObs.TransitionTimeOut += 1 ;
+                //xx[2] += 1 ;
+                //SLessState.SixStepObs.TransitionTimeOut += 1 ;
                 if ( SLessState.SixStepObs.TransitionTimeOut >= SLPars.Pars6Step.nTransitionTime)
                 {
                     xx[3] += 1 ;
@@ -280,9 +308,11 @@ short freeze = 0 ;
 void AnalyzeR6Step(void)
 {
     short cnt , c1 , c2 , k , offs  , offs2 ;
+    short unsigned mask, bProc ;
     float v , cur , vn ;
     float *pCPosPre  , *pCNegPre  , *pVPosPre  , *pVNegPre ;
     float *pCPosPost , *pCNegPost , *pVPosPost , *pVNegPost;
+    float CurTest , CurStep ;
 
     if ( (SLessState.SixStepObs.bProcREstimate == 0 ) || freeze )
     {
@@ -330,7 +360,7 @@ void AnalyzeR6Step(void)
     bm[0] = 0 ;
     bm[1] = 0 ;
     bm[2] = 0 ;
-
+    CurTest = 0 ;
 
     mat[0][0] = SLPars.Pars6Step.nSummingTime * 2 ;
     c1 = ( SLessState.SixStepObs.PostPutPtr - SLPars.Pars6Step.nSummingTime) & 63 ;
@@ -358,6 +388,7 @@ void AnalyzeR6Step(void)
                  +SLessState.SixStepObs.sumVPostC[c2]) * 0.333333333333f;
             v   = pVPosPost[c2] - vn ; // pVNegPre[c1] ;
             //v   = pVPosPost[cnt] - pVNegPost[cnt] ;
+            CurTest += cur ;
         }
         mat[0][1] += k ;
         mat[0][2] = mat[0][2] + cur  ;
@@ -365,66 +396,99 @@ void AnalyzeR6Step(void)
         mat[1][2] = mat[0][2] + cur * k ;
         mat[2][2] = mat[2][2] + cur * cur ;
 
+
         bm[0] += v ;
         bm[1] += v * k  ;
         bm[2] += v * cur ;
     }
-
-    SLessState.SixStepObs.RawR[0] = SolveR3x3Symmetric( mat, bm);
-
-    mat[0][1] = 0 ;
-    mat[0][2] = 0 ;
-    mat[1][1] = 0 ;
-    mat[1][2] = 0 ;
-    mat[2][2] = 0 ;
-    bm[0] = 0 ;
-    bm[1] = 0 ;
-    bm[2] = 0 ;
-    for ( cnt = 0 ; cnt < 2 * SLPars.Pars6Step.nSummingTime ; cnt++)
+    // See if there is enough current change to calculate
+    CurStep = ( CurTest - mat[0][2] * 0.5f ) * 1.33333333f * SLPars.Pars6Step.InvnSummingTime ;
+    if ( fabsf(CurStep) <  SLPars.Pars6Step.MinimumCur4RCalc )
     {
-        if ( cnt < SLPars.Pars6Step.nSummingTime)
+       bProc = 0 ;
+    }
+    else
+    {
+        bProc = 1 ;
+        SLessState.SixStepObs.RawR[0] = SolveR3x3Symmetric( mat, bm);
+    }
+
+    if ( bProc )
+    {
+
+        mat[0][1] = 0 ;
+        mat[0][2] = 0 ;
+        mat[1][1] = 0 ;
+        mat[1][2] = 0 ;
+        mat[2][2] = 0 ;
+        bm[0] = 0 ;
+        bm[1] = 0 ;
+        bm[2] = 0 ;
+        CurTest = 0 ;
+
+
+        for ( cnt = 0 ; cnt < 2 * SLPars.Pars6Step.nSummingTime ; cnt++)
         {
-            k = cnt - offs  ;
-            cur = pCNegPre[c1] ; // - pCNegPre[c1] ;
-            vn = (SLessState.SixStepObs.sumVPreA[c1]
-                 +SLessState.SixStepObs.sumVPreB[c1]
-                 +SLessState.SixStepObs.sumVPreC[c1]) * 0.333333333333f;
-            v   = pVNegPre[c1] - vn ; // pVNegPre[c1] ;
-            c1 = ( c1 + 1 ) & 63 ;
+            if ( cnt < SLPars.Pars6Step.nSummingTime)
+            {
+                k = cnt - offs  ;
+                cur = pCNegPre[c1] ; // - pCNegPre[c1] ;
+                vn = (SLessState.SixStepObs.sumVPreA[c1]
+                     +SLessState.SixStepObs.sumVPreB[c1]
+                     +SLessState.SixStepObs.sumVPreC[c1]) * 0.333333333333f;
+                v   = pVNegPre[c1] - vn ; // pVNegPre[c1] ;
+                c1 = ( c1 + 1 ) & 63 ;
+            }
+            else
+            {
+                c2 = cnt - SLPars.Pars6Step.nSummingTime ;
+                k = c2 + offs2 ;
+                cur = pCNegPost[c2] ; // + pCNegPost[cnt] ;
+                vn = (SLessState.SixStepObs.sumVPostA[c2]
+                     +SLessState.SixStepObs.sumVPostB[c2]
+                     +SLessState.SixStepObs.sumVPostC[c2]) * 0.333333333333f;
+                v   = pVNegPost[c2] - vn ;
+                CurTest += cur ;
+                //v   = pVPosPost[cnt] - pVNegPost[cnt] ;
+            }
+            mat[0][1] += k ;
+            mat[0][2] = mat[0][2] + cur  ;
+            mat[1][1] += k * k  ;
+            mat[1][2] = mat[0][2] + cur * k ;
+            mat[2][2] = mat[2][2] + cur * cur ;
+
+            bm[0] += v ;
+            bm[1] += v * k  ;
+            bm[2] += v * cur ;
+        }
+        // See if there is enough current change to calculate
+        CurStep = ( CurTest - mat[0][2] * 0.5f ) * 1.33333333f * SLPars.Pars6Step.InvnSummingTime ;
+        bProc = 1 ;
+        if ( fabsf(CurStep) <  SLPars.Pars6Step.MinimumCur4RCalc )
+        {
+           bProc = 0 ;
         }
         else
         {
-            c2 = cnt - SLPars.Pars6Step.nSummingTime ;
-            k = c2 + offs2 ;
-            cur = pCNegPost[c2] ; // + pCNegPost[cnt] ;
-            vn = (SLessState.SixStepObs.sumVPostA[c2]
-                 +SLessState.SixStepObs.sumVPostB[c2]
-                 +SLessState.SixStepObs.sumVPostC[c2]) * 0.333333333333f;
-            v   = pVNegPost[c2] - vn ;
-            //v   = pVPosPost[cnt] - pVNegPost[cnt] ;
+            SLessState.SixStepObs.RawR[1] = SolveR3x3Symmetric( mat, bm);
         }
-        mat[0][1] += k ;
-        mat[0][2] = mat[0][2] + cur  ;
-        mat[1][1] += k * k  ;
-        mat[1][2] = mat[0][2] + cur * k ;
-        mat[2][2] = mat[2][2] + cur * cur ;
-
-        bm[0] += v ;
-        bm[1] += v * k  ;
-        bm[2] += v * cur ;
     }
 
-    SLessState.SixStepObs.RawR[1] = SolveR3x3Symmetric( mat, bm);
 
-
-
-    SLessState.SixStepObs.FilteredR = SLessState.SixStepObs.FilteredR +
-            0.1f *  ( 0.5f * (SLessState.SixStepObs.RawR[0]+SLessState.SixStepObs.RawR[1]) -SLessState.SixStepObs.FilteredR  ) ;
+    if ( bProc )
+    {
+        SLessState.SixStepObs.FilteredR = SLessState.SixStepObs.FilteredR +
+                0.1f *  ( __fmax  ( 0.5f * (SLessState.SixStepObs.RawR[0]+SLessState.SixStepObs.RawR[1]), R_MINIMUM )  -SLessState.SixStepObs.FilteredR  ) ;
+    }
 
     if ( SysState.Debug.DebugSLessCycle < 2  )
     {
+        mask = BlockInts() ;
+        SLessState.SixStepObs.PutPtr = 0 ;
+        SLessState.SixStepObs.AbsPutPtr =0 ;
         SLessState.SixStepObs.bProcREstimate  = 0 ;
         SLessState.SixStepObs.bUpdateBuf  =  1 ;
+        RestoreInts(mask) ;
     }
 
 
@@ -446,7 +510,7 @@ static void InitSensorlessObserverFOM6Step()
 
     SLPars.Pars6Step.nSummingTime       = (short) ( SLPars.Pars6Step.SummingTime / SLPars.dT ) ;
     SLPars.Pars6Step.nTransitionTime = (short) ( SLPars.Pars6Step.TransitionTime / SLPars.dT ) | 1 ; // assure oddity
-
+    SLPars.Pars6Step.InvnSummingTime = 1.0f /SLPars.Pars6Step.nSummingTime ;
 
 
 }
@@ -465,7 +529,48 @@ static void InitSensorlessMode6Step()
     SysState.Mot.InAutoBrakeEngage = 0 ;
     SysState.StepperCurrent.StepperAngle = 0 ;
     SLessState.SixStepObs.bUpdateBuf = 1 ;
+    SLessState.SixStepObs.PutPtr = 0 ;
+    SLessState.SixStepObs.AbsPutPtr =0 ;
+    SLessState.SixStepObs.FilteredR  = SLPars.R ;
     InitSensorlessObserverFOM6Step() ;
+}
+
+
+void SixStepEstimatePU()
+{
+    float b , d , v1 , v2 , v3 , s , c, vn ;
+    float ipart ;
+    if ( SLessState.SixStepObs.TransitionTimeOut < SLPars.Pars6Step.nTransitionTime )
+    { // In transition, so not calculate angle or speed
+        return ;
+    }
+    TryUpdateClaMailOut();
+    v1 = VarMirror.Va - SLessState.SixStepObs.FilteredR * VarMirror.Ia;
+    v2 = VarMirror.Vb - SLessState.SixStepObs.FilteredR * VarMirror.Ib;
+    v3 = VarMirror.Vc - SLessState.SixStepObs.FilteredR * VarMirror.Ic;
+    vn = ( v1 + v2 + v3 ) * 0.33333333333f ;
+    v1 = v1 - vn ;
+    v2 = v2 - vn ;
+    v3 = v3 - vn ;
+    c = (v2 - v3) / 0.577350269189626f ;
+    s = v1 ;
+    SLessState.SixStepObs.ThetaRawPU = __atan2puf32(s , c ) ;
+    SLessState.SixStepObs.ETheta = SLessState.SixStepObs.ThetaRawPU;
+
+    SLessState.SixStepObs.ThetaPsi += __SignedFrac(SLessState.SixStepObs.ThetaRawPU - SLessState.SixStepObs.ThetaPsi);
+    b = (SLessState.SixStepObs.ThetaPsi - SLessState.SixStepObs.ThetaHat) ;
+    SLessState.SixStepObs.ETheta = __fmax(__fmin(b, 40), -40);
+    SLessState.SixStepObs.OmegaState = SLessState.SixStepObs.OmegaState + SLPars.KiTheta * SLPars.dT * SLessState.SixStepObs.ETheta;
+    SLessState.SixStepObs.OmegaHat = SLessState.SixStepObs.OmegaState + SLPars.KpTheta * SLessState.SixStepObs.ETheta;
+
+    // Advance angle by w
+    d = SLessState.SixStepObs.ThetaHat + SLessState.SixStepObs.OmegaHat * SLPars.dT;
+    SLessState.SixStepObs.ThetaHat = d;
+
+//#ifdef REMINT
+    SLessState.SixStepObs.ThetaHat = modff(d, &ipart);
+    SLessState.SixStepObs.ThetaPsi -= ipart;
+
 }
 
 
@@ -594,6 +699,7 @@ static short ManageAccelerationToWorkZone6Step(float CurMax)
     case E_EngagingAngleObserver:
         if ( ClaState.CommutationSyncDone  )
         {
+            SLessState.SixStepObs.SetSpeedCtl = 0 ; // Kill ant pending speed control requests
             SLessState.FOM.bAcceleratingAsV2FState  = E_EngagingSpeedControl ;
             SetReferenceMode(E_RefModeSpeed)  ;
             SetLoopClosureMode(E_LC_Speed_Mode) ;
@@ -636,7 +742,6 @@ static short ManageAccelerationToWorkZone6Step(float CurMax)
         }
     }
 
-    SixStepsRObserver();
     return RetVal;
 }
 
@@ -646,6 +751,7 @@ void MotorOnSeqAsSensorless6Step(void)
 {
     float CurCmd , CurMax   ;
     short unsigned refmode , ClosureMode   ;
+    short stat ;
 
     // Run reference generators
     CurMax = ControlPars.MaxCurCmd ;
@@ -659,7 +765,10 @@ void MotorOnSeqAsSensorless6Step(void)
         return ;
     }
 
-    if ( ManageAccelerationToWorkZone6Step(CurMax) != 1 )
+    stat = ManageAccelerationToWorkZone6Step(CurMax);
+    SixStepsRObserver();
+
+    if ( stat != 1 )
     {
         return ;
     }
@@ -676,9 +785,20 @@ void MotorOnSeqAsSensorless6Step(void)
 
     // Limit the speed reference
     SysState.SpeedControl.SpeedCommand = fSatNanProt (SysState.SpeedControl.SpeedReference , ControlPars.MaxSpeedCmd ) ;
-    CurCmd = GetCurrentCmdForSpeedErr( CurCmd  , SLessState.OmegaHat );
 
-    ClaState.CurrentControl.ExtCurrentCommand =  fSatNanProt( CurCmd , CurMax ) ;
+    // New current command shall be calculated only after R
+    if ( SLessState.SixStepObs.SetSpeedCtl )
+    { // In transition, so not calculate angle or speed
+        CurCmd = GetCurrentCmdForSpeedErr( CurCmd  , SLessState.OmegaHat );
+        ClaState.CurrentControl.ExtCurrentCommand =  fSatNanProt( CurCmd , CurMax ) ;
+    }
+    else
+    {
+        ClaState.CurrentControl.ExtCurrentCommand = CurCmd ;
+    }
+
+
+
     ClaState.QThetaElect = __fracf32 ( SLessState.ThetaHat + 0.25f) ;
 
 

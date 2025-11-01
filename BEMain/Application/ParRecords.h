@@ -76,6 +76,7 @@
    {& SLPars.FomPars.InitiallStabilizationTime,133, 0.0000001f,1.0e6f,1.5f} , // Time for initial rotor stabilization
    {& SLPars.Pars6Step.TransitionTime,134, 0.0000001f,1.0e-2f,1.3e-3f} , // Time for transition allowance on 6-step event
    {& SLPars.Pars6Step.SummingTime,135, 0.0000001f,1.0e-2f,1.3e-3f} , // Time for summing voltage / current for R estimate
+   {& SLPars.Pars6Step.MinimumCur4RCalc,136, 0.0000001f,1.0e2f,5.0f} , // Minimum current step for a well defined R evaluation
    {& ClaMailIn.StoTholdScale,239, -1.5f,1.5f,1.0f} ,// !< Simulation voltage DC bus
    {& ClaControlPars.DCurrentMaxDiDt,246, 0.000001f,99999999.0f,200.0f} ,// !< Maximum rate of D current commad change
    {& ClaControlPars.ExtCutCst,247, 0.000001f,0.99999999f,0.001666f} ,// !< Filter constant for torque report , about 30msec

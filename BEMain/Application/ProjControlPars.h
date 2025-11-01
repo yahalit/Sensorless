@@ -279,7 +279,7 @@ struct  CProjSpecificCtl
       .LqCorner2 =  0,
       .Ld0 = 5.0e-4f ,
       .LdSlope = 0 ,
-      .R  =0.13f ,
+      .R  =0.062f ,
       .KiTheta = 7.8026e+03f,
       .KpTheta = 149.0188f,
       .KiFlux = 10.0f,
