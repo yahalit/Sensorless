@@ -582,6 +582,17 @@ void SixStepEstimatePU()
     SLessState.SixStepObs.ThetaHat = modff(d, &ipart);
     SLessState.SixStepObs.ThetaPsi -= ipart;
 
+// Get the local estimates of Id/Iq
+    s = __sinpuf32(SLessState.ThetaEst);
+    c = __cospuf32(SLessState.ThetaEst);
+    SLessState.IAlpha = 0.666666f * (SLessData.I[0] - 0.5f * (SLessData.I[1] + SLessData.I[2]));
+    SLessState.IBeta = 0.577350269189626f * (SLessData.I[1] - SLessData.I[2]);
+
+    SLessState.VAlpha = 0.666666f * (SLessData.V[0] - 0.5f * (SLessData.V[1] + SLessData.V[2]));
+    SLessState.VBeta = 0.577350269189626f * (SLessData.V[1] - SLessData.V[2]);
+
+    SLessState.Id = c * SLessState.IAlpha + s * SLessState.IBeta;
+    SLessState.Iq = -s * SLessState.IAlpha + c * SLessState.IBeta;
 }
 
 
@@ -597,8 +608,8 @@ void SixStepEstimatePU()
 short EstimateSensorlessObserverFOM6Step()
 {
     //float delta ;
-    SLessState.FOM.FOMRetardAngleDistance = Mod1Distance (ClaState.QThetaElect,SLessState.ThetaHat) ;
-    if  ( fabsf( SLessState.OmegaHat / SLPars.FomPars.FOMTakingStartSpeed - 1 ) > SLPars.FomPars.ObserverConvergenceToleranceFrac )
+    SLessState.FOM.FOMRetardAngleDistance = Mod1Distance (ClaState.QThetaElect,SLessState.SixStepObs.ThetaHat) ;
+    if  ( fabsf( SLessState.SixStepObs.OmegaHat / SLPars.FomPars.FOMTakingStartSpeed - 1 ) > SLPars.FomPars.ObserverConvergenceToleranceFrac )
     {
         SLessState.FOM.FOMConvergenceGoodTimer = 0 ;
         return 0 ;
@@ -689,19 +700,19 @@ static short ManageAccelerationToWorkZone6Step(float CurMax)
             // We expect about 90deg difference between the stepper angle and the estimated observer angle.
             // We transform the integrator states by [Co So;-So Co] * [Cs -Ss;Ss Cs] where the o subscript is for the observer and the s for the stepper.
             // The commutation angle is set to this of the observer
-            ClaMailIn.CandidateMotorSpeedCompensationVoltage = SLPars.PhiM * SLessState.OmegaHat ;
+            ClaMailIn.CandidateMotorSpeedCompensationVoltage = SLPars.PhiM * SLessState.SixStepObs.OmegaHat ;
             // Angle difference in matches d-d frame
-            arg = __fracf32 ( SLessState.ThetaEst - (ClaState.QThetaElect - 0.25f) ) * PI2 ;
+            arg = __fracf32 ( SLessState.SixStepObs.ThetaHat - (ClaState.QThetaElect - 0.25f) ) * PI2 ;
             ClaMailIn.CandidateElectAngleTxC = __cos(arg) ;
             ClaMailIn.CandidateElectAngleTxS = __sin(arg) ;
-            ClaMailIn.CandidateQElectAngle    = __fracf32(SLessState.ThetaEst+0.25f) ;
+            ClaMailIn.CandidateQElectAngle    = __fracf32(SLessState.SixStepObs.ThetaHat+0.25f) ;
             ClaMailIn.CandidateId   = SLessState.Id ;
             // Synchronize
             ClaState.CommutationSyncDone  = 0 ;
             CLA_forceTasks(CLA1_BASE, CLA_TASKFLAG_4);
         }
 
-        if ( ( SysState.Debug.DebugSLessCycle == 0 )  && ( SLessState.OmegaHat < SLPars.FomPars.OmegaCommutationLoss ))
+        if ( ( SysState.Debug.DebugSLessCycle == 0 )  && ( SLessState.SixStepObs.OmegaHat < SLPars.FomPars.OmegaCommutationLoss ))
         {
             excp = exp_sensorless_underspeed_whileFOM  ;
         }
@@ -723,10 +734,10 @@ static short ManageAccelerationToWorkZone6Step(float CurMax)
 
             SysState.SpeedControl.ProfileAcceleration= SLPars.WorkAcceleration  ;
             SysState.SpeedControl.SpeedTarget = SLPars.WorkSpeed  ;
-            SysState.SpeedControl.SpeedReference = SLessState.OmegaHat ;
+            SysState.SpeedControl.SpeedReference = SLessState.SixStepObs.OmegaHat ;
             SysState.SpeedControl.PIState = piOut  ;
         }
-        if ( SLessState.OmegaHat < SLPars.FomPars.OmegaCommutationLoss )
+        if ( SLessState.SixStepObs.OmegaHat < SLPars.FomPars.OmegaCommutationLoss )
         {
             excp = exp_sensorless_underspeed_whileFOM2  ;
         }
@@ -784,7 +795,7 @@ void MotorOnSeqAsSensorless6Step(void)
         return ;
     }
 
-    if ( SLessState.OmegaHat < SLPars.FomPars.OmegaCommutationLoss )
+    if ( SLessState.SixStepObs.OmegaHat < SLPars.FomPars.OmegaCommutationLoss )
     {
         LogException( EXP_FATAL , exp_sensorless_underspeed )  ;
         return  ;
@@ -803,7 +814,7 @@ void MotorOnSeqAsSensorless6Step(void)
     if ( SLessState.SixStepObs.SetSpeedCtl )
     { // In transition, so not calculate angle or speed
         if ( SLessState.SixStepObs.bUpdateBuf > 1 )
-        { // If already at buffer counting revert it, as results will be unuseable
+        { // If already at buffer counting revert it, as results will be un useable
             SLessState.SixStepObs.bUpdateBuf = 4 ;
         }
         ClaState.CurrentControl.ExtCurrentCommand =  fSatNanProt( CurCmd , CurMax ) ;
