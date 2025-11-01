@@ -1,7 +1,7 @@
 /*
  * SixStep.c
  *
- *  Created on: 31 срхїз 2025
+ *  Created on: 31 October 2025
  *      Author: Yahali
  */
 #include "StructDef.h"
@@ -129,19 +129,30 @@ static void SixStepsRObserver( void )
             }
             else
             {
-                xx[4] += 1 ;
-                SLessState.SixStepObs.sumCurPostA[SLessState.SixStepObs.PostPutPtr] = VarMirror.Ia;
-                SLessState.SixStepObs.sumCurPostB[SLessState.SixStepObs.PostPutPtr] = VarMirror.Ib;
-                SLessState.SixStepObs.sumCurPostC[SLessState.SixStepObs.PostPutPtr] = VarMirror.Ic;
-                SLessState.SixStepObs.sumVPostA[SLessState.SixStepObs.PostPutPtr] = VarMirror.Va;
-                SLessState.SixStepObs.sumVPostB[SLessState.SixStepObs.PostPutPtr] = VarMirror.Vb;
-                SLessState.SixStepObs.sumVPostC[SLessState.SixStepObs.PostPutPtr] = VarMirror.Vc;
-                SLessState.SixStepObs.PostPutPtr += 1 ;
-                if ( SLessState.SixStepObs.PostPutPtr >= SLPars.Pars6Step.nSummingTime)
+                if ( SLessState.SixStepObs.bUpdateBuf  == 4 )
+                { // Reset by speed control
+                    if ( SLessState.SixStepObs.TransitionTimeOut >= SLPars.Pars6Step.nTransitionTime)
+                    {
+                        SLessState.SixStepObs.PostPutPtr  = 0 ;
+                        SLessState.SixStepObs.PutPtr  = 0 ;
+                        SLessState.SixStepObs.bUpdateBuf = 1 ;
+                    }
+                }
+                else
                 {
-                    xx[5] += 1 ;
-                    SLessState.SixStepObs.bProcREstimate = 1 ; // Turn over to BG processing
-                    SLessState.SixStepObs.bUpdateBuf  =  0 ;
+                    SLessState.SixStepObs.sumCurPostA[SLessState.SixStepObs.PostPutPtr] = VarMirror.Ia;
+                    SLessState.SixStepObs.sumCurPostB[SLessState.SixStepObs.PostPutPtr] = VarMirror.Ib;
+                    SLessState.SixStepObs.sumCurPostC[SLessState.SixStepObs.PostPutPtr] = VarMirror.Ic;
+                    SLessState.SixStepObs.sumVPostA[SLessState.SixStepObs.PostPutPtr] = VarMirror.Va;
+                    SLessState.SixStepObs.sumVPostB[SLessState.SixStepObs.PostPutPtr] = VarMirror.Vb;
+                    SLessState.SixStepObs.sumVPostC[SLessState.SixStepObs.PostPutPtr] = VarMirror.Vc;
+                    SLessState.SixStepObs.PostPutPtr += 1 ;
+                    if ( SLessState.SixStepObs.PostPutPtr >= SLPars.Pars6Step.nSummingTime)
+                    {
+                        xx[5] += 1 ;
+                        SLessState.SixStepObs.bProcREstimate = 1 ; // Turn over to BG processing
+                        SLessState.SixStepObs.bUpdateBuf  =  0 ;
+                    }
                 }
             }
         }
@@ -405,7 +416,7 @@ void AnalyzeR6Step(void)
     CurStep = ( CurTest - mat[0][2] * 0.5f ) * 1.33333333f * SLPars.Pars6Step.InvnSummingTime ;
     if ( fabsf(CurStep) <  SLPars.Pars6Step.MinimumCur4RCalc )
     {
-       bProc = 0 ;
+        bProc = 0 ;
     }
     else
     {
@@ -786,18 +797,17 @@ void MotorOnSeqAsSensorless6Step(void)
     // Limit the speed reference
     SysState.SpeedControl.SpeedCommand = fSatNanProt (SysState.SpeedControl.SpeedReference , ControlPars.MaxSpeedCmd ) ;
 
-    // New current command shall be calculated only after R
+    // Speed control works every cycle for the integrator to function correctly
+    // New current command shall be activated only after R-calculation data collection
+    CurCmd = GetCurrentCmdForSpeedErr( CurCmd  , SLessState.SixStepObs.OmegaHat );
     if ( SLessState.SixStepObs.SetSpeedCtl )
     { // In transition, so not calculate angle or speed
-        CurCmd = GetCurrentCmdForSpeedErr( CurCmd  , SLessState.OmegaHat );
+        if ( SLessState.SixStepObs.bUpdateBuf > 1 )
+        { // If already at buffer counting revert it, as results will be unuseable
+            SLessState.SixStepObs.bUpdateBuf = 4 ;
+        }
         ClaState.CurrentControl.ExtCurrentCommand =  fSatNanProt( CurCmd , CurMax ) ;
     }
-    else
-    {
-        ClaState.CurrentControl.ExtCurrentCommand = CurCmd ;
-    }
-
-
 
     ClaState.QThetaElect = __fracf32 ( SLessState.ThetaHat + 0.25f) ;
 
