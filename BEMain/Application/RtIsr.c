@@ -143,7 +143,6 @@ __interrupt void AdcIsr(void)
 
     // Process analog readout
     //ProcAnalogSamples() ;
-
 #ifdef ON_BOARD_ENCODER
     // Read the encoder
     ReadEncPosition1() ;
@@ -155,6 +154,8 @@ __interrupt void AdcIsr(void)
 
     // Apply logger. Note that the logger works unconditionally - bombs repeatedly the UART port
     FillLoggerStruct();
+    // Read coherent vars from CLA
+    while(TryUpdateClaMailOut() == 0) ;
 
 #define N1 2
 #define N2 1

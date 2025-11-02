@@ -217,6 +217,7 @@ void MotorOnSeqAsSensorless() ;
 void AnalyzeR6Step(void);
 void MotorOnSeqAsSensorless6Step(void);
 void SixStepEstimatePU(void);
+short TryUpdateClaMailOut(void);
 
 // SpeedProfiler
 short SpeedProfiler( void ) ;

@@ -43,8 +43,18 @@ typedef struct
     float FOMConvergenceGoodTimer ; //Timer for establishing FOM convergence
     float FOMRetardAngleDistance ;
     float FOMFirstStabilizationTimer ;
+    float OldThetaHat ;
+    float StepDistance ;
+    short ConvergenceGoodCounter ;
 } FomState_T ;
 
+typedef struct
+{
+    long CalcRequest ;
+    long CalcService ;
+    long Time2Service ;
+    long Time2Answer  ;
+} CalculationTime_T ;
 
 
 typedef struct
@@ -75,14 +85,22 @@ typedef struct
     float ThetaPsi ;
     float OmegaHat;   // Estimated Omega
     float OmegaState; // PLL state of Omega
+    float WLPFState ;
     float ThetaHat;
+    float IqMean  ;
+    float IqMeanSum ;
+    float IqMeanSumTime ;
+    float DeltaCom2Close ;
     short AnaPreStep ;
     short AnaPostStep ;
     short PutPtr ;
     long  AbsPutPtr ; // Counts total available samples
     short PostPutPtr ;
     short SetSpeedCtl ; // Flag to activate speed controller
+    CalculationTime_T CalculationTime;
 }SixStepObs_T;
+
+
 
 struct CSLState
 {

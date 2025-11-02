@@ -904,6 +904,21 @@ struct CFloatParRecord
 
 EXTERN_TAG float FloatParRevision        ;
 
+
+typedef struct
+{
+    float Ia          ;
+    float Ib          ;
+    float Ic          ;
+    float Va          ;
+    float Vb          ;
+    float Vc          ;
+    float QThetaPU    ;
+    float OldQThetaPU ;
+} VarMirror_T ;
+EXTERN_TAG VarMirror_T VarMirror ;
+
+
 extern short RecorderStartFlag     ;
 
 #define GetOffsetC(x,y)  offsetof(struct CCalib, x)

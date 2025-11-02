@@ -100,6 +100,20 @@
         { 2 , (long unsigned *) & SysState.SpeedControl.SpeedCommand}, //:SpeedCommand  [SpeedCtl] {SpeedCommand}
         { 2 , (long unsigned *) & SysState.SpeedControl.PIState}, //:SpeedPIState  [SpeedCtl] {SpeedPIState}
         { 2 , (long unsigned *) & SysState.SpeedControl.SpeedReference}, //:SpeedSpeedReference  [SpeedCtl] {SpeedSpeedReference}
+        { 2 , (long unsigned *) & VarMirror.Va}, //:VarMirrorVa  [SixStep] {VarMirrorVa}
+        { 2 , (long unsigned *) & VarMirror.Vb}, //:VarMirrorVb  [SixStep] {VarMirrorVb}
+        { 2 , (long unsigned *) & VarMirror.Vc}, //:VarMirrorVc  [SixStep] {VarMirrorVc}
+        { 2 , (long unsigned *) & VarMirror.Ia}, //:VarMirrorIa  [SixStep] {VarMirrorIa}
+        { 2 , (long unsigned *) & VarMirror.Ib}, //:VarMirrorIb  [SixStep] {VarMirrorIb}
+        { 2 , (long unsigned *) & VarMirror.Ic}, //:VarMirrorIc  [SixStep] {VarMirrorIc}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.ThetaRawPU}, //:SixThetaRawPU  [SixStep] {SixThetaRawPU}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.ETheta}, //:SixETheta  [SixStep] {SixETheta}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.ThetaPsi}, //:SixThetaPsi  [SixStep] {SixThetaPsi}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.OmegaState}, //:SixOmegaState  [SixStep] {SixOmegaState}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.OmegaHat}, //:SixOmegaHat  [SixStep] {SixOmegaHat}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.ThetaHat}, //:SixThetaHat  [SixStep] {SixThetaHat}
+        { 2 , (long unsigned *) & SLessState.FOM.StepDistance}, //:StepDistance  [SixStep] {StepDistance}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.IqMean}, //:IqMean  [SixStep] {IqMean}
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVload  [ClaRecsCopy] {FastVload }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVout  [ClaRecsCopy] {FastVout }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastIsense  [ClaRecsCopy] {FastIsense }
