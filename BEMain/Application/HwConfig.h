@@ -238,7 +238,7 @@ struct CProjSpecificData
       {.ProjIndex = 2 ,// PROJ_TYPE_ZOOZ_S
        .ProjSpecificDataRevision = HwConfigRevision,
           .FullAdcRangeCurrent = FULL_ADC_RANGE_WH_CURRENT_R2 , .EncoderCountsFullRev = 65536 ,  .Rev2Pos = WHEEL_REV2POS  , .HallAngleOffset = 0 , .nPolePairs=5, .InvertEncoder=1 ,
-          .KpCur = 4.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 30.0f ,
+          .KpCur = 4.0f , .KiCur = 8000 , .PhaseOverCurrent = 35 , .DcShortCitcuitTripVolts = 2.7f, .MaxCurCmd = 18.0f ,
           .MaxCurCmdDdt = 10000.0f , .CurrentFilterBWHz = 3000.0f ,
          .HallVal0 = HALL_BAD_VALUE , .HallVal1 = 2 , .HallVal2 = 0 , .HallVal3 = 1 , .HallVal4 = 4 , .HallVal5 = 3 , .HallVal6 = 5  , .HallVal7 = HALL_BAD_VALUE,
          .BrakeReleaseVolts = 23.0f,

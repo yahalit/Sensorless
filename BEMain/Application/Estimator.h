@@ -59,11 +59,15 @@ typedef struct
 
 typedef struct
 {
-    short Step    ;
+    short Step      ;
+    unsigned long long  StepTimeLL  ;
+    float StepSpeed ;
+    float OpenLoopCurrent  ;
     short OldStep ;
+    short StepDirection ;
     short TransitionTimeOut ;
+    short CmdTransitionTimeOut ;
     short SumCountLen  ;
-    short TransitionTimeOutCnt ;
     short bUpdateBuf ;
     short bProcREstimate ;
     float sumCurPreA[64] ;
@@ -85,12 +89,13 @@ typedef struct
     float ThetaPsi ;
     float OmegaHat;   // Estimated Omega
     float OmegaState; // PLL state of Omega
-    float WLPFState ;
+    float WLPFState ; // filtered Kp * omega error, should be zero at steady state
     float ThetaHat;
     float IqMean  ;
     float IqMeanSum ;
     float IqMeanSumTime ;
     float DeltaCom2Close ;
+    long  StopDetectCntr ;
     short AnaPreStep ;
     short AnaPostStep ;
     short PutPtr ;
@@ -163,6 +168,7 @@ typedef struct
     short nSummingTime    ;
     float InvnSummingTime ;
     float MinimumCur4RCalc ;
+    float OpenLoopCurDiDtMax ;
 }CSLPars6Step_T;
 
 

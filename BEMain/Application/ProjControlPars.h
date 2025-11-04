@@ -171,7 +171,7 @@ struct  CProjSpecificCtl
      } , // PROJ_UNDEFINED
 
      {
-      .ProjIndex = PROJ_TYPE_BESENSORLESS ,// PROJ_TYPE_WHEEL_R
+      .ProjIndex = PROJ_TYPE_BESENSORLESS ,// PROJ_TYPE_BESENSORLESS
       .qf0PBw   = 400.0f,
       .qf0PXi   = 0.55f,
       .qf0ZBw   = 1.0e5f,
@@ -180,8 +180,8 @@ struct  CProjSpecificCtl
       .qf1PXi   = 0.55f,
       .qf1ZBw   = 1.0e5f,
       .qf1ZXi   = 1.0f,
-      .qf0Cfg   = 17 ,
-      .qf1Cfg   = 17 ,
+      .qf0Cfg   = 0 ,
+      .qf1Cfg   = 0 ,
       .SpeedKp   = 4.0f ,
       .SpeedKi   = 400.0f ,
       .PosKp   = 58.03392625f,
@@ -209,7 +209,7 @@ struct  CProjSpecificCtl
       .LowDeadBandThold = 0 ,
       .HiAutoMotorOffThold = 0.01 ,
       .LowAutoMotorOffThold = 0.005 ,
-      .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO | UC_SUPPORT_BRAKE | US_SUPPORT_AUTOBRAKE),
+      .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO ),
       .PhiM  = 0.130f,
       .Lq0 = 3.5e-3f ,
       .LqCorner2 =  1600.0f ,
@@ -235,7 +235,7 @@ struct  CProjSpecificCtl
      } , // PROJ_TYPE_BESENSORLESS
 
      {
-      .ProjIndex = PROJ_TYPE_ZOOZ_S ,// PROJ_TYPE_WHEEL_R
+      .ProjIndex = PROJ_TYPE_ZOOZ_S ,// PROJ_TYPE_ZOOZ_S
       .qf0PBw   = 400.0f,
       .qf0PXi   = 0.55f,
       .qf0ZBw   = 1.0e5f,
@@ -244,8 +244,8 @@ struct  CProjSpecificCtl
       .qf1PXi   = 0.55f,
       .qf1ZBw   = 1.0e5f,
       .qf1ZXi   = 1.0f,
-      .qf0Cfg   = 17 ,
-      .qf1Cfg   = 17 ,
+      .qf0Cfg   = 0 ,
+      .qf1Cfg   = 0 ,
       .SpeedKp   = 3.0f ,
       .SpeedKi   = 60.0f ,
       .PosKp   = 58.03392625f,
@@ -273,7 +273,7 @@ struct  CProjSpecificCtl
       .LowDeadBandThold = 0 ,
       .HiAutoMotorOffThold = 0.01 ,
       .LowAutoMotorOffThold = 0.005 ,
-      .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO | UC_SUPPORT_BRAKE | US_SUPPORT_AUTOBRAKE),
+      .UseCase = (PDO3_CONFIG_WHEEL | UC_POS_MODULO),
       .PhiM  = 0.130f,
       .Lq0 = 5.0e-4f ,
       .LqCorner2 =  0,

@@ -82,6 +82,7 @@ void SafeSetMotorOff(void) ;
 long unsigned SetLoopClosureMode( short us );
 long unsigned SetReferenceMode( short us);
 void ResetSpeedController(void) ;
+void ResetSpeedController2Speed(float speed, float cur );
 void SwitchMotionProfile (void);
 float  RunBiquads(float CandR, float cursat);
 float PosPrefilterMotorOn(float y , float *yf );
@@ -218,6 +219,7 @@ void AnalyzeR6Step(void);
 void MotorOnSeqAsSensorless6Step(void);
 void SixStepEstimatePU(void);
 short TryUpdateClaMailOut(void);
+void ResetEstimatorTout() ;
 
 // SpeedProfiler
 short SpeedProfiler( void ) ;

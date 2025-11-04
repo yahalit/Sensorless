@@ -114,8 +114,19 @@ struct CRecorder
     short BufferReady ;
     short TimerBasedTs  ;
     long  TimerBasedTsCntr   ;
-    long  TimerBasedTsTstart ;
-    long  TimerBasedTsTend   ;
+    union
+    {
+        long l[2] ;
+        unsigned long ul[2] ;
+        long long ll ;
+    }   TimerBasedTsTstart ;
+    union
+    {
+        long l[2] ;
+        unsigned long ul[2] ;
+        long long ll ;
+    }   TimerBasedTsTend ;
+    long unsigned OldEcap  ;
     long FastIntsInC; // !< Fast interrupts in C loop
     float FastTsUsec;  // !< Fast interrupt TS
     long unsigned SdoBufLenLongs; // !< Largest available SDO buffer , in 32bit units

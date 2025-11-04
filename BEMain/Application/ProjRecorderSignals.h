@@ -7,7 +7,8 @@
         { 0 , (long unsigned *) & SysState.Mot.LastException}, //:LastException [Status] {Last exception}
         { 2 , (long unsigned *) & ClaState.Analogs.Vdc }, //:Vdc [Analogs] {Servo DC voltage}
         { 2 , (long unsigned *) & ClaState.Encoder1.UserPos }, //:UserPos [Sensors] {User position measured by encoder}
-        { 2 , (long unsigned *) & ClaState.ThetaPuInUse }, //:ThetaElect [Current] {Electrical angle'}
+        { 2 , (long unsigned *) & ClaState.ThetaPuInUse }, //:ThetaElect [Current] {Electrical angle }
+        { 2 , (long unsigned *) & ClaState.QThetaElect }, //:ThetaElectCmd [Current] {Electrical angle command}
         { 2 , (long unsigned *) & ClaState.CurrentControl.Iq }, //:Iq [Current] {Current Q channel}
         { 2 , (long unsigned *) & ClaState.CurrentControl.Id }, //:Id [Current] {Current D channel}
         { 2 , (long unsigned *) & ClaState.Encoder1.UserSpeed }, //:UserSpeed [Sensors] {User Speed measured by encoder}
@@ -100,6 +101,9 @@
         { 2 , (long unsigned *) & SysState.SpeedControl.SpeedCommand}, //:SpeedCommand  [SpeedCtl] {SpeedCommand}
         { 2 , (long unsigned *) & SysState.SpeedControl.PIState}, //:SpeedPIState  [SpeedCtl] {SpeedPIState}
         { 2 , (long unsigned *) & SysState.SpeedControl.SpeedReference}, //:SpeedSpeedReference  [SpeedCtl] {SpeedSpeedReference}
+        { 2 , (long unsigned *) & SysState.SpeedControl.SpeedTarget}, //:SpeedTarget  [SpeedCtl] {SpeedTarget}
+        { 2 , (long unsigned *) & SysState.SpeedControl.PiOut}, //:PiOut  [SpeedCtl] {PiOut}
+        { 2 , (long unsigned *) & SysState.SpeedControl.SpeedError}, //:SpeedError  [SpeedCtl] {SpeedError}
         { 2 , (long unsigned *) & VarMirror.Va}, //:VarMirrorVa  [SixStep] {VarMirrorVa}
         { 2 , (long unsigned *) & VarMirror.Vb}, //:VarMirrorVb  [SixStep] {VarMirrorVb}
         { 2 , (long unsigned *) & VarMirror.Vc}, //:VarMirrorVc  [SixStep] {VarMirrorVc}
@@ -114,6 +118,12 @@
         { 2 , (long unsigned *) & SLessState.SixStepObs.ThetaHat}, //:SixThetaHat  [SixStep] {SixThetaHat}
         { 2 , (long unsigned *) & SLessState.FOM.StepDistance}, //:StepDistance  [SixStep] {StepDistance}
         { 2 , (long unsigned *) & SLessState.SixStepObs.IqMean}, //:IqMean  [SixStep] {IqMean}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.FilteredR}, //:FilteredR  [SixStep] {FilteredR}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.WLPFState}, //:WLPFState  [SixStep] {WLPFState}
+        { 8 , (long unsigned *) & SLessState.SixStepObs.CmdTransitionTimeOut}, //:TransitionTimeOutCnt  [SixStep] {TransitionTimeOutCnt}
+        { 8 , (long unsigned *) & SLessState.SixStepObs.bUpdateBuf}, //:bUpdateBuf  [SixStep] {bUpdateBuf}
+        { 8 , (long unsigned *) & SLessState.FOM.bAcceleratingAsV2FState}, //:SixbAcceleratingAsV2FState  [SixStep] {bAcceleratingAsV2FState}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.StepSpeed}, //:StepSpeed  [SixStep] {StepSpeed}
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVload  [ClaRecsCopy] {FastVload }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVout  [ClaRecsCopy] {FastVout }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastIsense  [ClaRecsCopy] {FastIsense }

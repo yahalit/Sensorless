@@ -310,6 +310,7 @@ long unsigned LogException (   short fatality , long unsigned exp )
 
     if ( ( fatality == EXP_FATAL ) && (( sysmode > E_SysMotionModeNothing ) || (sysmode == E_SysMotionModeSafeFault) ) )
     {
+        ResetEstimatorTout();
         SysState.Mot.SafeFaultCode = 0 ; // Terminate any safe fault process
         SetSystemMode(E_SysMotionModeFault);
         if ( exp == 0 )

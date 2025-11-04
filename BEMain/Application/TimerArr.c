@@ -30,6 +30,12 @@ long long unsigned GetLongTimer ( struct CSysTimerStr *pT )
 }
 
 
+void GetIpcTimer( unsigned long long *p)
+{
+    unsigned long * pp = (unsigned long *)p;
+    pp[0] = Cpu1toCpu2IpcRegs.IPCCOUNTERL ;
+    pp[1] = Cpu1toCpu2IpcRegs.IPCCOUNTERH ;
+}
 
 void UpdateSysTimer(void )
 {// RT safe: Timer update in the assembler is in critical section

@@ -6,16 +6,26 @@
 %         figure(1) ; clf
 %         plot( tht , tht , tht , thtr) ; 
 
-load SigRecSave6Step.mat ;
+%load SigRecSave6Step.mat ;
+load SigRecSave.mat ;
 r = RecStr ; 
 t = r.t ; 
 R = 0.066 ; % 62 / 12 ; 
+try 
 c1 = r.PhaseCur0 ;
 c2 = r.PhaseCur1 ;
 c3 = r.PhaseCur2 ;
 v1r = r.PhaseVoltMeas0  ; 
 v2r = r.PhaseVoltMeas1  ; 
 v3r = r.PhaseVoltMeas2  ; 
+catch 
+c1 = r.VarMirrorIa ;
+c2 = r.VarMirrorIb ;
+c3 = r.VarMirrorIc ;
+v1r = r.VarMirrorVa  ; 
+v2r = r.VarMirrorVb  ; 
+v3r = r.VarMirrorVc  ; 
+end 
 v1 = v1r - R * c1 ; 
 v2 = v2r - R * c2 ; 
 v3 = v3r - R * c3 ; 

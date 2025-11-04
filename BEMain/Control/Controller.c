@@ -919,6 +919,21 @@ void ResetSpeedController(void)
 }
 
 
+
+void ResetSpeedController2Speed(float speed , float cur )
+{
+    SysState.PosControl.SpeedFFExtState = 0 ;
+    SysState.SpeedControl.SpeedReference = speed ; // !< Reference to the speed controller
+    SysState.SpeedControl.SpeedCommand   = speed ; // !< Command to the speed controller composed of Reference and of position corrections
+    SysState.SpeedControl.SpeedError     = 0 ; // !< Error of speed from command
+    SysState.SpeedControl.PIState        = cur ; // !< State of PI controller
+    SysState.SpeedControl.PiOut          = cur ;
+    ControlPars.qf0.s0 = cur ;
+    ControlPars.qf0.s1 = cur ;
+    ControlPars.qf1.s0 = cur ;
+    ControlPars.qf1.s1 = cur ;
+}
+
 /*
  * Algorithm for holding the motor shut just because we have no justification to move
  */

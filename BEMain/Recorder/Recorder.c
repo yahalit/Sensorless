@@ -1381,7 +1381,7 @@ long unsigned  GetRecorder( struct CSdo * pSdo ,short unsigned *nData)
         {
             if ( Recorder.TimerBasedTs && ( Recorder.TimerBasedTsCntr > 1 ) )
             {
-                RecTs =  ((Recorder.TimerBasedTsTend - Recorder.TimerBasedTsTstart) * INV_CPU_CLK_HZ ) / (Recorder.TimerBasedTsCntr-1) ;
+                RecTs =  ((Recorder.TimerBasedTsTend.ll - Recorder.TimerBasedTsTstart.ll) * INV_CPU_CLK_HZ ) / __fmax( (float)(Recorder.TimerBasedTsCntr-1) , 1) ;
                 // Round to 100nsec
                 RecTs =  (long)( RecTs * 1e7f + 0.5f ) * 1e-7f ;
             }
@@ -1514,19 +1514,25 @@ void  SampleRecordedSignals(void)
     }u;
     short unsigned ** pList ;
     short unsigned * pNext ;
-    long tEcap ;
+    unsigned long tEcap ;
     short unsigned cnt ;
     Recorder.GapCntr += 1 ;
     if ( Recorder.GapCntr >= Recorder.RecorderGap)
     {
         Recorder.GapCntr = 0 ;
-        tEcap = (long) HWREG (ECAP3_BASE + ECAP_O_TSCTR );
+        tEcap = HWREG (ECAP3_BASE + ECAP_O_TSCTR );
         if (  Recorder.TimerBasedTsCntr == 0 )
         {
-            Recorder.TimerBasedTsTstart = tEcap ;
+            Recorder.TimerBasedTsTstart.ul[0] = tEcap ;
+            Recorder.TimerBasedTsTstart.ul[1] = 0 ;
+            Recorder.OldEcap = tEcap ;
+            Recorder.TimerBasedTsTend.ll =Recorder.TimerBasedTsTstart.ll ;
         }
         Recorder.TimerBasedTsCntr += 1 ;
-        Recorder.TimerBasedTsTend  = tEcap ;
+
+
+        Recorder.TimerBasedTsTend.ll  += ( tEcap - Recorder.OldEcap ) ;
+        Recorder.OldEcap = tEcap ;
 
         pList = (short unsigned **) &Recorder.RecorderList[0];
         for ( cnt = 0 ; cnt < Recorder.RecorderListLen ; cnt++ )
