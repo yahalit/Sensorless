@@ -26,7 +26,8 @@
 %% Unit tests
 %%%%%%%%%%%%%
 % UnitTestBE1: Currents Alpha and Beta are sinusoidal, and PWM and voltage measurements yield acceptable similarity
-% UnitTestBE2: Test flux equations 
+% UnitTestBE2: Test flux equations
+% BitzerBEmfForm: Get the EMF forms by the recoil with zero current after pressure buildup
 
 %% Recording and Operation experiments
 %%%%%%%%%%%%%%%%%%%%%%%
@@ -82,6 +83,11 @@
 % function rslt = thd ( vec , tht) :  Total harmonic distortion of a signal, given the angle 
 % Els : Calculate LL and L- (LL) impedances given branch impedances and couplings
 % function F = findFrq(vec,T) : Find the frequency of a recorded signal with good THD
+% function GetRecTimeRange() : Extracts a subset of a record structure whose time values fall within a specified range.
+% function InterpolateSteps() Linearly smooths transients following steps in a field.
+% function ddt(x, t) Numerical first derivative of a signal with respect to time.
+% IntegrateOverSteps : Computes step-wise averaged values of structure fields between discrete changes
+% function DrawRecs(r,nfig,siglist,range): Draw a complete records set
 
 %% Sensored motor only
 % CommutationExp: Make a commutation tuning experiment 

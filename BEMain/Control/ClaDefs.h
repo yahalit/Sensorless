@@ -68,6 +68,7 @@ struct CClaMailIn
     float CandidateQElectAngle ;
     float CandidateId ;
     float CandidateMotorSpeedCompensationVoltage ;
+    float IqdConvergenceTol; // Amps : Window size for convergence
 #ifndef SIMULATION_MODE
     float vOpenLoopTestA ;
     float vOpenLoopTestB ;
@@ -275,6 +276,7 @@ struct CEncoder
 
 struct CClaTiming
 {
+    float Ts ;
     float InvMhz ;
     float TsInTicks ;
     float InvTsInTicks ;
@@ -342,6 +344,7 @@ struct CClaState
     float VoltageAddA ;
     float VoltageAddB ;
     float VoltageAddCount ;
+    float ConvergenceTime ;
 };
 EXTERN_CLA volatile struct CClaState ClaState ;
 

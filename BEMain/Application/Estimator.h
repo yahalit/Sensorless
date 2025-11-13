@@ -62,6 +62,7 @@ typedef struct
     short Step      ;
     unsigned long long  StepTimeLL  ;
     float StepSpeed ;
+    float StepTime  ;
     float OpenLoopCurrent  ;
     short OldStep ;
     short StepDirection ;
@@ -95,13 +96,15 @@ typedef struct
     float IqMeanSum ;
     float IqMeanSumTime ;
     float DeltaCom2Close ;
+    float AngleCandidate ;
     long  StopDetectCntr ;
     short AnaPreStep ;
     short AnaPostStep ;
     short PutPtr ;
     long  AbsPutPtr ; // Counts total available samples
     short PostPutPtr ;
-    short SetSpeedCtl ; // Flag to activate speed controller
+    short EnableREstimator ; //
+    //short SetSpeedCtl ; // Flag to activate speed controller
     CalculationTime_T CalculationTime;
 }SixStepObs_T;
 
@@ -137,6 +140,7 @@ struct CSLState
     float CommAngleDisturbance;
     float CommAngleQuadDisturbance;
     float DeltaThetaOnEngage ; // The angle difference that need be compensated at the engage time
+    float OmegaHatDisplay ;
     short On; // 1: Algorithm is active 0: Observing only
     short DInjectionOn; // 1: Inject D "noise"
     FomState_T FOM ;
@@ -169,6 +173,10 @@ typedef struct
     float InvnSummingTime ;
     float MinimumCur4RCalc ;
     float OpenLoopCurDiDtMax ;
+    float MaxStepTime ;
+    float JOverKT ;
+    float Har3Phase ;
+    float Har3Amp ;
 }CSLPars6Step_T;
 
 

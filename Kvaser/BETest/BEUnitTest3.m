@@ -1,31 +1,27 @@
-% tht = 0:0.001:1 ;
-% thtr = tht ;
-% delta = ( mod( tht,1) + 1 )  * 6.0  + 1  ;
-%         delta = delta - mod(delta,1) ;
-%         thtr = mod((delta-0.5) * 0.166666666666667,1)  ;
-%         figure(1) ; clf
-%         plot( tht , tht , tht , thtr) ; 
-
-load SigRecSave6Step.mat ;
-%load SigRecSaveE1_3.mat ;
-r = RecStr ; 
+% Unit test for the 6 step mode
+x = load('SixStepSave.mat') ; 
+r = x.RecStr ;
 t = r.t ; 
-R = 0.066 ; % 62 / 12 ; 
-try 
-c1 = r.PhaseCur0 ;
-c2 = r.PhaseCur1 ;
-c3 = r.PhaseCur2 ;
-v1r = r.PhaseVoltMeas0  ; 
-v2r = r.PhaseVoltMeas1  ; 
-v3r = r.PhaseVoltMeas2  ; 
-catch 
+
+%                 t: [1×2047 double]
+%                Ts: 2.0000e-04
+%        ThetaElect: [1×2047 double]
+%       VarMirrorVa: [1×2047 double]
+%       VarMirrorVb: [1×2047 double]
+%       VarMirrorVc: [1×2047 double]
+%       VarMirrorIa: [1×2047 double]
+%       VarMirrorIb: [1×2047 double]
+%       VarMirrorIc: [1×2047 double]
+%     SixThetaRawPU: [1×2047 double]
+
+% Ideal algorithm
+R = 0.061 ; % 62 / 12 ; 
 c1 = r.VarMirrorIa ;
 c2 = r.VarMirrorIb ;
 c3 = r.VarMirrorIc ;
 v1r = r.VarMirrorVa  ; 
 v2r = r.VarMirrorVb  ; 
 v3r = r.VarMirrorVc  ; 
-end 
 v1 = v1r - R * c1 ; 
 v2 = v2r - R * c2 ; 
 v3 = v3r - R * c3 ; 
@@ -78,60 +74,6 @@ for cnt = 1 : nIntervals
     Pvec(cnt)  = atan2(tht(2) , tht(1)) - (-1)^(cnt) * Offset ; 
     plot ( t(ind) , H * tht, 'r' ,'linewidth' , 2 ) ; 
 end
-
-
-% Estimation of resistance 
-ncur = ceil(2e-3 / dt) ; 
-rx = zeros(1,nIntervals-1) ; 
-for cnt = 1 : nIntervals-1 
-    ind2  = (df(cnt)+ndyn * 2):(df(cnt)+ndyn * 2 +ncur); 
-    ind1 =  (df(cnt)-ncur-2):(df(cnt)-2); 
-    indc = [ind1(:) ; ind2(:) ] ; 
-    nind1 = length(ind1) ; 
-    nind2 = length(ind2) ; 
-    On1 = [ones(nind1,1) ; ones(nind2,1)];
-    On2 = indc - mean(indc); 
-    
-    % Go for the current that changed 
-    cd1 = c1(ind2(end)) - c1(ind1(1)) ;  
-    cd2 = c2(ind2(end)) - c2(ind1(1)) ;  
-    cd3 = c3(ind2(end)) - c3(ind1(1)) ;  
-    [cdm,cdn] = min(abs([cd1,cd2,cd3])) ;
-    if cdn == 1 
-        On31 = c2(indc);
-        vrv1 = v2r(:) - vn(:) ; 
-        On32 = c3(indc);
-        vrv2 = v3r(:) - vn(:) ; 
-    elseif cdn == 2 
-        On31 = c1(indc);
-        vrv1 = v1r(:) - vn(:) ; 
-        On32 = c3(indc);
-        vrv2 = v3r(:) - vn(:) ; 
-    else
-        On31 = c1(indc);
-        vrv1 = v1r(:) - vn(:) ; 
-        On32 = c2(indc);
-        vrv2 = v2r(:) - vn(:) ; 
-    end
-    
-    figure(10) ; clf
-    H = [On1 On2 On31(:)] ; 
-    tht1 = (H' * H) \ H' *  vrv1(indc) ;
-    r1 = tht1(3) ; 
-    H = [On1 On2 On32(:)] ; 
-    tht2 = (H' * H) \ H' *  vrv2(indc) ;
-    r2 = tht2(3) ; 
-    rx(cnt) = mean([r1,r2]);
-    disp( [r1 , r2 , rx(cnt) ] );
-%     plot( On2 ,v1rv(indc),'b', On2 ,v2rv(indc),'r', On2 ,v3rv(indc), 'y' , On2 , H * tht1 ,'b', On2 , H * tht2 ,'r', On2 , H * tht3 ,'y') ; 
-    x = 1; 
-end
-
-figure(6) ; clf
-subplot( 2,1,1) ; 
-plot( 1 : nIntervals , Evec ) ; 
-subplot( 2,1,2) ; 
-plot( 1 : nIntervals , unwrap(Pvec ) * 180 / pi - 90 )  ; 
 
 
 figure(7) ; clf

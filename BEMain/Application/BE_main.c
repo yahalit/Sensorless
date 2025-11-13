@@ -221,7 +221,10 @@ void InitAppData(void)
 
     InitTimeOuts();
 
+
     ClaState.Timing.TsInTicks = CUR_SAMPLE_TIME_CLOCKS  ;
+    ClaState.Timing.Ts = ClaState.Timing.TsInTicks * INV_CPU_CLK_HZ ;
+
     ClaState.Timing.InvTsInTicks = (1.0f / CUR_SAMPLE_TIME_CLOCKS)   ;
     ClaState.Timing.InvMhz = 1.0f / (float) CPU_CLK_MHZ ;
     ClaState.Pwm6LimitForZeroing = (DAC_PWM_PERIOD_CLK*0.5f) ;
@@ -490,7 +493,7 @@ void SetProjectId(void)
 {
     //if ( DBaseConf.IsValidDatabase  )
     {
-        ProjId =  PROJ_TYPE_ZOOZ_S ; // PROJ_TYPE_BESENSORLESS    ; //  ;
+        ProjId =  PROJ_TYPE_BESENSORLESS    ; // PROJ_TYPE_ZOOZ_S ; ;
     }
 
     CanId = ProjSpecificData[ProjId].CanId ;

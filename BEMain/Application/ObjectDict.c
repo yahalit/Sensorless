@@ -945,7 +945,8 @@ const struct CShortDataItem ShortDataItem[]={
                                {(short*)  &SysState.SteerCorrection.bSteeringComprensation ,0, 1 , 0},   // 9
                                {(short*)  &SysState.CLMeas.Fault ,0, 1 , 0}  , // 10
                                {(short*)  &SLessState.On ,0, 1 , 0}  , // 11
-                               {(short*)  &SysState.Debug.DebugSLessCycle , 0,2,0} //12
+                               {(short*)  &SysState.Debug.DebugSLessCycle , 0,2,0} ,//12
+                               {(short*)  &SLessState.SixStepObs.EnableREstimator, 0 , 1, 0 } //13
 };
 
 

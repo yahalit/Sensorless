@@ -78,7 +78,7 @@
         { 2 , (long unsigned *) & SLessState.VcompA}, //:SlessVcompA  [SensorLess] {Sensorless VcompA}
         { 2 , (long unsigned *) & SLessState.VcompB}, //:SlessVcompB  [SensorLess] {Sensorless VcompB}
         { 2 , (long unsigned *) & SLessState.ETheta}, //:SlessETheta  [SensorLess] {Sensorless ETheta}
-        { 2 , (long unsigned *) & SLessState.OmegaHat}, //:SlessOmegaHat  [SensorLess] {Sensorless OmegaHat}
+        { 2 , (long unsigned *) & SLessState.OmegaHatDisplay}, //:SlessOmegaHat  [SensorLess] {Sensorless OmegaHat}
         { 2 , (long unsigned *) & SLessState.OmegaState}, //:SlessOmegaState  [SensorLess] {Sensorless OmegaState}
         { 2 , (long unsigned *) & SLessState.ThetaHat}, //:SlessThetaHat  [SensorLess] {Sensorless ThetaHat}
         { 2 , (long unsigned *) & SLessState.IdDemandPhase}, //:SlessIdDemandPhase  [SensorLess] {Sensorless IdDemandPhase}
@@ -124,6 +124,11 @@
         { 8 , (long unsigned *) & SLessState.SixStepObs.bUpdateBuf}, //:bUpdateBuf  [SixStep] {bUpdateBuf}
         { 8 , (long unsigned *) & SLessState.FOM.bAcceleratingAsV2FState}, //:SixbAcceleratingAsV2FState  [SixStep] {bAcceleratingAsV2FState}
         { 2 , (long unsigned *) & SLessState.SixStepObs.StepSpeed}, //:StepSpeed  [SixStep] {StepSpeed}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.AngleCandidate}, //:AngleCandidate  [SixStep] {AngleCandidate}
+        { 2 , (long unsigned *) & ControlPars.SpeedKi}, //:SpeedKi  [SixStep] {SpeedKi}
+        { 2 , (long unsigned *) & ControlPars.SpeedKp}, //:SpeedKp  [SixStep] {SpeedKp}
+        { 2 , (long unsigned *) & SLessState.SixStepObs.StepTime}, //:StepTime  [SixStep] {StepTime}
+        { 2 , (long unsigned *) & ClaState.ConvergenceTime}, //:ConvergenceTime  [Current] {ConvergenceTime}
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVload  [ClaRecsCopy] {FastVload }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastVout  [ClaRecsCopy] {FastVout }
         { 258 , (long unsigned *) &ClaRecsCopy.kuku[0] }, //:FastIsense  [ClaRecsCopy] {FastIsense }

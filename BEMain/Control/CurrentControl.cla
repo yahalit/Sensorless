@@ -566,6 +566,7 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
             ClaState.vb = 0 ;
             ClaState.vb = 0 ;
             ClaState.VoltageAddCount = 0 ;
+            ClaState.ConvergenceTime  = 0 ;
         }
 
         ClaState.vn =  ClaState.PwmOffset - 0.5f * (  __mmaxf32(__mmaxf32(ClaState.va,ClaState.vb),ClaState.vc) + __mminf32(__mminf32(ClaState.va,ClaState.vb),ClaState.vc)) ;
@@ -684,6 +685,17 @@ __attribute__((interrupt)) void Cla1Task1 ( void )
         }
         IntegrateVolts1() ;
     }
+
+    // Test convergence
+    if  ( __mmaxf32( fabsf(ClaState.CurrentControl.Id) , fabsf(ClaState.CurrentControl.Iq - ClaState.CurrentControl.CurrentCommand) ) < ClaMailIn.IqdConvergenceTol)
+    {
+        ClaState.ConvergenceTime = __mminf32(  ClaState.ConvergenceTime + ClaState.Timing.Ts , 1.0f ) ;
+    }
+    else
+    {
+        ClaState.ConvergenceTime = 0 ;
+    }
+
     ClaState.InterruptCtr += c.UnsignedLong1;
 
     // Coherent updating

@@ -243,6 +243,7 @@ set ( handles.CheckBlockUpload,'Visible','on') ;
 % 
 % Construct the signal tree
 
+warning('off','MATLAB:ui:javacomponent:FunctionToBeRemoved');
 import uiextras.jTree.*
 handles.t = CheckboxTree('Parent',handles.PanelSigTree);
 handles.t.CheckboxClickedCallback = [] ; 
@@ -1093,12 +1094,18 @@ end
 
 handles.TrigSelect = desc ; 
 set( handles.EditTrigPercent ,'String' , num2str(x.desc.Percent) ); 
+
+
+
 handles.PreTrigPercent = x.desc.Percent ;
 
 handles.ComboTrigType.Value = find( strcmpi(handles.ComboTrigType.String,desc.Action)) ; 
-
 handles.RecStruct.TrigVal = desc.TrigVal ;
-set(handles.edit6,'String',desc.Descriptor.Text) ;
+if isequal( x.desc.Action, 'Immediate' ) 
+    set(handles.edit6,'String','') ;
+else
+    set(handles.edit6,'String',desc.Descriptor.Text) ;
+end
 set(handles.EditTriggerValue,'String',desc.TrigVal) ;
 
 

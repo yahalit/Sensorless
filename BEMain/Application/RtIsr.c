@@ -193,10 +193,12 @@ __interrupt void AdcIsr(void)
         if ( ClaMailIn.SixStepCommutation)
         {
             SixStepEstimatePU();
+            SLessState.OmegaHatDisplay = SLessState.SixStepObs.OmegaHat ;
         }
         else
         {
             PaicuPU();
+            SLessState.OmegaHatDisplay = SLessState.OmegaHat ;
         }
     }
 

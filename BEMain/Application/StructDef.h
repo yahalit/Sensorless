@@ -690,6 +690,7 @@ struct CControlPars
     float ProfileTau ; // Delay assumption in profile
     float SpeedCtlDelay ; // Delay to account for when preparing speed control command
     float PosKp ; //!< Proportional gain for the position controller
+    float JOverKt ; // !< Inverse of inertia plant
     float SpeedKp ; // !< Kp parameter of speed control
     float SpeedKi ; // !< Ki parameter of speed control
     float SpeedAWU ; // !< Anti windup parameter of speed control

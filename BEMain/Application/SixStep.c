@@ -13,8 +13,12 @@ extern float Mod1Distance(float x, float y);
 static float mat[3][3];
 static float bm[3] ;
 #define R_MINIMUM 0.01f
+#define R_NOMINAL 0.1f
 
-
+#define CUR_CONVERGENCE_WDW_TIME 5.0e-4f
+#define ANGLE_EXTRAPOLATION_TIME_NAX 0.003f
+#define MAX_GAIN_INCREASE_FAC 1.025f
+#define MINIMUM_STEP_TIME 0.003f
 
 inline float __SignedFrac(float x)
 {// Return always positive fraction
@@ -57,6 +61,7 @@ static void SixStepsRObserver( void )
 // Read the CLA vars
     short oldstep , dist ,nextdir ;
     unsigned long long ull ;
+    float InvT  ;
 
     //while(TryUpdateClaMailOut() == 0) ;
     SLessState.SixStepObs.Step = (short) (VarMirror.QThetaPU * 6 ) ;
@@ -64,26 +69,42 @@ static void SixStepsRObserver( void )
     SLessState.SixStepObs.OldStep  = SLessState.SixStepObs.Step ;
     if (SLessState.SixStepObs.Step != oldstep  )
     {// Identify commutation step transition
-        GetIpcTimer( &ull );
-
-        dist = SLessState.SixStepObs.Step - oldstep ;
-
-        nextdir = (( dist == 1 || dist == -5 )) ? 1 : -1 ;
-        if ( SLessState.SixStepObs.StepDirection == nextdir )
+        // If step is within transition, ignore it
+        if ( ( ClaState.ConvergenceTime > CUR_CONVERGENCE_WDW_TIME  ) && ( SLessState.SixStepObs.TransitionTimeOut >= SLPars.Pars6Step.nTransitionTime))
         {
-            SLessState.SixStepObs.StepSpeed = SLessState.SixStepObs.StepDirection *
-                    ( 0.166666666666667f * CPU_CLK_HZ ) / __fmax( (float)( ull - SLessState.SixStepObs.StepTimeLL), 1e-5f) ;
-        }
-        else
-        {
-            SLessState.SixStepObs.StepSpeed = 0 ;
-        }
-        SLessState.SixStepObs.StepDirection = nextdir;
+            GetIpcTimer( &ull );
 
-        SLessState.SixStepObs.StepTimeLL = ull ;
-        SLessState.SixStepObs.TransitionTimeOut = 0 ;
-        SLessState.SixStepObs.CmdTransitionTimeOut= 0 ;
-        SLessState.SixStepObs.SetSpeedCtl = 1 ;
+            dist = SLessState.SixStepObs.Step - oldstep ;
+
+            nextdir = (( dist == 1 || dist == -5 )) ? 1 : -1 ;
+            if ( SLessState.SixStepObs.StepDirection == nextdir )
+            {
+                SLessState.SixStepObs.StepTime  =  __fmin(
+                        __fmax( (float)( ull - SLessState.SixStepObs.StepTimeLL) * INV_CPU_CLK_HZ, MINIMUM_STEP_TIME ),
+                                 SLPars.Pars6Step.MaxStepTime ) ;
+                InvT = 1.0f /  SLessState.SixStepObs.StepTime  ;
+                SLessState.SixStepObs.StepSpeed = SLessState.SixStepObs.StepDirection * 0.166666666666667f * InvT *nextdir  ;
+                        //( 0.166666666666667f * CPU_CLK_HZ ) / __fmax( (float)( ull - SLessState.SixStepObs.StepTimeLL), 1e-5f) ;
+            }
+            else
+            {
+                SLessState.SixStepObs.StepSpeed = 0 ;
+                SLessState.SixStepObs.StepTime = SLPars.Pars6Step.MaxStepTime  ;
+                InvT = 1.0f /  SLessState.SixStepObs.StepTime  ;
+            }
+            // We need Kp = 1/T , KI = 1/9/T^2 but we need for discrete implementation KI * T = 1 / 9/ T
+            // Both are normalized
+
+            ControlPars.SpeedKi = __fmin( InvT * 0.111111f * SLPars.Pars6Step.JOverKT , ControlPars.SpeedKi * MAX_GAIN_INCREASE_FAC ) ;
+            ControlPars.SpeedKp = __fmin( InvT * SLPars.Pars6Step.JOverKT , ControlPars.SpeedKp * MAX_GAIN_INCREASE_FAC );
+
+            SLessState.SixStepObs.StepDirection = nextdir;
+
+            SLessState.SixStepObs.StepTimeLL = ull ;
+            SLessState.SixStepObs.TransitionTimeOut = 0 ;
+            SLessState.SixStepObs.CmdTransitionTimeOut= 0 ;
+        }
+        //SLessState.SixStepObs.SetSpeedCtl = 1 ;
     }
 
     if ( SLessState.SixStepObs.TransitionTimeOut < SLPars.Pars6Step.nTransitionTime + SLPars.Pars6Step.nSummingTime)
@@ -160,8 +181,18 @@ static void SixStepsRObserver( void )
                     {
                         xx[5] += 1 ;
                         SLessState.SixStepObs.CalculationTime.CalcRequest = CpuTimer1Regs.TIM.all ;
-                        SLessState.SixStepObs.bProcREstimate = 1 ; // Turn over to BG processing
-                        SLessState.SixStepObs.bUpdateBuf  =  0 ;
+                        if ( SLessState.SixStepObs.EnableREstimator )
+                        {
+                            SLessState.SixStepObs.bProcREstimate = 1 ; // Turn over to BG processing
+                            SLessState.SixStepObs.bUpdateBuf  =  0 ;
+                        }
+                        else
+                        {
+                            SLessState.SixStepObs.bUpdateBuf = 1 ;
+                            SLessState.SixStepObs.FilteredR = R_NOMINAL ;
+                            SLessState.SixStepObs.RawR[0] = SLessState.SixStepObs.FilteredR ;
+                            SLessState.SixStepObs.RawR[1] = SLessState.SixStepObs.FilteredR ;
+                        }
                     }
                 }
             }
@@ -541,11 +572,7 @@ static void InitSensorlessObserverFOM6Step()
     SLPars.Pars6Step.nSummingTime       = (short) ( __fmin(SLPars.Pars6Step.SummingTime / SLPars.dT , 32000.0f) ) ;
     SLPars.Pars6Step.nTransitionTime = (short) ( __fmin(SLPars.Pars6Step.TransitionTime / SLPars.dT , 32000.0f) ) | 1 ; // assure oddity
     SLPars.Pars6Step.InvnSummingTime = 1.0f /SLPars.Pars6Step.nSummingTime ;
-
-
 }
-
-
 
 
 
@@ -563,6 +590,7 @@ static void InitSensorlessMode6Step()
     SLessState.SixStepObs.AbsPutPtr =0 ;
     SLessState.SixStepObs.FilteredR  = SLPars.R ;
     SLessState.SixStepObs.OpenLoopCurrent = 0;
+    ClaMailIn.IqdConvergenceTol = 0.5 ; // Amps : Window size for convergence
     InitSensorlessObserverFOM6Step() ;
 }
 
@@ -570,11 +598,14 @@ static void InitSensorlessMode6Step()
 void SixStepEstimatePU()
 {
     float b, v1 , v2 , v3 , s , c, vn ;
-    float ipart ;
-    if ( SLessState.SixStepObs.CmdTransitionTimeOut < SLPars.Pars6Step.nTransitionTime )
+    float ipart , thetaAtan ;
+    if ( (SLessState.SixStepObs.CmdTransitionTimeOut < SLPars.Pars6Step.nTransitionTime ) || ClaState.ConvergenceTime < CUR_CONVERGENCE_WDW_TIME   )
     { // In transition, so not calculate angle or speed
-        SLessState.SixStepObs.CmdTransitionTimeOut += 1 ;
-        SLessState.SixStepObs.ThetaRawPU += SLessState.SixStepObs.StepSpeed * SLPars.dT ;
+        if ( SLessState.SixStepObs.CmdTransitionTimeOut * SLPars.dT < ANGLE_EXTRAPOLATION_TIME_NAX )
+        {
+            SLessState.SixStepObs.CmdTransitionTimeOut += 1 ;
+            SLessState.SixStepObs.ThetaRawPU += SLessState.SixStepObs.StepSpeed * SLPars.dT ;
+        }
     }
     else
     {
@@ -587,7 +618,8 @@ void SixStepEstimatePU()
         v3 = v3 - vn ;
         c = (v2 - v3) * 0.577350269189626f ;
         s = v1 ;
-        SLessState.SixStepObs.ThetaRawPU = __atan2puf32(s , c ) + 0.5f ;
+        thetaAtan = __atan2puf32(s , c ) + 0.5f  ;
+        SLessState.SixStepObs.ThetaRawPU = thetaAtan + __sin( thetaAtan * 3 + SLPars.Pars6Step.Har3Phase ) * SLPars.Pars6Step.Har3Amp ;
     }
 
     // Accumulate the angle
@@ -749,7 +781,7 @@ static short ManageAccelerationToWorkZone6Step(float CurMax)
                 // For six-step the engagement mechanism about Id/Iq will not work.
                 // We want QThetaElect to be SLessState.SixStepObs.ThetaHat + 0.25 , we will drag the angle offset slowly to it
                 SLessState.SixStepObs.DeltaCom2Close = Mod1Distance(SLessState.SixStepObs.ThetaHat, ClaState.QThetaElect + 0.25f);
-                SLessState.SixStepObs.SetSpeedCtl = 0 ; // Kill pending speed control requests
+                //SLessState.SixStepObs.SetSpeedCtl = 0 ; // Kill pending speed control requests
                 SLessState.FOM.bAcceleratingAsV2FState  = E_EngagingSpeedControl ;
 
                 SysState.Mot.ReferenceMode = E_RefModeSpeed ;//Avoid SetReferenceMode()  since it will reset profile
@@ -838,11 +870,14 @@ static float SixStepPI(void)
 {
     // Speed control works every cycle for the integrator to function correctly
     // New current command shall be activated only after R-calculation data collection
-    float Cand   ;
+    float Cand     ;
     SysState.SpeedControl.SpeedError =  SysState.SpeedControl.SpeedCommand - SLessState.SixStepObs.StepSpeed ;
 
+
+
+
     SysState.SpeedControl.PIState = SysState.SpeedControl.PIState  +
-            ControlPars.SpeedKi * SysState.Timing.Ts * ( SysState.SpeedControl.SpeedCommand -  SLessState.SixStepObs.OmegaHat ) ;
+            ControlPars.SpeedKi * SysState.SpeedControl.SpeedError ; // ( SysState.SpeedControl.SpeedCommand -  SLessState.SixStepObs.OmegaHat ) ;
 
     Cand  = ControlPars.SpeedKp * SysState.SpeedControl.SpeedError + SysState.SpeedControl.PIState  ;
     SysState.SpeedControl.PiOut = fSat( Cand, ControlPars.MaxCurCmd ) ;
@@ -863,9 +898,9 @@ static float SixStepPI(void)
 // Sequence of action to be taken while the motor is on.
 void MotorOnSeqAsSensorless6Step(void)
 {
-    float CurCmd , CurMax   ;
+    float CurCmd , CurMax   , delta ;
     //short unsigned refmode , ClosureMode   ;
-    short stat ;
+    short stat , step , nextstep ;
 
     // Run reference generators
     CurMax = ControlPars.MaxCurCmd ;
@@ -902,6 +937,10 @@ void MotorOnSeqAsSensorless6Step(void)
     else
     {
         SLessState.SixStepObs.StopDetectCntr  -= 3 ;
+        if ( SLessState.SixStepObs.StopDetectCntr < 0 )
+        {
+            SLessState.SixStepObs.StopDetectCntr = 0 ;
+        }
     }
 
 
@@ -912,11 +951,26 @@ void MotorOnSeqAsSensorless6Step(void)
     SysState.SpeedControl.SpeedCommand = fSatNanProt (SysState.SpeedControl.SpeedReference , ControlPars.MaxSpeedCmd ) ;
 
 
+    // Decide commutation by electrical angle
+    step = (short) ( ClaState.QThetaElect * 6 ) ;
+    SLessState.SixStepObs.AngleCandidate = __fracf32 ( SLessState.SixStepObs.ThetaHat + 1.25f) ;
+    delta = ( __fracf32( SLessState.SixStepObs.AngleCandidate) + 1 )  * 6.0f + 1.0f ;
+    delta = delta - __fracf32(delta) ;
+    ClaState.QThetaElect =  __fracf32((delta-0.5f) * 0.166666666666667f) ;
+    nextstep = (short) ( ClaState.QThetaElect * 6 ) ;
+    if ( nextstep != step)
+    {
+        CurCmd = SixStepPI() ;
+        ResetEstimatorTout() ; // Eliminate angle counting till transient ends
+        ClaState.CurrentControl.ExtCurrentCommand =  __fmin(__fmax( fSatNanProt( CurCmd , CurMax ) ,0),ClaState.CurrentControl.ExtCurrentCommand+1) ;
+    }
 
-
-    CurCmd = SixStepPI() ;
+#ifdef PIPIKAKI
     if ( SLessState.SixStepObs.SetSpeedCtl )
     {
+    //ClaState.CurrentControl.ExtCurrentCommand = 0 ;
+    //SLessState.SixStepObs.SetSpeedCtl = 0 ;
+
         // Wait R calculation completion
         if  ((SLessState.SixStepObs.bUpdateBuf==0) ||
                 ( SLessState.SixStepObs.TransitionTimeOut >= SLPars.Pars6Step.nTransitionTime + SLPars.Pars6Step.nSummingTime ))
@@ -925,9 +979,11 @@ void MotorOnSeqAsSensorless6Step(void)
             // Current command never goes negative , its not a servo
             // Also limit the rise rate
             ClaState.CurrentControl.ExtCurrentCommand =  __fmin(__fmax( fSatNanProt( CurCmd , CurMax ) ,0),ClaState.CurrentControl.ExtCurrentCommand+1) ;
+
             SLessState.SixStepObs.SetSpeedCtl = 0 ;
         }
     }
+
 
     if ( SLessState.SixStepObs.DeltaCom2Close )
     {
@@ -942,7 +998,7 @@ void MotorOnSeqAsSensorless6Step(void)
             SLessState.SixStepObs.DeltaCom2Close = __fmin( SLessState.SixStepObs.DeltaCom2Close + 0.0417f , 0 ) ;
         }
     }
-    ClaState.QThetaElect = __fracf32 ( SLessState.SixStepObs.ThetaHat - SLessState.SixStepObs.DeltaCom2Close + 1.25f) ;
+#endif
 
 
     if ( fabsf(ClaState.CurrentControl.ExtCurrentCommand)  ==  CurMax )
